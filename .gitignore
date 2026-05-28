@@ -1,0 +1,174 @@
+# ===========================================
+# BACKEND - Java/Spring Boot
+# ===========================================
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Spring Boot
+spring-shell.log
+
+# Application sensitive files
+application-local.yml
+application-local.properties
+*.local.yml
+*.local.properties
+
+# ===========================================
+# FRONTEND - React/Next.js
+# ===========================================
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+build/
+
+# Production
+dist/
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Testing
+coverage/
+
+# ===========================================
+# COMMON - All projects
+# ===========================================
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# IDE - Eclipse/STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+
+# IDE - NetBeans
+nbproject/private/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# IDE - VS Code
+.vscode/
+
+# Cursor IDE
+.cursor/
+.cursor/rules/
+.cursor/commands/
+.cursor/skills/
+.cursor/agents/
+.cursor/hooks/
+.cursor/mcps/
+
+# Logs
+*.log
+logs/
+
+# Package files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Sensitive files
+.env
+.env.*
+!.env.example
+.env.local
+.env.*.local
+*.secret
+credentials.json
+secrets.yaml
+/secrets/
+/private/
+/credentials/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Test output
+test-output/
+surefire-reports/
+failsafe-reports/
+*.test.output
+
+# Coverage reports
+jacoco/
+cobertura/
+coverage/
+*.exec
+*.gcda
+*.gcno
+
+# Docker
+docker-compose.override.yml
+
+# Backup files
+*~
+*.bak
+*.backup
+*.swp
+*.swo
