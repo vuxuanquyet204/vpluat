@@ -1,0 +1,82 @@
+# ============================================================
+# Production Profile Configuration
+# ============================================================
+
+spring:
+  # Production Database
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:brs}
+    username: ${DB_USER:brs_user}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+
+  # Redis (Production)
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 5000
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 5
+
+  # RabbitMQ (Production)
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
+
+  # Hide SQL in production
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+# Flyway - production settings
+  flyway:
+    baseline-on-migrate: false
+
+# Production-specific app config
+app:
+  jwt:
+    private-key-path: ${JWT_PRIVATE_KEY_PATH:/run/secrets/jwt-private.pem}
+    public-key-path: ${JWT_PUBLIC_KEY_PATH:/run/secrets/jwt-public.pem}
+
+  cors:
+    allowed-origins:
+      - ${CORS_ORIGIN_1:https://lawfirm.vn}
+      - ${CORS_ORIGIN_2:https://www.lawfirm.vn}
+      - ${CORS_ORIGIN_3:https://admin.lawfirm.vn}
+
+# Logging - production
+logging:
+  level:
+    root: WARN
+    com.lawfirm.brs: INFO
+    org.springframework.security: WARN
+  file:
+    name: /var/log/brs/brs-backend.log
+
+# Swagger UI - disabled in production
+springdoc:
+  swagger-ui:
+    enabled: false
+  show-actuator: false
+
+# Actuator - production
+management:
+  endpoint:
+    health:
+      show-details: never
