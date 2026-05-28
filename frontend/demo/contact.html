@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liên Hệ | VP Luật Hùng & Cộng sự</title>
+    <meta name="description" content="Liên hệ Văn Phòng Luật Hùng & Cộng sự. Đội ngũ sẵn sàng hỗ trợ pháp lý 24/7. Hotline: 1900 6868.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #1E3A5F;
+            --primary-dark: #152A45;
+            --primary-light: #2A4F7A;
+            --primary-faint: #EFF3F8;
+            --accent: #C9A84C;
+            --accent-dark: #B8953D;
+            --white: #FFFFFF;
+            --off-white: #F8F9FA;
+            --gray-50: #F8F9FA;
+            --gray-100: #F0F2F5;
+            --gray-200: #E4E8EF;
+            --gray-300: #CBD2DC;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --green: #059669;
+            --green-bg: #ECFDF5;
+            --red: #DC2626;
+            --red-bg: #FEF2F2;
+            --yellow: #D97706;
+            --yellow-bg: #FFFBEB;
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.07);
+            --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+            --shadow-xl: 0 16px 60px rgba(0,0,0,0.15);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 9999px;
+            --transition: 0.2s ease;
+            --navbar-h: 72px;
+            --font-heading: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
+        }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body);
+            color: var(--gray-700);
+            background: var(--white);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, h4 { font-family: var(--font-heading); line-height: 1.2; }
+        button { font-family: inherit; cursor: pointer; }
+        input, select, textarea { font-family: inherit; }
+        a { text-decoration: none; color: inherit; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        img { max-width: 100%; display: block; }
+
+        /* ============================================================
+           NAVBAR
+           ============================================================ */
+        .navbar {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-100);
+            height: var(--navbar-h);
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center;
+        }
+        .navbar__inner {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 24px;
+        }
+        .navbar__brand { display: flex; align-items: center; gap: 10px; }
+        .navbar__logo {
+            width: 38px; height: 38px;
+            background: var(--accent); border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; font-weight: 800; color: var(--primary-dark);
+            font-family: var(--font-heading);
+        }
+        .navbar__name { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; color: var(--primary); }
+        .navbar__links { display: flex; align-items: center; gap: 28px; list-style: none; }
+        .navbar__links a {
+            font-size: 0.875rem; font-weight: 500; color: var(--gray-600);
+            transition: color var(--transition);
+        }
+        .navbar__links a:hover { color: var(--primary); }
+        .navbar__links a.active { color: var(--primary); font-weight: 600; }
+        .navbar__cta {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .navbar__phone {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.85rem; font-weight: 700; color: var(--primary);
+        }
+        .navbar__phone i { color: var(--accent); }
+        .btn-primary {
+            background: var(--accent); color: var(--primary-dark);
+            padding: 10px 20px; border: none; border-radius: var(--radius-md);
+            font-size: 0.85rem; font-weight: 700;
+            display: inline-flex; align-items: center; gap: 7px;
+            transition: all var(--transition);
+        }
+        .btn-primary:hover { background: var(--accent-dark); transform: translateY(-1px); }
+        .btn-outline {
+            background: transparent; color: var(--primary);
+            padding: 10px 20px; border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md); font-size: 0.85rem; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 7px;
+            transition: all var(--transition);
+        }
+        .btn-outline:hover { border-color: var(--primary); }
+
+        /* ============================================================
+           PAGE HEADER
+           ============================================================ */
+        .page-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 60px 24px 56px;
+            text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .page-header::before {
+            content: ''; position: absolute; inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .page-header__inner { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; }
+        .page-header__label {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(201,168,76,0.15);
+            color: var(--accent); font-size: 0.78rem; font-weight: 700;
+            padding: 4px 14px; border-radius: var(--radius-full);
+            border: 1px solid rgba(201,168,76,0.3);
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+        }
+        .page-header__title {
+            font-family: var(--font-heading);
+            font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700;
+            color: var(--white); margin-bottom: 12px; line-height: 1.15;
+        }
+        .page-header__sub {
+            font-size: 1rem; color: rgba(255,255,255,0.65);
+            line-height: 1.6;
+        }
+
+        /* ============================================================
+           CONTACT SECTION
+           ============================================================ */
+        .contact-section { padding: 60px 24px; max-width: 1200px; margin: 0 auto; }
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 42% 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        /* Info cards */
+        .info-list { display: flex; flex-direction: column; gap: 14px; }
+        .info-card {
+            background: var(--white);
+            border: 1px solid var(--gray-100);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            display: flex; gap: 14px;
+            align-items: flex-start;
+            transition: all var(--transition);
+            box-shadow: var(--shadow-xs);
+        }
+        .info-card:hover { border-color: var(--primary-light); box-shadow: var(--shadow-sm); transform: translateX(4px); }
+        .info-card__icon {
+            width: 42px; height: 42px; border-radius: var(--radius-md);
+            background: var(--primary-faint);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; color: var(--primary);
+            flex-shrink: 0;
+        }
+        .info-card__content { flex: 1; }
+        .info-card__label { font-size: 0.75rem; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .info-card__value { font-size: 0.875rem; font-weight: 600; color: var(--primary); line-height: 1.4; }
+        .info-card__sub { font-size: 0.78rem; color: var(--gray-500); margin-top: 2px; }
+
+        /* Quick contact buttons */
+        .quick-btns {
+            display: flex; gap: 10px; flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .quick-btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 10px 18px;
+            border-radius: var(--radius-full);
+            font-size: 0.82rem; font-weight: 700;
+            cursor: pointer; border: none;
+            transition: all var(--transition);
+        }
+        .quick-btn--call { background: var(--primary); color: var(--white); }
+        .quick-btn--call:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .quick-btn--zalo { background: #0068FF; color: var(--white); }
+        .quick-btn--zalo:hover { background: #0055DD; transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .quick-btn--email { background: var(--gray-100); color: var(--gray-700); border: 1.5px solid var(--gray-200); }
+        .quick-btn--email:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* Social links */
+        .social-links {
+            display: flex; align-items: center; gap: 12px;
+            margin-top: 20px; padding-top: 20px;
+            border-top: 1px solid var(--gray-100);
+        }
+        .social-links__label { font-size: 0.78rem; font-weight: 600; color: var(--gray-500); }
+        .social-link {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--gray-100);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--gray-500); font-size: 0.875rem;
+            transition: all var(--transition);
+        }
+        .social-link:hover { background: var(--primary); color: var(--white); transform: translateY(-2px); }
+
+        /* ============================================================
+           FORM CARD
+           ============================================================ */
+        .form-card {
+            background: var(--white);
+            border: 1px solid var(--gray-100);
+            border-radius: var(--radius-xl);
+            padding: 32px;
+            box-shadow: var(--shadow-md);
+        }
+        .form-card__header { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid var(--accent); }
+        .form-card__title { font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+        .form-card__sub { font-size: 0.82rem; color: var(--gray-500); }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label {
+            display: block; font-size: 0.8rem; font-weight: 700;
+            color: var(--primary); margin-bottom: 6px;
+        }
+        .form-group label .req { color: var(--red); margin-left: 2px; }
+        .form-control {
+            width: 100%; padding: 11px 14px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md); font-size: 0.875rem;
+            color: var(--gray-700); background: var(--white);
+            transition: border-color var(--transition);
+            outline: none;
+        }
+        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,58,95,0.07); }
+        .form-control.error { border-color: var(--red); }
+        .form-control::placeholder { color: var(--gray-400); }
+        textarea.form-control { resize: vertical; min-height: 120px; }
+        .field-error { font-size: 0.72rem; color: var(--red); margin-top: 4px; display: none; }
+        .field-error.show { display: block; }
+        .char-count { font-size: 0.7rem; color: var(--gray-400); text-align: right; margin-top: 3px; }
+
+        /* Radio groups */
+        .radio-group { display: flex; gap: 20px; flex-wrap: wrap; }
+        .radio-item {
+            display: flex; align-items: center; gap: 7px;
+            cursor: pointer;
+        }
+        .radio-item input[type="radio"] { display: none; }
+        .radio-item__dot {
+            width: 18px; height: 18px; border-radius: 50%;
+            border: 2px solid var(--gray-300);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all var(--transition);
+        }
+        .radio-item input:checked + .radio-item__dot {
+            border-color: var(--primary);
+            background: var(--primary);
+        }
+        .radio-item input:checked + .radio-item__dot::after {
+            content: ''; width: 6px; height: 6px;
+            border-radius: 50%; background: var(--white);
+        }
+        .radio-item__label { font-size: 0.875rem; font-weight: 500; color: var(--gray-600); }
+
+        /* Select */
+        select.form-control { appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239CA3AF' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+        /* Checkbox */
+        .form-check { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 18px; cursor: pointer; }
+        .form-check__box {
+            width: 18px; height: 18px; border: 2px solid var(--gray-300);
+            border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; margin-top: 1px; transition: all var(--transition);
+        }
+        .form-check.checked .form-check__box { background: var(--primary); border-color: var(--primary); }
+        .form-check.checked .form-check__box::after {
+            content: ''; width: 8px; height: 5px;
+            border-left: 2px solid white; border-bottom: 2px solid white;
+            transform: rotate(-45deg) translateY(-1px);
+        }
+        .form-check__text { font-size: 0.8rem; color: var(--gray-600); line-height: 1.5; }
+        .form-check__text a { color: var(--primary); font-weight: 600; text-decoration: underline; }
+
+        /* Honeypot */
+        .hp-field { display: none !important; }
+
+        /* Submit */
+        .submit-btn {
+            width: 100%; padding: 15px;
+            background: var(--accent); color: var(--primary-dark);
+            border: none; border-radius: var(--radius-md);
+            font-size: 1rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            cursor: pointer; transition: all var(--transition);
+            letter-spacing: 0.3px;
+        }
+        .submit-btn:hover:not(:disabled) { background: var(--accent-dark); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,168,76,0.35); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .submit-btn.loading { pointer-events: none; }
+        .submit-btn .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(21,42,69,0.3);
+            border-top-color: var(--primary-dark);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+        .submit-btn.loading .spinner { display: block; }
+        .submit-btn.loading .btn-text { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Success state */
+        .form-success {
+            display: none;
+            text-align: center;
+            padding: 40px 24px;
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .form-success.show { display: block; }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+        .form-success__icon {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: var(--green-bg);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 1.8rem; color: var(--green);
+        }
+        .form-success__title { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+        .form-success__sub { font-size: 0.875rem; color: var(--gray-500); margin-bottom: 24px; line-height: 1.6; }
+        .form-success__next { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+        /* ============================================================
+           MAP SECTION
+           ============================================================ */
+        .map-section { background: var(--gray-50); padding: 60px 24px; }
+        .map-section__inner { max-width: 1200px; margin: 0 auto; }
+        .map-section__header { text-align: center; margin-bottom: 32px; }
+        .map-section__title { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+        .map-section__sub { font-size: 0.875rem; color: var(--gray-500); }
+        .map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .map-card {
+            background: var(--white); border-radius: var(--radius-lg);
+            overflow: hidden; box-shadow: var(--shadow-sm);
+            border: 1px solid var(--gray-100);
+        }
+        .map-card__image {
+            width: 100%; height: 220px;
+            object-fit: cover;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .map-card__body { padding: 16px 20px; }
+        .map-card__city { font-size: 0.72rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .map-card__address { font-size: 0.875rem; font-weight: 600; color: var(--primary); margin-bottom: 6px; line-height: 1.4; }
+        .map-card__detail { font-size: 0.78rem; color: var(--gray-500); display: flex; align-items: center; gap: 5px; }
+
+        /* ============================================================
+           FAQ SECTION
+           ============================================================ */
+        .faq-section { padding: 60px 24px; max-width: 800px; margin: 0 auto; }
+        .faq-section__header { text-align: center; margin-bottom: 36px; }
+        .faq-section__title { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+        .faq-section__sub { font-size: 0.875rem; color: var(--gray-500); }
+
+        .accordion { border: 1px solid var(--gray-100); border-radius: var(--radius-lg); overflow: hidden; }
+        .accordion-item { border-bottom: 1px solid var(--gray-100); }
+        .accordion-item:last-child { border-bottom: none; }
+        .accordion-item__trigger {
+            width: 100%; padding: 18px 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--white); border: none;
+            font-size: 0.9rem; font-weight: 600; color: var(--primary);
+            text-align: left; cursor: pointer;
+            transition: background var(--transition);
+            gap: 12px;
+        }
+        .accordion-item__trigger:hover { background: var(--gray-50); }
+        .accordion-item__trigger span { flex: 1; }
+        .accordion-item__icon {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: var(--primary-faint);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; color: var(--primary);
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .accordion-item.open .accordion-item__icon {
+            background: var(--primary);
+            color: var(--white);
+            transform: rotate(180deg);
+        }
+        .accordion-item__body {
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+        .accordion-item.open .accordion-item__body { max-height: 400px; }
+        .accordion-item__content {
+            padding: 0 20px 18px;
+            font-size: 0.875rem; color: var(--gray-600);
+            line-height: 1.65; border-top: 1px solid var(--gray-50);
+            padding-top: 16px;
+        }
+
+        /* ============================================================
+           TRUST BADGES
+           ============================================================ */
+        .trust-section {
+            background: var(--primary);
+            padding: 36px 24px;
+        }
+        .trust-section__inner { max-width: 1200px; margin: 0 auto; }
+        .trust-badges {
+            display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+        }
+        .trust-badge {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.82rem; font-weight: 600; color: var(--white);
+        }
+        .trust-badge i { font-size: 1.1rem; color: var(--accent); flex-shrink: 0; }
+
+        /* ============================================================
+           FOOTER
+           ============================================================ */
+        .footer {
+            background: var(--primary-dark);
+            padding: 48px 24px 0;
+        }
+        .footer__inner { max-width: 1200px; margin: 0 auto; }
+        .footer__grid {
+            display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr;
+            gap: 40px; padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .footer__brand-name {
+            font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700;
+            color: var(--white); margin-bottom: 10px;
+        }
+        .footer__brand-desc {
+            font-size: 0.82rem; color: rgba(255,255,255,0.5);
+            line-height: 1.6; margin-bottom: 16px;
+        }
+        .footer__social { display: flex; gap: 8px; }
+        .footer__social-link {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.5); font-size: 0.8rem;
+            transition: all var(--transition);
+        }
+        .footer__social-link:hover { background: var(--accent); color: var(--primary-dark); }
+        .footer__col-title {
+            font-size: 0.8rem; font-weight: 700; color: var(--white);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+        .footer__col-links { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .footer__col-links a {
+            font-size: 0.82rem; color: rgba(255,255,255,0.5);
+            transition: color var(--transition);
+        }
+        .footer__col-links a:hover { color: var(--accent); }
+        .footer__contact-item {
+            display: flex; align-items: flex-start; gap: 8px;
+            font-size: 0.82rem; color: rgba(255,255,255,0.5);
+            margin-bottom: 10px;
+        }
+        .footer__contact-item i { color: var(--accent); margin-top: 3px; flex-shrink: 0; }
+        .footer__bottom {
+            padding: 20px 0;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 12px;
+        }
+        .footer__copy { font-size: 0.78rem; color: rgba(255,255,255,0.3); }
+        .footer__copy a { color: var(--accent); }
+        .footer__legal { display: flex; gap: 20px; }
+        .footer__legal a { font-size: 0.78rem; color: rgba(255,255,255,0.3); transition: color var(--transition); }
+        .footer__legal a:hover { color: var(--accent); }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 1024px) {
+            .contact-grid { grid-template-columns: 1fr; }
+            .footer__grid { grid-template-columns: 1fr 1fr; }
+            .map-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .navbar__links { display: none; }
+            .navbar__cta .btn-outline { display: none; }
+            .form-row { grid-template-columns: 1fr; }
+            .quick-btns { flex-direction: column; }
+            .quick-btn { justify-content: center; }
+            .trust-badges { gap: 24px; }
+            .footer__grid { grid-template-columns: 1fr; gap: 28px; }
+        }
+        @media (max-width: 480px) {
+            .contact-section { padding: 40px 16px; }
+            .form-card { padding: 22px 18px; }
+            .trust-badges { flex-direction: column; align-items: flex-start; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="navbar__inner">
+        <a href="#" class="navbar__brand">
+            <div class="navbar__logo"><i class="fa-solid fa-scale-balanced"></i></div>
+            <div class="navbar__name">VP Luật Hùng &amp; Cộng sự</div>
+        </a>
+        <ul class="navbar__links">
+            <li><a href="#">Trang chủ</a></li>
+            <li><a href="#">Dịch vụ</a></li>
+            <li><a href="#">Đội ngũ</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Về chúng tôi</a></li>
+            <li><a href="#" class="active">Liên hệ</a></li>
+        </ul>
+        <div class="navbar__cta">
+            <div class="navbar__phone">
+                <i class="fa-solid fa-phone-volume"></i>
+                1900 6868
+            </div>
+            <a href="#contactForm" class="btn-primary">
+                <i class="fa-solid fa-calendar-check"></i>
+                Đặt lịch tư vấn
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<section class="page-header">
+    <div class="page-header__inner">
+        <div class="page-header__label">
+            <i class="fa-solid fa-headset"></i>
+            HỖ TRỢ 24/7
+        </div>
+        <h1 class="page-header__title" data-i18n="header.title">Liên Hệ Với Chúng Tôi</h1>
+        <p class="page-header__sub" data-i18n="header.sub">Đội ngũ sẵn sàng hỗ trợ bạn – Phản hồi trong 30 phút trong giờ hành chính.</p>
+    </div>
+</section>
+
+<!-- CONTACT SECTION -->
+<section class="contact-section" id="contactForm">
+    <div class="contact-grid">
+
+        <!-- LEFT: Info -->
+        <div class="info-col">
+            <div class="info-list">
+
+                <div class="info-card">
+                    <div class="info-card__icon"><i class="fa-solid fa-location-dot"></i></div>
+                    <div class="info-card__content">
+                        <div class="info-card__label" data-i18n="info.hcm_label">Văn phòng chính</div>
+                        <div class="info-card__value" data-i18n="info.hcm_address">Tầng 12, Tòa nhà Landmark 81</div>
+                        <div class="info-card__sub">720A Điện Biên Phủ, P.22, Q.Bình Thạnh, TP.HCM</div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card__icon"><i class="fa-solid fa-building"></i></div>
+                    <div class="info-card__content">
+                        <div class="info-card__label" data-i18n="info.hn_label">Văn phòng Hà Nội</div>
+                        <div class="info-card__value" data-i18n="info.hn_address">Tầng 8, 63 Lý Thái Tổ</div>
+                        <div class="info-card__sub">Hoàn Kiếm, Hà Nội</div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card__icon"><i class="fa-solid fa-phone-volume"></i></div>
+                    <div class="info-card__content">
+                        <div class="info-card__label" data-i18n="info.hotline_label">Hotline</div>
+                        <div class="info-card__value">1900 6868</div>
+                        <div class="info-card__sub" data-i18n="info.hotline_hours">7:30 – 17:30, Thứ 2 – Thứ 6</div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card__icon" style="background:#EFF9FF"><i class="fa-brands fa-rocketchat" style="color:#0068FF"></i></div>
+                    <div class="info-card__content">
+                        <div class="info-card__label" data-i18n="info.zalo_label">Zalo OA</div>
+                        <div class="info-card__value">VP Luật Hùng &amp; Cộng sự</div>
+                        <div class="info-card__sub" data-i18n="info.zalo_sub">Phản hồi trong 15 phút</div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card__icon" style="background:#FEF3F2"><i class="fa-solid fa-envelope" style="color:#DC2626"></i></div>
+                    <div class="info-card__content">
+                        <div class="info-card__label" data-i18n="info.email_label">Email</div>
+                        <div class="info-card__value">info@vpluat.vn</div>
+                        <div class="info-card__sub" data-i18n="info.email_sub">Phản hồi trong 4 giờ làm việc</div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card__icon" style="background:#ECFDF5"><i class="fa-solid fa-clock" style="color:#059669"></i></div>
+                    <div class="info-card__content">
+                        <div class="info-card__label" data-i18n="info.hours_label">Giờ làm việc</div>
+                        <div class="info-card__value" data-i18n="info.hours_weekday">Thứ 2 – Thứ 6: 07:30 – 17:30</div>
+                        <div class="info-card__sub" data-i18n="info.hours_sat">Thứ 7: 08:00 – 12:00 | CN &amp; Lễ: Nghỉ</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-btns">
+                <a href="tel:19006868" class="quick-btn quick-btn--call">
+                    <i class="fa-solid fa-phone"></i>
+                    <span data-i18n="quick.call">Gọi ngay</span>
+                </a>
+                <a href="https://zalo.me" target="_blank" class="quick-btn quick-btn--zalo">
+                    <i class="fa-brands fa-rocketchat"></i>
+                    <span data-i18n="quick.zalo">Chat Zalo</span>
+                </a>
+                <a href="mailto:info@vpluat.vn" class="quick-btn quick-btn--email">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span data-i18n="quick.email">Gửi Email</span>
+                </a>
+            </div>
+
+            <div class="social-links">
+                <span class="social-links__label" data-i18n="social.label">Theo dõi:</span>
+                <a href="#" class="social-link" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                <a href="#" class="social-link" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                <a href="#" class="social-link" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                <a href="#" class="social-link" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+            </div>
+        </div>
+
+        <!-- RIGHT: Form -->
+        <div class="form-card" id="formCard">
+            <div class="form-card__header">
+                <h2 class="form-card__title" data-i18n="form.title">Gửi Yêu Cầu Tư Vấn</h2>
+                <p class="form-card__sub" data-i18n="form.sub">Điền thông tin, chúng tôi sẽ liên hệ lại trong 30 phút.</p>
+            </div>
+
+            <!-- Form -->
+            <form id="contactFormEl" novalidate>
+                <div class="form-group">
+                    <label for="fieldName" data-i18n="form.name">Họ và tên <span class="req">*</span></label>
+                    <input type="text" class="form-control" id="fieldName" placeholder="Nhập họ và tên đầy đủ" data-i18n-placeholder="form.name.ph" autocomplete="name">
+                    <div class="field-error" id="errorName" data-i18n="form.err.required">Vui lòng nhập họ và tên</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fieldPhone" data-i18n="form.phone">Số điện thoại <span class="req">*</span></label>
+                        <input type="tel" class="form-control" id="fieldPhone" placeholder="0xxx xxx xxx" data-i18n-placeholder="form.phone.ph" autocomplete="tel">
+                        <div class="field-error" id="errorPhone" data-i18n="form.err.phone">Số điện thoại không hợp lệ</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="fieldEmail" data-i18n="form.email">Email</label>
+                        <input type="email" class="form-control" id="fieldEmail" placeholder="email@example.com" data-i18n-placeholder="form.email.ph" autocomplete="email">
+                        <div class="field-error" id="errorEmail" data-i18n="form.err.email">Email không hợp lệ</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="fieldService" data-i18n="form.service">Lĩnh vực cần tư vấn <span class="req">*</span></label>
+                    <select class="form-control" id="fieldService">
+                        <option value="" data-i18n="form.service.ph">-- Chọn lĩnh vực --</option>
+                        <option value="doanh-nghiep">Luật Doanh nghiệp &amp; M&amp;A</option>
+                        <option value="hinh-su">Luật Hình sự</option>
+                        <option value="dan-su">Luật Dân sự</option>
+                        <option value="dat-dai">Luật Đất đai &amp; BĐS</option>
+                        <option value="lao-dong">Luật Lao động &amp; BHXH</option>
+                        <option value="fdi">Đầu tư nước ngoài (FDI)</option>
+                        <option value="shtt">Sở hữu trí tuệ</option>
+                        <option value="khac">Lĩnh vực khác</option>
+                    </select>
+                    <div class="field-error" id="errorService" data-i18n="form.err.service">Vui lòng chọn lĩnh vực</div>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="form.contact_method">Hình thức liên hệ ưa thích</label>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="contactMethod" value="call" checked>
+                            <div class="radio-item__dot"></div>
+                            <span class="radio-item__label" data-i18n="form.call">Gọi điện</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="contactMethod" value="zalo">
+                            <div class="radio-item__dot"></div>
+                            <span class="radio-item__label" data-i18n="form.zalo">Zalo</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="contactMethod" value="email">
+                            <div class="radio-item__dot"></div>
+                            <span class="radio-item__label" data-i18n="form.email_opt">Email</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="contactMethod" value="office">
+                            <div class="radio-item__dot"></div>
+                            <span class="radio-item__label" data-i18n="form.office">Đến văn phòng</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="form.preferred_time">Thời gian phù hợp</label>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="preferredTime" value="morning" checked>
+                            <div class="radio-item__dot"></div>
+                            <span class="radio-item__label" data-i18n="form.morning">Buổi sáng</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="preferredTime" value="afternoon">
+                            <div class="radio-item__dot"></div>
+                            <span class="radio-item__label" data-i18n="form.afternoon">Buổi chiều</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="preferredTime" value="evening">
+                            <div class="radio-item__dot"></div>
+                            <span class="radio-item__label" data-i18n="form.evening">Buổi tối</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="preferredTime" value="weekend">
+                            <div class="radio-item__dot"></div>
+                            <span class="radio-item__label" data-i18n="form.weekend">Cuối tuần</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="fieldIssue" data-i18n="form.issue">Mô tả vấn đề cần tư vấn <span class="req">*</span></label>
+                    <textarea class="form-control" id="fieldIssue" placeholder="Mô tả ngắn gọn vấn đề pháp lý bạn cần hỗ trợ..." data-i18n-placeholder="form.issue.ph" maxlength="1000"></textarea>
+                    <div class="char-count"><span id="charCount">0</span> / 1000</div>
+                    <div class="field-error" id="errorIssue" data-i18n="form.err.required">Vui lòng mô tả vấn đề của bạn</div>
+                </div>
+
+                <!-- Honeypot -->
+                <div class="hp-field" aria-hidden="true">
+                    <input type="text" name="website" tabindex="-1" autocomplete="off">
+                </div>
+
+                <div class="form-check" id="agreeCheck">
+                    <div class="form-check__box"></div>
+                    <div class="form-check__text">
+                        Tôi đồng ý với <a href="#" onclick="event.preventDefault()">Điều khoản sử dụng</a> và <a href="#" onclick="event.preventDefault()">Chính sách bảo mật</a> của VP Luật Hùng &amp; Cộng sự. <span class="req">*</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <span class="btn-text" data-i18n="form.submit">Gửi Yêu Cầu Tư Vấn</span>
+                    <div class="spinner"></div>
+                    <i class="btn-icon fa-solid fa-paper-plane"></i>
+                </button>
+            </form>
+
+            <!-- Success -->
+            <div class="form-success" id="formSuccess">
+                <div class="form-success__icon">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <h3 class="form-success__title" data-i18n="form.success.title">Gửi Thành Công!</h3>
+                <p class="form-success__sub" data-i18n="form.success.sub">Cảm ơn bạn đã liên hệ. Đội ngũ VP Luật Hùng sẽ phản hồi trong vòng 30 phút trong giờ hành chính.</p>
+                <div class="form-success__next">
+                    <a href="tel:19006868" class="btn-primary">
+                        <i class="fa-solid fa-phone"></i> Gọi hotline
+                    </a>
+                    <a href="#" class="btn-outline" onclick="event.preventDefault(); resetForm()">
+                        <i class="fa-solid fa-plus"></i> Gửi yêu cầu khác
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- MAP SECTION -->
+<section class="map-section">
+    <div class="map-section__inner">
+        <div class="map-section__header">
+            <h2 class="map-section__title" data-i18n="map.title">Văn Phòng Của Chúng Tôi</h2>
+            <p class="map-section__sub" data-i18n="map.sub">Hai văn phòng tại TP.HCM và Hà Nội, sẵn sàng phục vụ bạn.</p>
+        </div>
+        <div class="map-grid">
+            <div class="map-card">
+                <div class="map-card__image">
+                    <div style="text-align:center">
+                        <div style="font-size:2.5rem;color:rgba(255,255,255,0.8);margin-bottom:8px"><i class="fa-solid fa-location-dot"></i></div>
+                        <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:white;font-weight:700">TP. Hồ Chí Minh</div>
+                        <div style="font-size:0.8rem;color:rgba(255,255,255,0.6);margin-top:4px">Landmark 81, Bình Thạnh</div>
+                    </div>
+                </div>
+                <div class="map-card__body">
+                    <div class="map-card__city">Miền Nam</div>
+                    <div class="map-card__address">Tầng 12, Tòa nhà Landmark 81<br>720A Điện Biên Phủ, P.22, Q.Bình Thạnh, TP.HCM</div>
+                    <div class="map-card__detail">
+                        <i class="fa-solid fa-clock" style="color:var(--accent)"></i>
+                        <span>07:30 – 17:30, T2–T6</span>
+                    </div>
+                </div>
+            </div>
+            <div class="map-card">
+                <div class="map-card__image">
+                    <div style="text-align:center">
+                        <div style="font-size:2.5rem;color:rgba(255,255,255,0.8);margin-bottom:8px"><i class="fa-solid fa-location-dot"></i></div>
+                        <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:white;font-weight:700">Hà Nội</div>
+                        <div style="font-size:0.8rem;color:rgba(255,255,255,0.6);margin-top:4px">Lý Thái Tổ, Hoàn Kiếm</div>
+                    </div>
+                </div>
+                <div class="map-card__body">
+                    <div class="map-card__city">Miền Bắc</div>
+                    <div class="map-card__address">Tầng 8, 63 Lý Thái Tổ<br>Quận Hoàn Kiếm, Hà Nội</div>
+                    <div class="map-card__detail">
+                        <i class="fa-solid fa-clock" style="color:var(--accent)"></i>
+                        <span>08:00 – 17:30, T2–T6</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ SECTION -->
+<section class="faq-section">
+    <div class="faq-section__header">
+        <h2 class="faq-section__title" data-i18n="faq.title">Câu Hỏi Thường Gặp</h2>
+        <p class="faq-section__sub" data-i18n="faq.sub">Các câu hỏi phổ biến về dịch vụ liên hệ của VP Luật Hùng &amp; Cộng sự.</p>
+    </div>
+    <div class="accordion" id="faqAccordion">
+        <div class="accordion-item">
+            <button class="accordion-item__trigger" onclick="toggleAccordion(this)">
+                <span data-i18n="faq.q1">Tôi có thể tư vấn online không?</span>
+                <div class="accordion-item__icon"><i class="fa-solid fa-chevron-down"></i></div>
+            </button>
+            <div class="accordion-item__body">
+                <div class="accordion-item__content" data-i18n="faq.a1">Có. Chúng tôi hỗ trợ tư vấn qua video call (Zoom/Google Meet), điện thoại hoặc Zalo. Bạn có thể chọn hình thức phù hợp khi đặt lịch hoặc liên hệ trực tiếp qua hotline 1900 6868. Phí tư vấn online tương đương tư vấn tại văn phòng.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <button class="accordion-item__trigger" onclick="toggleAccordion(this)">
+                <span data-i18n="faq.q2">Chi phí tư vấn đầu tiên bao nhiêu?</span>
+                <div class="accordion-item__icon"><i class="fa-solid fa-chevron-down"></i></div>
+            </button>
+            <div class="accordion-item__body">
+                <div class="accordion-item__content" data-i18n="faq.a2">Lần tư vấn đầu tiên tại VP Luật Hùng &amp; Cộng sự hoàn toàn miễn phí trong 30 phút. Các lần tư vấn tiếp theo có mức phí từ 500.000 VNĐ, tùy theo lĩnh vực và độ phức tạp của vụ việc. Chúng tôi sẽ báo giá chi tiết trước khi tiến hành.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <button class="accordion-item__trigger" onclick="toggleAccordion(this)">
+                <span data-i18n="faq.q3">Thời gian phản hồi sau khi gửi form là bao lâu?</span>
+                <div class="accordion-item__icon"><i class="fa-solid fa-chevron-down"></i></div>
+            </button>
+            <div class="accordion-item__body">
+                <div class="accordion-item__content" data-i18n="faq.a3">Trong giờ hành chính (07:30–17:30, T2–T6), đội ngũ CSKH sẽ phản hồi trong vòng 30 phút kể từ khi nhận được yêu cầu. Ngoài giờ hành chính, chúng tôi sẽ liên hệ lại vào đầu giờ làm việc tiếp theo. Hotline 1900 6868 hoạt động 24/7 để tiếp nhận yêu cầu khẩn cấp.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <button class="accordion-item__trigger" onclick="toggleAccordion(this)">
+                <span data-i18n="faq.q4">Văn phòng có hỗ trợ ngoài giờ hành chính không?</span>
+                <div class="accordion-item__icon"><i class="fa-solid fa-chevron-down"></i></div>
+            </button>
+            <div class="accordion-item__body">
+                <div class="accordion-item__content" data-i18n="faq.a4">Hotline 1900 6868 hoạt động 24/7 để tiếp nhận yêu cầu tư vấn khẩn cấp. Tuy nhiên, lịch hẹn tại văn phòng và tư vấn trực tiếp chỉ áp dụng trong giờ hành chính. Bạn có thể đặt lịch trước qua form hoặc hotline để được sắp xếp luật sư phù hợp.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TRUST BADGES -->
+<section class="trust-section">
+    <div class="trust-section__inner">
+        <div class="trust-badges">
+            <div class="trust-badge">
+                <i class="fa-solid fa-award"></i>
+                <span data-i18n="trust.1">Thành viên Đoàn Luật sư TP.HCM</span>
+            </div>
+            <div class="trust-badge">
+                <i class="fa-solid fa-certificate"></i>
+                <span data-i18n="trust.2">Giấy phép hành nghề đầy đủ</span>
+            </div>
+            <div class="trust-badge">
+                <i class="fa-solid fa-lock"></i>
+                <span data-i18n="trust.3">Bảo mật tuyệt đối</span>
+            </div>
+            <div class="trust-badge">
+                <i class="fa-solid fa-star"></i>
+                <span data-i18n="trust.4">4.9/5 từ 200+ đánh giá Google</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer__inner">
+        <div class="footer__grid">
+            <div>
+                <div class="footer__brand-name">VP Luật Hùng &amp; Cộng sự</div>
+                <p class="footer__brand-desc">Hơn 20 năm kinh nghiệm tư vấn pháp lý toàn diện. Đội ngũ luật sư giàu chuyên môn, tận tâm bảo vệ quyền lợi khách hàng.</p>
+                <div class="footer__social">
+                    <a href="#" class="footer__social-link"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#" class="footer__social-link"><i class="fa-brands fa-linkedin-in"></i></a>
+                    <a href="#" class="footer__social-link"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="#" class="footer__social-link"><i class="fa-brands fa-tiktok"></i></a>
+                </div>
+            </div>
+            <div>
+                <div class="footer__col-title">Dịch vụ</div>
+                <ul class="footer__col-links">
+                    <li><a href="#">Luật Doanh nghiệp</a></li>
+                    <li><a href="#">Luật Đất đai</a></li>
+                    <li><a href="#">Luật Hình sự</a></li>
+                    <li><a href="#">Luật Dân sự</a></li>
+                    <li><a href="#">Luật Lao động</a></li>
+                    <li><a href="#">Sở hữu trí tuệ</a></li>
+                </ul>
+            </div>
+            <div>
+                <div class="footer__col-title">Văn phòng</div>
+                <div class="footer__contact-item"><i class="fa-solid fa-location-dot"></i>TP.HCM: Landmark 81, Bình Thạnh</div>
+                <div class="footer__contact-item"><i class="fa-solid fa-location-dot"></i>Hà Nội: 63 Lý Thái Tổ, Hoàn Kiếm</div>
+                <div class="footer__contact-item"><i class="fa-solid fa-phone-volume"></i>Hotline: 1900 6868</div>
+                <div class="footer__contact-item"><i class="fa-solid fa-envelope"></i>info@vpluat.vn</div>
+            </div>
+            <div>
+                <div class="footer__col-title">Giờ làm việc</div>
+                <div class="footer__contact-item"><i class="fa-solid fa-clock"></i>T2–T6: 07:30 – 17:30</div>
+                <div class="footer__contact-item"><i class="fa-solid fa-clock"></i>T7: 08:00 – 12:00</div>
+                <div class="footer__contact-item"><i class="fa-solid fa-clock"></i>CN &amp; Lễ: Nghỉ</div>
+                <div style="margin-top:12px">
+                    <a href="tel:19006868" class="btn-primary" style="font-size:0.8rem;padding:8px 14px">
+                        <i class="fa-solid fa-phone"></i> 1900 6868
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="footer__bottom">
+            <div class="footer__copy">&copy; 2026 VP Luật Hùng &amp; Cộng sự. Mọi quyền được bảo lưu.</div>
+            <div class="footer__legal">
+                <a href="#">Chính sách bảo mật</a>
+                <a href="#">Điều khoản sử dụng</a>
+                <a href="#">Sitemap</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+// ================================================================
+// TRANSLATIONS
+// ================================================================
+var T = {
+    vi: {
+        'header.title': 'Liên Hệ Với Chúng Tôi',
+        'header.sub': 'Đội ngũ sẵn sàng hỗ trợ bạn – Phản hồi trong 30 phút trong giờ hành chính.',
+        'info.hcm_label': 'Văn phòng chính',
+        'info.hcm_address': 'Tầng 12, Tòa nhà Landmark 81',
+        'info.hn_label': 'Văn phòng Hà Nội',
+        'info.hn_address': 'Tầng 8, 63 Lý Thái Tổ',
+        'info.hotline_label': 'Hotline',
+        'info.hotline_hours': '7:30 – 17:30, Thứ 2 – Thứ 6',
+        'info.zalo_label': 'Zalo OA',
+        'info.zalo_sub': 'Phản hồi trong 15 phút',
+        'info.email_label': 'Email',
+        'info.email_sub': 'Phản hồi trong 4 giờ làm việc',
+        'info.hours_label': 'Giờ làm việc',
+        'info.hours_weekday': 'Thứ 2 – Thứ 6: 07:30 – 17:30',
+        'info.hours_sat': 'Thứ 7: 08:00 – 12:00 | CN & Lễ: Nghỉ',
+        'quick.call': 'Gọi ngay',
+        'quick.zalo': 'Chat Zalo',
+        'quick.email': 'Gửi Email',
+        'social.label': 'Theo dõi:',
+        'form.title': 'Gửi Yêu Cầu Tư Vấn',
+        'form.sub': 'Điền thông tin, chúng tôi sẽ liên hệ lại trong 30 phút.',
+        'form.name': 'Họ và tên', 'form.name.ph': 'Nhập họ và tên đầy đủ',
+        'form.phone': 'Số điện thoại', 'form.phone.ph': '0xxx xxx xxx',
+        'form.email': 'Email', 'form.email.ph': 'email@example.com',
+        'form.service': 'Lĩnh vực cần tư vấn', 'form.service.ph': '-- Chọn lĩnh vực --',
+        'form.contact_method': 'Hình thức liên hệ ưa thích',
+        'form.call': 'Gọi điện', 'form.zalo': 'Zalo', 'form.email_opt': 'Email', 'form.office': 'Đến văn phòng',
+        'form.preferred_time': 'Thời gian phù hợp',
+        'form.morning': 'Buổi sáng', 'form.afternoon': 'Buổi chiều', 'form.evening': 'Buổi tối', 'form.weekend': 'Cuối tuần',
+        'form.issue': 'Mô tả vấn đề cần tư vấn',
+        'form.issue.ph': 'Mô tả ngắn gọn vấn đề pháp lý bạn cần hỗ trợ...',
+        'form.submit': 'Gửi Yêu Cầu Tư Vấn',
+        'form.err.required': 'Vui lòng nhập đầy đủ thông tin',
+        'form.err.phone': 'Số điện thoại không hợp lệ (0xxx xxx xxx)',
+        'form.err.email': 'Email không hợp lệ',
+        'form.err.service': 'Vui lòng chọn lĩnh vực',
+        'form.success.title': 'Gửi Thành Công!',
+        'form.success.sub': 'Cảm ơn bạn đã liên hệ. Đội ngũ VP Luật Hùng sẽ phản hồi trong vòng 30 phút trong giờ hành chính.',
+        'map.title': 'Văn Phòng Của Chúng Tôi',
+        'map.sub': 'Hai văn phòng tại TP.HCM và Hà Nội, sẵn sàng phục vụ bạn.',
+        'faq.title': 'Câu Hỏi Thường Gặp',
+        'faq.sub': 'Các câu hỏi phổ biến về dịch vụ liên hệ.',
+        'faq.q1': 'Tôi có thể tư vấn online không?',
+        'faq.a1': 'Có. Chúng tôi hỗ trợ tư vấn qua video call (Zoom/Google Meet), điện thoại hoặc Zalo. Bạn có thể chọn hình thức phù hợp khi đặt lịch hoặc liên hệ trực tiếp qua hotline 1900 6868. Phí tư vấn online tương đương tư vấn tại văn phòng.',
+        'faq.q2': 'Chi phí tư vấn đầu tiên bao nhiêu?',
+        'faq.a2': 'Lần tư vấn đầu tiên tại VP Luật Hùng & Cộng sự hoàn toàn miễn phí trong 30 phút. Các lần tư vấn tiếp theo có mức phí từ 500.000 VNĐ, tùy theo lĩnh vực và độ phức tạp của vụ việc.',
+        'faq.q3': 'Thời gian phản hồi sau khi gửi form là bao lâu?',
+        'faq.a3': 'Trong giờ hành chính (07:30–17:30, T2–T6), đội ngũ CSKH sẽ phản hồi trong vòng 30 phút. Ngoài giờ, chúng tôi sẽ liên hệ vào đầu giờ làm việc tiếp theo. Hotline 1900 6868 hoạt động 24/7.',
+        'faq.q4': 'Văn phòng có hỗ trợ ngoài giờ hành chính không?',
+        'faq.a4': 'Hotline 1900 6868 hoạt động 24/7 để tiếp nhận yêu cầu khẩn cấp. Lịch hẹn tại văn phòng chỉ áp dụng trong giờ hành chính. Bạn có thể đặt lịch trước qua form hoặc hotline.',
+        'trust.1': 'Thành viên Đoàn Luật sư TP.HCM',
+        'trust.2': 'Giấy phép hành nghề đầy đủ',
+        'trust.3': 'Bảo mật tuyệt đối',
+        'trust.4': '4.9/5 từ 200+ đánh giá Google',
+    },
+    en: {
+        'header.title': 'Contact Us',
+        'header.sub': 'Our team is ready to assist you – Response within 30 minutes during business hours.',
+        'info.hcm_label': 'Main Office',
+        'info.hcm_address': 'Floor 12, Landmark 81 Tower',
+        'info.hn_label': 'Hanoi Office',
+        'info.hn_address': 'Floor 8, 63 Ly Thai To',
+        'info.hotline_label': 'Hotline',
+        'info.hotline_hours': '7:30 AM – 5:30 PM, Mon–Fri',
+        'info.zalo_label': 'Zalo OA',
+        'info.zalo_sub': 'Response within 15 minutes',
+        'info.email_label': 'Email',
+        'info.email_sub': 'Response within 4 business hours',
+        'info.hours_label': 'Working Hours',
+        'info.hours_weekday': 'Mon – Fri: 07:30 – 17:30',
+        'info.hours_sat': 'Sat: 08:00 – 12:00 | Sun & Holidays: Closed',
+        'quick.call': 'Call Now',
+        'quick.zalo': 'Chat Zalo',
+        'quick.email': 'Send Email',
+        'social.label': 'Follow us:',
+        'form.title': 'Submit a Consultation Request',
+        'form.sub': 'Fill in your details and we will get back to you within 30 minutes.',
+        'form.name': 'Full Name', 'form.name.ph': 'Enter your full name',
+        'form.phone': 'Phone Number', 'form.phone.ph': '0xxx xxx xxx',
+        'form.email': 'Email', 'form.email.ph': 'email@example.com',
+        'form.service': 'Legal Area', 'form.service.ph': '-- Select area --',
+        'form.contact_method': 'Preferred Contact Method',
+        'form.call': 'Phone Call', 'form.zalo': 'Zalo', 'form.email_opt': 'Email', 'form.office': 'In Office',
+        'form.preferred_time': 'Preferred Time',
+        'form.morning': 'Morning', 'form.afternoon': 'Afternoon', 'form.evening': 'Evening', 'form.weekend': 'Weekend',
+        'form.issue': 'Describe your legal issue',
+        'form.issue.ph': 'Briefly describe your legal matter...',
+        'form.submit': 'Submit Consultation Request',
+        'form.err.required': 'Please fill in all required fields',
+        'form.err.phone': 'Invalid phone number (0xxx xxx xxx)',
+        'form.err.email': 'Invalid email address',
+        'form.err.service': 'Please select a legal area',
+        'form.success.title': 'Sent Successfully!',
+        'form.success.sub': 'Thank you for reaching out. Our team will respond within 30 minutes during business hours.',
+        'map.title': 'Our Offices',
+        'map.sub': 'Two offices in Ho Chi Minh City and Hanoi, ready to serve you.',
+        'faq.title': 'Frequently Asked Questions',
+        'faq.sub': 'Common questions about our contact and legal services.',
+        'faq.q1': 'Can I get legal consultation online?',
+        'faq.a1': 'Yes. We offer consultations via video call (Zoom/Google Meet), phone, or Zalo. You can choose your preferred method when booking or calling hotline 1900 6868.',
+        'faq.q2': 'What is the cost for the first consultation?',
+        'faq.a2': 'Your first consultation at VP Luật Hùng & Partners is completely free for 30 minutes. Subsequent consultations start from 500,000 VND depending on the legal area and complexity.',
+        'faq.q3': 'How long does it take to respond after submitting the form?',
+        'faq.a3': 'During business hours (07:30–17:30, Mon–Fri), our team responds within 30 minutes. Outside business hours, we will contact you at the start of the next business day.',
+        'faq.q4': 'Do you provide support outside business hours?',
+        'faq.a4': 'Hotline 1900 6868 operates 24/7 for urgent requests. In-office appointments and in-person consultations are only available during business hours.',
+        'trust.1': 'Member of HCMC Bar Association',
+        'trust.2': 'Full Law Practice License',
+        'trust.3': 'Complete Confidentiality',
+        'trust.4': '4.9/5 from 200+ Google Reviews',
+    }
+};
+var currentLang = 'vi';
+
+function setLang(lang) {
+    currentLang = lang;
+    var t = T[lang];
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) el.textContent = t[key];
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n-placeholder');
+        if (t[key] !== undefined) el.placeholder = t[key];
+    });
+}
+
+// ================================================================
+// ACCORDION
+// ================================================================
+function toggleAccordion(trigger) {
+    var item = trigger.parentElement;
+    var isOpen = item.classList.contains('open');
+    // Close all
+    document.querySelectorAll('.accordion-item').forEach(function(i) { i.classList.remove('open'); });
+    // Toggle current
+    if (!isOpen) item.classList.add('open');
+}
+
+// ================================================================
+// FORM VALIDATION & SUBMIT
+// ================================================================
+function showError(id, msg) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('show');
+    if (msg) el.textContent = msg;
+    var input = el.previousElementSibling;
+    if (input && (input.tagName === 'TEXTAREA' || input.tagName === 'INPUT' || input.tagName === 'SELECT')) {
+        input.classList.add('error');
+    }
+}
+
+function clearError(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('show');
+    var input = el.previousElementSibling;
+    if (input && (input.tagName === 'TEXTAREA' || input.tagName === 'INPUT' || input.tagName === 'SELECT')) {
+        input.classList.remove('error');
+    }
+}
+
+function validateVietnamPhone(phone) {
+    return /^(0[1-9]\d{8,9})$/.test(phone.replace(/\s/g, ''));
+}
+
+function validateEmail(email) {
+    return !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validateForm() {
+    var t = T[currentLang];
+    var valid = true;
+
+    var name = document.getElementById('fieldName').value.trim();
+    if (!name) { showError('errorName', t['form.err.required']); valid = false; }
+    else clearError('errorName');
+
+    var phone = document.getElementById('fieldPhone').value.trim();
+    if (!phone || !validateVietnamPhone(phone)) { showError('errorPhone', t['form.err.phone']); valid = false; }
+    else clearError('errorPhone');
+
+    var email = document.getElementById('fieldEmail').value.trim();
+    if (email && !validateEmail(email)) { showError('errorEmail', t['form.err.email']); valid = false; }
+    else clearError('errorEmail');
+
+    var service = document.getElementById('fieldService').value;
+    if (!service) { showError('errorService', t['form.err.service']); valid = false; }
+    else clearError('errorService');
+
+    var issue = document.getElementById('fieldIssue').value.trim();
+    if (!issue) { showError('errorIssue', t['form.err.required']); valid = false; }
+    else clearError('errorIssue');
+
+    var agree = document.getElementById('agreeCheck').classList.contains('checked');
+    if (!agree) {
+        var agreeEl = document.getElementById('agreeCheck');
+        agreeEl.style.animation = 'none';
+        agreeEl.offsetHeight;
+        agreeEl.style.animation = 'shake 0.4s ease';
+        valid = false;
+    }
+
+    return valid;
+}
+
+function submitForm(e) {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    // Honeypot check
+    var honeypot = document.querySelector('input[name="website"]');
+    if (honeypot && honeypot.value) return; // Bot detected
+
+    var btn = document.getElementById('submitBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    // Simulate API call
+    setTimeout(function() {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        document.getElementById('contactFormEl').style.display = 'none';
+        document.getElementById('formSuccess').classList.add('show');
+    }, 1800);
+}
+
+function resetForm() {
+    document.getElementById('contactFormEl').reset();
+    document.getElementById('contactFormEl').style.display = 'block';
+    document.getElementById('formSuccess').classList.remove('show');
+    document.getElementById('agreeCheck').classList.remove('checked');
+    document.getElementById('charCount').textContent = '0';
+    document.querySelectorAll('.field-error').forEach(function(el) { el.classList.remove('show'); });
+    document.querySelectorAll('.form-control').forEach(function(el) { el.classList.remove('error'); });
+}
+
+// ================================================================
+// INIT
+// ================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    setLang('vi');
+
+    // Form submit
+    document.getElementById('contactFormEl').addEventListener('submit', submitForm);
+
+    // Checkbox toggle
+    document.getElementById('agreeCheck').addEventListener('click', function() {
+        this.classList.toggle('checked');
+    });
+
+    // Character counter
+    var issueEl = document.getElementById('fieldIssue');
+    var charCount = document.getElementById('charCount');
+    issueEl.addEventListener('input', function() {
+        charCount.textContent = this.value.length;
+    });
+
+    // Real-time validation on blur
+    ['fieldName', 'fieldPhone', 'fieldEmail', 'fieldService', 'fieldIssue'].forEach(function(id) {
+        var el = document.getElementById(id);
+        el.addEventListener('blur', function() { validateForm(); });
+        el.addEventListener('input', function() { clearError('error' + id.charAt(5).toUpperCase() + id.slice(6)); });
+    });
+});
+
+// Shake animation
+var style = document.createElement('style');
+style.textContent = '@keyframes shake {0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)} }';
+document.head.appendChild(style);
+</script>
+</body>
+</html>

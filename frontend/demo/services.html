@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dịch Vụ Pháp Lý | VP Luật Hùng & Cộng sự</title>
+    <meta name="description" content="Dịch vụ pháp lý toàn diện: Luật Doanh nghiệp, Đất đai, Hình sự, Dân sự, Hôn nhân, Lao động, FDI, Sở hữu trí tuệ. Đội ngũ 20+ luật sư chuyên nghiệp.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* ============================================================
+           CSS RESET & BASE
+           ============================================================ */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1E3A5F;
+            --primary-dark: #152A45;
+            --primary-light: #2A4F7A;
+            --accent: #C9A84C;
+            --accent-dark: #B8953D;
+            --accent-light: #D4B76A;
+            --white: #FFFFFF;
+            --gray-50: #F8F9FA;
+            --gray-100: #F0F2F5;
+            --gray-200: #E4E8EF;
+            --gray-300: #CBD2DC;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --text-primary: #1E3A5F;
+            --text-secondary: #4B5563;
+            --text-muted: #6B7280;
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.07);
+            --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+            --shadow-xl: 0 16px 60px rgba(0,0,0,0.15);
+            --shadow-card: 0 4px 20px rgba(0,0,0,0.06);
+            --shadow-card-hover: 0 12px 40px rgba(0,0,0,0.12);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 9999px;
+            --transition-fast: 0.2s ease;
+            --transition-base: 0.3s ease;
+            --transition-slow: 0.5s ease;
+            --font-heading: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+            --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        html { scroll-behavior: smooth; font-size: 16px; }
+
+        body {
+            font-family: var(--font-body);
+            color: var(--text-primary);
+            background: var(--white);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        img { max-width: 100%; display: block; }
+        a { text-decoration: none; color: inherit; }
+        button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+        ul { list-style: none; }
+        input, select, textarea { font-family: inherit; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        .section {
+            padding: 80px 0;
+        }
+
+        .section--gray { background: var(--gray-50); }
+
+        /* ============================================================
+           NAVBAR (same as homepage)
+           ============================================================ */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            transition: all var(--transition-base);
+            background: var(--primary);
+        }
+        .navbar.scrolled {
+            background: var(--white);
+            box-shadow: var(--shadow-md);
+        }
+        .navbar__inner {
+            display: flex; align-items: center; justify-content: space-between;
+            height: 72px; gap: 24px;
+        }
+        .navbar__logo {
+            display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+        }
+        .navbar__logo-icon {
+            width: 40px; height: 40px; background: var(--accent);
+            border-radius: var(--radius-md); display: flex; align-items: center;
+            justify-content: center; font-size: 1.2rem; font-weight: 800;
+            color: var(--primary-dark); font-family: var(--font-heading);
+        }
+        .navbar__logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+        .navbar__logo-name {
+            font-family: var(--font-heading); font-size: 1.05rem;
+            font-weight: 700; color: var(--white);
+        }
+        .navbar.scrolled .navbar__logo-name { color: var(--primary); }
+        .navbar__logo-sub {
+            font-size: 0.65rem; color: var(--accent); font-weight: 500;
+            letter-spacing: 1.5px; text-transform: uppercase;
+        }
+        .navbar__menu { display: flex; align-items: center; gap: 4px; }
+        .navbar__menu-link {
+            display: flex; align-items: center; padding: 8px 14px;
+            font-size: 0.88rem; font-weight: 500; color: rgba(255,255,255,0.9);
+            border-radius: var(--radius-sm); transition: all var(--transition-fast);
+        }
+        .navbar.scrolled .navbar__menu-link { color: var(--text-primary); }
+        .navbar__menu-link:hover { background: rgba(255,255,255,0.1); color: var(--white); }
+        .navbar.scrolled .navbar__menu-link:hover { background: var(--gray-100); color: var(--primary); }
+        .navbar__menu-link.active { color: var(--accent) !important; }
+        .navbar.scrolled .navbar__menu-link.active { color: var(--accent-dark) !important; }
+        .navbar__actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+        .navbar__lang {
+            display: flex; align-items: center; background: rgba(255,255,255,0.1);
+            border-radius: var(--radius-full); padding: 3px;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all var(--transition-base);
+        }
+        .navbar.scrolled .navbar__lang {
+            background: var(--gray-100); border-color: var(--gray-200);
+        }
+        .navbar__lang-btn {
+            padding: 4px 12px; font-size: 0.75rem; font-weight: 600;
+            border-radius: var(--radius-full); color: rgba(255,255,255,0.7);
+            background: transparent; transition: all var(--transition-fast); cursor: pointer;
+        }
+        .navbar.scrolled .navbar__lang-btn { color: var(--gray-500); }
+        .navbar__lang-btn.active { background: var(--accent); color: var(--primary-dark); }
+        .navbar__cta {
+            background: var(--accent); color: var(--primary-dark);
+            padding: 9px 20px; font-size: 0.85rem; font-weight: 700;
+            border-radius: var(--radius-sm); transition: all var(--transition-base);
+            white-space: nowrap; border: none; cursor: pointer; letter-spacing: 0.3px;
+        }
+        .navbar__cta:hover { background: var(--accent-dark); transform: translateY(-1px); }
+        .navbar__hamburger {
+            display: none; flex-direction: column; gap: 5px; padding: 8px; background: transparent;
+        }
+        .navbar__hamburger span {
+            width: 24px; height: 2px; background: var(--white); border-radius: 2px;
+            transition: all var(--transition-base);
+        }
+        .navbar.scrolled .navbar__hamburger span { background: var(--primary); }
+        .navbar__hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .navbar__hamburger.active span:nth-child(2) { opacity: 0; }
+        .navbar__hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+        .mobile-menu {
+            display: none; position: fixed; top: 72px; left: 0; right: 0;
+            background: var(--white); box-shadow: var(--shadow-lg); z-index: 999;
+            padding: 16px; transform: translateY(-20px); opacity: 0;
+            transition: all var(--transition-base); pointer-events: none;
+        }
+        .mobile-menu.active { transform: translateY(0); opacity: 1; pointer-events: all; }
+        .mobile-menu__link {
+            display: block; padding: 14px 16px; font-size: 0.95rem; font-weight: 500;
+            color: var(--text-primary); border-radius: var(--radius-md);
+            transition: background var(--transition-fast);
+        }
+        .mobile-menu__link:hover { background: var(--gray-50); }
+        .mobile-menu__link.active { background: var(--gray-100); color: var(--accent-dark); font-weight: 600; }
+        .mobile-menu__divider { height: 1px; background: var(--gray-200); margin: 8px 0; }
+        .mobile-menu__cta {
+            display: block; text-align: center; margin-top: 12px; padding: 14px;
+            background: var(--accent); color: var(--primary-dark); font-weight: 700;
+            border-radius: var(--radius-md); font-size: 0.95rem;
+        }
+
+        /* ============================================================
+           PAGE HERO
+           ============================================================ */
+        .page-hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 140px 0 80px;
+            position: relative;
+            overflow: hidden;
+        }
+        .page-hero::before {
+            content: '';
+            position: absolute; top: -50%; right: -10%;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .page-hero::after {
+            content: '';
+            position: absolute; bottom: -30%; left: -5%;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(201,168,76,0.04) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .page-hero__inner { position: relative; z-index: 1; }
+        .page-hero__breadcrumb {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 20px;
+        }
+        .page-hero__breadcrumb-item {
+            font-size: 0.82rem; color: rgba(255,255,255,0.6); font-weight: 500;
+        }
+        .page-hero__breadcrumb-sep {
+            font-size: 0.75rem; color: rgba(255,255,255,0.3);
+        }
+        .page-hero__breadcrumb-item:last-child { color: var(--accent); }
+        .page-hero__title {
+            font-family: var(--font-heading); font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 800; color: var(--white); line-height: 1.15;
+            margin-bottom: 16px;
+        }
+        .page-hero__title em { color: var(--accent); font-style: normal; }
+        .page-hero__subtitle {
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            color: rgba(255,255,255,0.75); max-width: 600px;
+            line-height: 1.7; margin-bottom: 0;
+        }
+
+        /* ============================================================
+           FILTER TABS
+           ============================================================ */
+        .filter-section {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            position: sticky; top: 72px; z-index: 100;
+            box-shadow: var(--shadow-xs);
+        }
+        .filter-tabs {
+            display: flex; align-items: center; gap: 4px;
+            padding: 12px 0; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
+        }
+        .filter-tabs::-webkit-scrollbar { display: none; }
+        .filter-tab {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 20px; font-size: 0.88rem; font-weight: 600;
+            color: var(--text-secondary); background: transparent;
+            border-radius: var(--radius-full); white-space: nowrap;
+            transition: all var(--transition-fast); cursor: pointer;
+            border: 1.5px solid transparent;
+        }
+        .filter-tab:hover {
+            background: var(--gray-100); color: var(--primary);
+        }
+        .filter-tab.active {
+            background: var(--primary); color: var(--white);
+            border-color: var(--primary);
+        }
+        .filter-tab__icon { font-size: 1rem; }
+
+        /* ============================================================
+           SECTION HEADER
+           ============================================================ */
+        .section__header {
+            text-align: center; margin-bottom: 48px;
+        }
+        .section__label {
+            display: inline-block; font-size: 0.75rem; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase; color: var(--accent);
+            margin-bottom: 12px; padding: 4px 16px;
+            background: rgba(201,168,76,0.1); border-radius: var(--radius-full);
+            border: 1px solid rgba(201,168,76,0.2);
+        }
+        .section__title {
+            font-family: var(--font-heading); font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700; color: var(--primary); line-height: 1.2; margin-bottom: 16px;
+        }
+        .section__subtitle {
+            font-size: clamp(0.95rem, 2vw, 1.1rem); color: var(--text-secondary);
+            max-width: 600px; margin: 0 auto; line-height: 1.7;
+        }
+
+        /* ============================================================
+           SERVICE GRID
+           ============================================================ */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+        }
+
+        .service-card {
+            background: var(--white); border-radius: var(--radius-xl);
+            padding: 32px 28px; transition: all var(--transition-base);
+            border: 1.5px solid var(--gray-200);
+            position: relative; overflow: hidden;
+            cursor: pointer;
+            display: flex; flex-direction: column;
+        }
+        .service-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+            transform: scaleX(0); transform-origin: left;
+            transition: transform var(--transition-base);
+        }
+        .service-card:hover {
+            transform: translateY(-8px); box-shadow: var(--shadow-card-hover);
+            border-color: transparent;
+        }
+        .service-card:hover::before { transform: scaleX(1); }
+        .service-card.hidden {
+            display: none;
+        }
+        .service-card.fade-out {
+            opacity: 0; transform: scale(0.95);
+            transition: all 0.3s ease;
+        }
+        .service-card.fade-in {
+            animation: cardFadeIn 0.4s ease forwards;
+        }
+        @keyframes cardFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .service-card__top {
+            display: flex; align-items: flex-start;
+            justify-content: space-between; margin-bottom: 16px;
+        }
+        .service-card__icon {
+            font-size: 1.5rem;
+            color: var(--accent-dark);
+            line-height: 1;
+            transition: transform var(--transition-base);
+        }
+        .service-card:hover .service-card__icon { transform: scale(1.1); }
+        .service-card__category {
+            padding: 4px 10px; background: var(--gray-100);
+            border: 1px solid var(--gray-200); border-radius: var(--radius-full);
+            font-size: 0.7rem; font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .service-card__name {
+            font-family: var(--font-heading); font-size: 1.15rem;
+            font-weight: 700; color: var(--primary); margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        .service-card__desc {
+            font-size: 0.88rem; color: var(--text-secondary);
+            line-height: 1.7; margin-bottom: 18px;
+        }
+        .service-card__list {
+            margin-bottom: 20px; flex: 1;
+        }
+        .service-card__list-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 0; font-size: 0.82rem; color: var(--text-secondary);
+            border-bottom: 1px dashed var(--gray-200);
+        }
+        .service-card__list-item:last-child { border-bottom: none; }
+        .service-card__list-item::before {
+            content: '✓'; width: 16px; height: 16px;
+            background: rgba(201,168,76,0.12); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.6rem; color: var(--accent-dark); flex-shrink: 0;
+            font-weight: 700;
+        }
+        .service-card__lawyer {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 0; border-top: 1px solid var(--gray-200);
+            margin-bottom: 16px;
+        }
+        .service-card__lawyer-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700; color: var(--white);
+            flex-shrink: 0; font-family: var(--font-heading);
+        }
+        .service-card__lawyer-info {}
+        .service-card__lawyer-name {
+            font-size: 0.82rem; font-weight: 600; color: var(--text-primary);
+        }
+        .service-card__lawyer-exp {
+            font-size: 0.72rem; color: var(--text-muted);
+        }
+        .service-card__cta {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 0.88rem; font-weight: 700; color: var(--accent-dark);
+            transition: gap var(--transition-fast);
+            padding: 0;
+            background: none; border: none; cursor: pointer;
+        }
+        .service-card:hover .service-card__cta { gap: 10px; }
+
+        /* ============================================================
+           STATS / TRUST SECTION
+           ============================================================ */
+        .stats-trust {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 60px 0;
+            position: relative; overflow: hidden;
+        }
+        .stats-trust::before {
+            content: ''; position: absolute; inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .stats-trust__grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 32px; position: relative; z-index: 1;
+        }
+        .stats-trust__item { text-align: center; }
+        .stats-trust__number {
+            font-family: var(--font-heading); font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 800; color: var(--accent); line-height: 1; margin-bottom: 6px;
+        }
+        .stats-trust__label {
+            font-size: 0.88rem; color: rgba(255,255,255,0.75); font-weight: 500;
+        }
+        .stats-trust__text {
+            font-size: 0.9rem; color: rgba(255,255,255,0.65);
+            line-height: 1.7; max-width: 800px; margin: 0 auto;
+            text-align: center;
+        }
+        .stats-trust__divider {
+            width: 1px; background: rgba(255,255,255,0.1); align-self: stretch; margin: auto;
+        }
+
+        /* ============================================================
+           MODAL – SERVICE DETAIL
+           ============================================================ */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 2000;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            display: flex; align-items: flex-start; justify-content: center;
+            padding: 20px;
+            opacity: 0; visibility: hidden;
+            transition: all var(--transition-base);
+            overflow-y: auto;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal {
+            background: var(--white); border-radius: var(--radius-xl);
+            width: 100%; max-width: 800px; margin: 20px 0 40px;
+            box-shadow: var(--shadow-xl); position: relative;
+            transform: translateY(30px);
+            transition: transform var(--transition-base);
+            overflow: hidden;
+        }
+        .modal-overlay.active .modal { transform: translateY(0); }
+        .modal__close {
+            position: absolute; top: 16px; right: 16px; z-index: 10;
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--gray-100); border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; color: var(--text-secondary);
+            transition: all var(--transition-fast);
+        }
+        .modal__close:hover { background: var(--gray-200); color: var(--primary); }
+        .modal__hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 40px 40px 32px; position: relative; overflow: hidden;
+        }
+        .modal__hero::before {
+            content: ''; position: absolute; top: -40px; right: -40px;
+            width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(201,168,76,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .modal__breadcrumb {
+            display: flex; align-items: center; gap: 6px; margin-bottom: 16px;
+        }
+        .modal__breadcrumb-item {
+            font-size: 0.78rem; color: rgba(255,255,255,0.6);
+        }
+        .modal__breadcrumb-sep { font-size: 0.7rem; color: rgba(255,255,255,0.3); }
+        .modal__breadcrumb-item.active { color: var(--accent); }
+        .modal__icon {
+            font-size: 2rem;
+            color: var(--accent);
+            margin-bottom: 16px;
+            width: 72px;
+            height: 72px;
+            background: rgba(255,255,255,0.08);
+            border-radius: var(--radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .modal__title {
+            font-family: var(--font-heading); font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 700; color: var(--white); line-height: 1.2; margin-bottom: 10px;
+        }
+        .modal__subtitle {
+            font-size: 0.95rem; color: rgba(255,255,255,0.7); line-height: 1.7;
+        }
+        .modal__body { padding: 36px 40px; }
+
+        /* What we support */
+        .modal__section { margin-bottom: 32px; }
+        .modal__section-title {
+            font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700;
+            color: var(--primary); margin-bottom: 16px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .modal__section-title::after {
+            content: ''; flex: 1; height: 1px; background: var(--gray-200);
+        }
+        .modal__list {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .modal__list-item {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 10px 14px; background: var(--gray-50);
+            border-radius: var(--radius-md); font-size: 0.88rem;
+            color: var(--text-secondary); transition: all var(--transition-fast);
+        }
+        .modal__list-item:hover { background: rgba(201,168,76,0.06); }
+        .modal__list-item::before {
+            content: '✓'; width: 20px; height: 20px; flex-shrink: 0;
+            background: rgba(201,168,76,0.12); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.65rem; color: var(--accent-dark); font-weight: 700;
+        }
+
+        /* Process Timeline */
+        .process-timeline {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 0; position: relative; margin: 24px 0;
+        }
+        .process-timeline::before {
+            content: ''; position: absolute; top: 28px; left: 10%; right: 10%;
+            height: 2px; background: var(--gray-200); z-index: 0;
+        }
+        .process-step {
+            display: flex; flex-direction: column; align-items: center;
+            text-align: center; position: relative; z-index: 1;
+        }
+        .process-step__num {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: var(--white); border: 3px solid var(--gray-200);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-heading); font-size: 1.1rem; font-weight: 800;
+            color: var(--gray-400); margin-bottom: 14px;
+            transition: all var(--transition-base);
+        }
+        .process-step:hover .process-step__num {
+            border-color: var(--accent); color: var(--accent-dark);
+            background: var(--accent);
+        }
+        .process-step.active .process-step__num {
+            border-color: var(--accent); color: var(--white);
+            background: var(--accent); box-shadow: 0 0 0 4px rgba(201,168,76,0.2);
+        }
+        .process-step__title {
+            font-size: 0.85rem; font-weight: 700; color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .process-step__desc {
+            font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;
+        }
+
+        /* Lawyer card in modal */
+        .modal__lawyer-card {
+            display: flex; align-items: center; gap: 16px;
+            padding: 20px; background: var(--gray-50);
+            border-radius: var(--radius-lg); border: 1px solid var(--gray-200);
+            margin-bottom: 24px;
+        }
+        .modal__lawyer-avatar {
+            width: 64px; height: 64px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700;
+            color: var(--white); flex-shrink: 0;
+        }
+        .modal__lawyer-info { flex: 1; }
+        .modal__lawyer-name {
+            font-family: var(--font-heading); font-size: 1.05rem;
+            font-weight: 700; color: var(--primary); margin-bottom: 2px;
+        }
+        .modal__lawyer-position {
+            font-size: 0.82rem; color: var(--accent-dark); font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .modal__lawyer-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .modal__lawyer-tag {
+            padding: 2px 10px; background: var(--white);
+            border: 1px solid var(--gray-200); border-radius: var(--radius-full);
+            font-size: 0.7rem; font-weight: 500; color: var(--text-muted);
+        }
+        .modal__lawyer-exp {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 14px; background: rgba(201,168,76,0.1);
+            border-radius: var(--radius-full); font-size: 0.8rem;
+            font-weight: 600; color: var(--accent-dark);
+        }
+
+        /* Mini FAQ in modal */
+        .modal__faq-item {
+            border: 1px solid var(--gray-200); border-radius: var(--radius-md);
+            margin-bottom: 8px; overflow: hidden;
+            transition: border-color var(--transition-fast);
+        }
+        .modal__faq-item:hover { border-color: var(--gray-300); }
+        .modal__faq-item.active { border-color: var(--accent); }
+        .modal__faq-q {
+            width: 100%; display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; background: transparent; border: none;
+            cursor: pointer; text-align: left; font-size: 0.88rem; font-weight: 600;
+            color: var(--primary); gap: 12px;
+            transition: color var(--transition-fast);
+        }
+        .modal__faq-q-icon {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--gray-100); display: flex; align-items: center;
+            justify-content: center; font-size: 0.7rem; color: var(--text-muted);
+            flex-shrink: 0; transition: all var(--transition-base);
+        }
+        .modal__faq-item.active .modal__faq-q-icon {
+            background: var(--accent); color: var(--primary-dark);
+            transform: rotate(45deg);
+        }
+        .modal__faq-a {
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .modal__faq-item.active .modal__faq-a { max-height: 200px; }
+        .modal__faq-a-inner {
+            padding: 0 16px 12px; font-size: 0.85rem;
+            color: var(--text-secondary); line-height: 1.7;
+        }
+
+        /* Modal CTA */
+        .modal__cta {
+            background: linear-gradient(135deg, rgba(30,58,95,0.04), rgba(201,168,76,0.06));
+            border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
+            padding: 24px; text-align: center;
+        }
+        .modal__cta-title {
+            font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700;
+            color: var(--primary); margin-bottom: 6px;
+        }
+        .modal__cta-sub {
+            font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;
+        }
+        .modal__cta-form {
+            display: flex; gap: 10px; max-width: 460px; margin: 0 auto 12px;
+        }
+        .modal__cta-input {
+            flex: 1; padding: 10px 14px; border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-sm); font-size: 0.88rem;
+            transition: border-color var(--transition-fast);
+        }
+        .modal__cta-input:focus {
+            outline: none; border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+        }
+        .modal__cta-btn {
+            padding: 10px 20px; background: var(--accent); color: var(--primary-dark);
+            border: none; border-radius: var(--radius-sm); font-size: 0.88rem;
+            font-weight: 700; cursor: pointer; white-space: nowrap;
+            transition: all var(--transition-base);
+        }
+        .modal__cta-btn:hover {
+            background: var(--accent-dark); transform: translateY(-1px);
+        }
+        .modal__cta-note {
+            font-size: 0.75rem; color: var(--text-muted);
+        }
+
+        /* ============================================================
+           FOOTER
+           ============================================================ */
+        .footer {
+            background: var(--primary-dark); color: rgba(255,255,255,0.8);
+            padding-top: 64px;
+        }
+        .footer__top {
+            display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+            gap: 48px; padding-bottom: 48px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .footer__brand-logo {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+        }
+        .footer__brand-icon {
+            width: 44px; height: 44px; background: var(--accent); border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800;
+            color: var(--primary-dark);
+        }
+        .footer__brand-name {
+            font-family: var(--font-heading); font-size: 1.15rem;
+            font-weight: 700; color: var(--white);
+        }
+        .footer__brand-desc {
+            font-size: 0.85rem; line-height: 1.7; color: rgba(255,255,255,0.6);
+            margin-bottom: 20px;
+        }
+        .footer__socials { display: flex; gap: 10px; }
+        .footer__social {
+            width: 38px; height: 38px; background: rgba(255,255,255,0.08);
+            border-radius: var(--radius-md); display: flex; align-items: center;
+            justify-content: center; color: rgba(255,255,255,0.7);
+            transition: all var(--transition-base); font-size: 0.9rem;
+        }
+        .footer__social:hover { background: var(--accent); color: var(--primary-dark); transform: translateY(-2px); }
+        .footer__col-title {
+            font-family: var(--font-heading); font-size: 1rem; font-weight: 700;
+            color: var(--white); margin-bottom: 20px;
+            position: relative; padding-bottom: 10px;
+        }
+        .footer__col-title::after {
+            content: ''; position: absolute; bottom: 0; left: 0;
+            width: 24px; height: 2px; background: var(--accent); border-radius: 2px;
+        }
+        .footer__links { display: flex; flex-direction: column; gap: 10px; }
+        .footer__link {
+            font-size: 0.85rem; color: rgba(255,255,255,0.6);
+            transition: all var(--transition-fast); display: flex; align-items: center; gap: 8px;
+        }
+        .footer__link::before { content: '›'; color: var(--accent); font-size: 1rem; }
+        .footer__link:hover { color: var(--accent); padding-left: 4px; }
+        .footer__contact-item {
+            display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; font-size: 0.85rem;
+        }
+        .footer__contact-icon { color: var(--accent); margin-top: 3px; flex-shrink: 0; }
+        .footer__bottom {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 0; flex-wrap: wrap; gap: 12px;
+        }
+        .footer__copyright { font-size: 0.82rem; color: rgba(255,255,255,0.4); }
+        .footer__legal { display: flex; gap: 20px; }
+        .footer__legal a { font-size: 0.82rem; color: rgba(255,255,255,0.4); transition: color var(--transition-fast); }
+        .footer__legal a:hover { color: var(--accent); }
+
+        /* ============================================================
+           FLOATING ELEMENTS
+           ============================================================ */
+        .floating-widget {
+            position: fixed; z-index: 998; display: flex; flex-direction: column;
+            gap: 12px; bottom: 24px; right: 24px;
+        }
+        .floating-widget__item {
+            width: 50px; height: 50px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; cursor: pointer; transition: all var(--transition-base);
+            box-shadow: var(--shadow-lg); position: relative; text-decoration: none;
+        }
+        .floating-widget__item:hover { transform: scale(1.1); }
+        .floating-widget__item--chat { background: var(--primary); color: var(--white); }
+        .floating-widget__item--chat:hover { background: var(--primary-light); }
+        .floating-widget__item--zalo { background: #0068FF; color: var(--white); }
+        .floating-widget__item--zalo:hover { background: #0055DD; }
+        .floating-widget__tooltip {
+            position: absolute; right: 62px; background: var(--gray-800); color: var(--white);
+            font-size: 0.75rem; font-weight: 500; padding: 5px 10px;
+            border-radius: var(--radius-sm); white-space: nowrap;
+            opacity: 0; pointer-events: none; transition: opacity var(--transition-fast);
+        }
+        .floating-widget__tooltip::after {
+            content: ''; position: absolute; right: -4px; top: 50%;
+            transform: translateY(-50%); border: 4px solid transparent;
+            border-left-color: var(--gray-800);
+        }
+        .floating-widget__item:hover .floating-widget__tooltip { opacity: 1; }
+
+        .call-widget { position: fixed; left: 24px; bottom: 24px; z-index: 998; display: none; }
+        .call-widget__btn {
+            width: 52px; height: 52px; background: var(--accent); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; box-shadow: var(--shadow-lg); cursor: pointer;
+            transition: all var(--transition-base); text-decoration: none;
+            animation: pulse-ring 2s infinite;
+        }
+        .call-widget__btn:hover { transform: scale(1.1); background: var(--accent-dark); }
+
+        .back-to-top {
+            position: fixed; right: 24px; bottom: 90px; z-index: 997;
+            width: 42px; height: 42px; background: var(--white);
+            border: 1.5px solid var(--gray-200); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; opacity: 0; visibility: hidden;
+            transform: translateY(20px); transition: all var(--transition-base);
+            box-shadow: var(--shadow-md); font-size: 0.9rem; color: var(--text-secondary);
+        }
+        .back-to-top.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+        .back-to-top:hover { background: var(--primary); border-color: var(--primary); color: var(--white); }
+
+        /* ============================================================
+           TOAST
+           ============================================================ */
+        .toast {
+            position: fixed; top: 88px; right: 24px; z-index: 9999;
+            padding: 14px 24px; background: var(--primary); color: var(--white);
+            border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+            font-size: 0.88rem; font-weight: 500; transform: translateX(120%);
+            transition: transform var(--transition-base); max-width: 340px;
+        }
+        .toast.show { transform: translateX(0); }
+        .toast--success { background: #059669; }
+        .toast--error { background: #DC2626; }
+
+        /* ============================================================
+           ANIMATIONS
+           ============================================================ */
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); }
+            70% { box-shadow: 0 0 0 12px rgba(201,168,76,0); }
+            100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+        }
+        .reveal {
+            opacity: 0; transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 1024px) {
+            .services-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+            .footer__top { grid-template-columns: repeat(2, 1fr); }
+            .process-timeline { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+            .process-timeline::before { display: none; }
+            .modal__list { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .navbar__menu { display: none; }
+            .navbar__hamburger { display: flex; }
+            .navbar__cta { display: none; }
+            .mobile-menu { display: block; }
+            .page-hero { padding: 120px 0 60px; }
+            .services-grid { grid-template-columns: 1fr; gap: 16px; }
+            .stats-trust__grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+            .stats-trust__divider { display: none; }
+            .modal { margin: 0; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+            .modal__body { padding: 24px 20px; }
+            .modal__hero { padding: 28px 24px 24px; }
+            .modal__cta-form { flex-direction: column; }
+            .footer__top { grid-template-columns: 1fr 1fr; gap: 28px; }
+            .footer__bottom { flex-direction: column; text-align: center; }
+            .floating-widget { bottom: 16px; right: 16px; }
+            .floating-widget__item { width: 44px; height: 44px; font-size: 1rem; }
+            .back-to-top { right: 16px; bottom: 76px; }
+            .call-widget { display: block; }
+            .filter-tabs { padding: 10px 0; }
+            .filter-tab { padding: 7px 16px; font-size: 0.82rem; }
+        }
+
+        @media (max-width: 480px) {
+            .section { padding: 56px 0; }
+            .stats-trust__grid { grid-template-columns: 1fr 1fr; }
+            .footer__top { grid-template-columns: 1fr; }
+            .process-timeline { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+         NAVBAR
+         ============================================================ -->
+    <nav class="navbar scrolled" id="navbar" role="navigation" aria-label="Main navigation">
+        <div class="container">
+            <div class="navbar__inner">
+                <a href="index.html" class="navbar__logo" aria-label="VP Luật Hùng & Cộng sự">
+                    <div class="navbar__logo-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                    <div class="navbar__logo-text">
+                        <span class="navbar__logo-name">VP Luật Hùng & Cộng sự</span>
+                        <span class="navbar__logo-sub">Hanoi, Vietnam</span>
+                    </div>
+                </a>
+                <ul class="navbar__menu" role="menubar">
+                    <li><a href="index.html" class="navbar__menu-link" role="menuitem">Trang chủ</a></li>
+                    <li><a href="services.html" class="navbar__menu-link active" role="menuitem">Dịch vụ</a></li>
+                    <li><a href="#" class="navbar__menu-link" role="menuitem">Đội ngũ</a></li>
+                    <li><a href="#" class="navbar__menu-link" role="menuitem">Tin tức</a></li>
+                    <li><a href="#contact" class="navbar__menu-link" role="menuitem">Đặt lịch</a></li>
+                </ul>
+                <div class="navbar__actions">
+                    <div class="navbar__lang" role="group" aria-label="Language">
+                        <button class="navbar__lang-btn active" id="langVI" onclick="setLang('vi')">VI</button>
+                        <button class="navbar__lang-btn" id="langEN" onclick="setLang('en')">EN</button>
+                    </div>
+                    <button class="navbar__cta" onclick="scrollToSection('contact')">Đặt Lịch Tư Vấn</button>
+                    <button class="navbar__hamburger" id="hamburger" aria-label="Menu" onclick="toggleMobileMenu()">
+                        <span></span><span></span><span></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="index.html" class="mobile-menu__link">Trang chủ</a>
+        <a href="services.html" class="mobile-menu__link active">Dịch vụ</a>
+        <a href="#" class="mobile-menu__link">Đội ngũ</a>
+        <a href="#" class="mobile-menu__link">Tin tức</a>
+        <a href="#contact" class="mobile-menu__link">Đặt lịch</a>
+        <div class="mobile-menu__divider"></div>
+        <button class="mobile-menu__cta" onclick="scrollToSection('contact'); toggleMobileMenu();">Đặt Lịch Tư Vấn</button>
+    </div>
+
+    <!-- ============================================================
+         PAGE HERO
+         ============================================================ -->
+    <section class="page-hero">
+        <div class="container">
+            <div class="page-hero__inner">
+                <nav class="page-hero__breadcrumb" aria-label="Breadcrumb">
+                    <span class="page-hero__breadcrumb-item" data-i18n="bc_home">Trang chủ</span>
+                    <span class="page-hero__breadcrumb-sep">›</span>
+                    <span class="page-hero__breadcrumb-item" data-i18n="bc_services">Dịch vụ</span>
+                </nav>
+                <h1 class="page-hero__title" data-i18n="hero_title">Dịch Vụ Pháp Lý <em>Toàn Diện</em></h1>
+                <p class="page-hero__subtitle" data-i18n="hero_subtitle">Đội ngũ 20+ luật sư chuyên nghiệp, kinh nghiệm 15 năm, hỗ trợ bạn trên mọi lĩnh vực pháp lý từ doanh nghiệp, đất đai đến hình sự, dân sự và đầu tư nước ngoài.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================
+         FILTER TABS
+         ============================================================ -->
+    <div class="filter-section" id="filterSection">
+        <div class="container">
+            <div class="filter-tabs" role="tablist" aria-label="Lọc dịch vụ">
+                <button class="filter-tab active" data-filter="all" role="tab" aria-selected="true">
+                    <span class="filter-tab__icon"><i class="fa-solid fa-list"></i></span>
+                    <span data-i18n="filter_all">Tất cả</span>
+                </button>
+                <button class="filter-tab" data-filter="doanh-nghiep" role="tab" aria-selected="false">
+                    <span class="filter-tab__icon"><i class="fa-solid fa-building"></i></span>
+                    <span data-i18n="filter_business">Doanh nghiệp</span>
+                </button>
+                <button class="filter-tab" data-filter="ca-nhan" role="tab" aria-selected="false">
+                    <span class="filter-tab__icon"><i class="fa-solid fa-user"></i></span>
+                    <span data-i18n="filter_personal">Cá nhân</span>
+                </button>
+                <button class="filter-tab" data-filter="dau-tu" role="tab" aria-selected="false">
+                    <span class="filter-tab__icon"><i class="fa-solid fa-earth-americas"></i></span>
+                    <span data-i18n="filter_fdi">Đầu tư nước ngoài</span>
+                </button>
+                <button class="filter-tab" data-filter="tranh-chap" role="tab" aria-selected="false">
+                    <span class="filter-tab__icon"><i class="fa-solid fa-gavel"></i></span>
+                    <span data-i18n="filter_dispute">Tranh chấp</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <!-- ============================================================
+             SERVICES GRID
+             ============================================================ -->
+        <section class="section" id="servicesSection">
+            <div class="container">
+                <div class="services-grid" id="servicesGrid">
+
+                    <!-- 1. LUẬT DOANH NGHIỆP -->
+                    <div class="service-card reveal" data-category="doanh-nghiep" data-service="luat-doanh-nghiep">
+                        <div class="service-card__top">
+                            <div class="service-card__icon"><i class="fa-solid fa-briefcase"></i></div>
+                            <span class="service-card__category" data-i18n="cat_business">Doanh nghiệp</span>
+                        </div>
+                        <h2 class="service-card__name" data-i18n="svc_1_name">Luật Doanh Nghiệp</h2>
+                        <p class="service-card__desc" data-i18n="svc_1_desc">Tư vấn toàn diện về thành lập, hoạt động, tái cơ cấu và giải thể doanh nghiệp theo Luật Doanh nghiệp 2020.</p>
+                        <ul class="service-card__list">
+                            <li class="service-card__list-item" data-i18n="svc_1_1">Thành lập công ty (TNHH, Cổ phần, DNTN)</li>
+                            <li class="service-card__list-item" data-i18n="svc_1_2">M&A – Sáp nhập & mua lại doanh nghiệp</li>
+                            <li class="service-card__list-item" data-i18n="svc_1_3">Hợp đồng thương mại & đại diện</li>
+                            <li class="service-card__list-item" data-i18n="svc_1_4">Giải thể, phá sản doanh nghiệp</li>
+                        </ul>
+                        <div class="service-card__lawyer">
+                            <div class="service-card__lawyer-avatar">LS</div>
+                            <div class="service-card__lawyer-info">
+                                <div class="service-card__lawyer-name" data-i18n="law_1">Ls. Nguyễn Văn Hùng</div>
+                                <div class="service-card__lawyer-exp" data-i18n="law_1_exp">Trưởng VP · 22 năm kinh nghiệm</div>
+                            </div>
+                        </div>
+                        <button class="service-card__cta" onclick="openModal('luat-doanh-nghiep')">
+                            <span data-i18n="cta_detail">Tư vấn ngay</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- 2. LUẬT ĐẤT ĐAI -->
+                    <div class="service-card reveal" data-category="tranh-chap ca-nhan" data-service="luat-dat-dai">
+                        <div class="service-card__top">
+                            <div class="service-card__icon"><i class="fa-solid fa-house-chimney"></i></div>
+                            <span class="service-card__category" data-i18n="cat_land">Đất đai & BĐS</span>
+                        </div>
+                        <h2 class="service-card__name" data-i18n="svc_2_name">Luật Đất Đai & Bất Động Sản</h2>
+                        <p class="service-card__desc" data-i18n="svc_2_desc">Giải quyết mọi vấn đề pháp lý liên quan đến quyền sử dụng đất, tranh chấp đất đai và giao dịch BĐS.</p>
+                        <ul class="service-card__list">
+                            <li class="service-card__list-item" data-i18n="svc_2_1">Tranh chấp đất đai thừa kế, ranh giới</li>
+                            <li class="service-card__list-item" data-i18n="svc_2_2">Chuyển nhượng, thuê quyền sử dụng đất</li>
+                            <li class="service-card__list-item" data-i18n="svc_2_3">Bồi thường GPMB & tái định cư</li>
+                            <li class="service-card__list-item" data-i18n="svc_2_4">Đăng ký, cấp GCN quyền sử dụng đất</li>
+                        </ul>
+                        <div class="service-card__lawyer">
+                            <div class="service-card__lawyer-avatar">LT</div>
+                            <div class="service-card__lawyer-info">
+                                <div class="service-card__lawyer-name" data-i18n="law_2">Ls. Trần Thị Lan</div>
+                                <div class="service-card__lawyer-exp" data-i18n="law_2_exp">Phó Trưởng VP · 18 năm kinh nghiệm</div>
+                            </div>
+                        </div>
+                        <button class="service-card__cta" onclick="openModal('luat-dat-dai')">
+                            <span data-i18n="cta_detail">Tư vấn ngay</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- 3. LUẬT HÌNH SỰ -->
+                    <div class="service-card reveal" data-category="tranh-chap ca-nhan" data-service="luat-hinh-su">
+                        <div class="service-card__top">
+                            <div class="service-card__icon"><i class="fa-solid fa-gavel"></i></div>
+                            <span class="service-card__category" data-i18n="cat_criminal">Hình sự</span>
+                        </div>
+                        <h2 class="service-card__name" data-i18n="svc_3_name">Luật Hình Sự & Tố Tụng Hình Sự</h2>
+                        <p class="service-card__desc" data-i18n="svc_3_desc">Bào chữa và bảo vệ quyền lợi hợp pháp cho bị can, bị cáo trong các vụ án hình sự từ giai đoạn điều tra đến xét xử.</p>
+                        <ul class="service-card__list">
+                            <li class="service-card__list-item" data-i18n="svc_3_1">Bào chữa bị can, bị cáo các tội danh</li>
+                            <li class="service-card__list-item" data-i18n="svc_3_2">Tư vấn thủ tục tố tụng hình sự</li>
+                            <li class="service-card__list-item" data-i18n="svc_3_3">Bảo vệ quyền lợi người bị hại</li>
+                            <li class="service-card__list-item" data-i18n="svc_3_4">Khiếu nại, tố cáo trong tố tụng</li>
+                        </ul>
+                        <div class="service-card__lawyer">
+                            <div class="service-card__lawyer-avatar">LM</div>
+                            <div class="service-card__lawyer-info">
+                                <div class="service-card__lawyer-name" data-i18n="law_3">Ls. Lê Đức Minh</div>
+                                <div class="service-card__lawyer-exp" data-i18n="law_3_exp">Luật sư cao cấp · 15 năm kinh nghiệm</div>
+                            </div>
+                        </div>
+                        <button class="service-card__cta" onclick="openModal('luat-hinh-su')">
+                            <span data-i18n="cta_detail">Tư vấn ngay</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- 4. LUẬT DÂN SỰ -->
+                    <div class="service-card reveal" data-category="ca-nhan" data-service="luat-dan-su">
+                        <div class="service-card__top">
+                            <div class="service-card__icon"><i class="fa-solid fa-landmark"></i></div>
+                            <span class="service-card__category" data-i18n="cat_civil">Dân sự</span>
+                        </div>
+                        <h2 class="service-card__name" data-i18n="svc_4_name">Luật Dân Sự</h2>
+                        <p class="service-card__desc" data-i18n="svc_4_desc">Tư vấn và đại diện giải quyết các tranh chấp dân sự, kinh doanh, thương mại theo Bộ luật Dân sự 2015.</p>
+                        <ul class="service-card__list">
+                            <li class="service-card__list-item" data-i18n="svc_4_1">Tranh chấp hợp đồng dân sự & thương mại</li>
+                            <li class="service-card__list-item" data-i18n="svc_4_2">Thừa kế tài sản & di chúc</li>
+                            <li class="service-card__list-item" data-i18n="svc_4_3">Bồi thường thiệt hại ngoài hợp đồng</li>
+                            <li class="service-card__list-item" data-i18n="svc_4_4">Quyền sở hữu trí tuệ trong dân sự</li>
+                        </ul>
+                        <div class="service-card__lawyer">
+                            <div class="service-card__lawyer-avatar">PH</div>
+                            <div class="service-card__lawyer-info">
+                                <div class="service-card__lawyer-name" data-i18n="law_4">Ls. Phạm Thu Hà</div>
+                                <div class="service-card__lawyer-exp" data-i18n="law_4_exp">Luật sư · 12 năm kinh nghiệm</div>
+                            </div>
+                        </div>
+                        <button class="service-card__cta" onclick="openModal('luat-dan-su')">
+                            <span data-i18n="cta_detail">Tư vấn ngay</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- 5. LUẬT HÔN NHÂN GIA ĐÌNH -->
+                    <div class="service-card reveal" data-category="ca-nhan" data-service="luat-hon-nhan">
+                        <div class="service-card__top">
+                            <div class="service-card__icon"><i class="fa-solid fa-heart"></i></div>
+                            <span class="service-card__category" data-i18n="cat_family">Hôn nhân & Gia đình</span>
+                        </div>
+                        <h2 class="service-card__name" data-i18n="svc_5_name">Luật Hôn Nhân & Gia Đình</h2>
+                        <p class="service-card__desc" data-i18n="svc_5_desc">Tư vấn và hỗ trợ giải quyết các vấn đề pháp lý liên quan đến hôn nhân, ly hôn, quyền nuôi con và phân chia tài sản.</p>
+                        <ul class="service-card__list">
+                            <li class="service-card__list-item" data-i18n="svc_5_1">Thủ tục ly hôn thuận tình & đơn phương</li>
+                            <li class="service-card__list-item" data-i18n="svc_5_2">Phân chia tài sản khi ly hôn</li>
+                            <li class="service-card__list-item" data-i18n="svc_5_3">Quyền nuôi con & cấp dưỡng</li>
+                            <li class="service-card__list-item" data-i18n="svc_5_4">Kết hôn có yếu tố nước ngoài</li>
+                        </ul>
+                        <div class="service-card__lawyer">
+                            <div class="service-card__lawyer-avatar">PH</div>
+                            <div class="service-card__lawyer-info">
+                                <div class="service-card__lawyer-name" data-i18n="law_4">Ls. Phạm Thu Hà</div>
+                                <div class="service-card__lawyer-exp" data-i18n="law_4_exp">Luật sư · 12 năm kinh nghiệm</div>
+                            </div>
+                        </div>
+                        <button class="service-card__cta" onclick="openModal('luat-hon-nhan')">
+                            <span data-i18n="cta_detail">Tư vấn ngay</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- 6. LUẬT LAO ĐỘNG -->
+                    <div class="service-card reveal" data-category="doanh-nghiep ca-nhan" data-service="luat-lao-dong">
+                        <div class="service-card__top">
+                            <div class="service-card__icon"><i class="fa-solid fa-user-tie"></i></div>
+                            <span class="service-card__category" data-i18n="cat_labor">Lao động</span>
+                        </div>
+                        <h2 class="service-card__name" data-i18n="svc_6_name">Luật Lao Động</h2>
+                        <p class="service-card__desc" data-i18n="svc_6_desc">Tư vấn toàn diện về quan hệ lao động, hợp đồng lao động, tranh chấp lao động và các quyền lợi bảo hiểm xã hội.</p>
+                        <ul class="service-card__list">
+                            <li class="service-card__list-item" data-i18n="svc_6_1">Soạn thảo & ký kết HĐLĐ</li>
+                            <li class="service-card__list-item" data-i18n="svc_6_2">Tranh chấp lao động cá nhân & tập thể</li>
+                            <li class="service-card__list-item" data-i18n="svc_6_3">Sa thải, kỷ luật lao động đúng pháp luật</li>
+                            <li class="service-card__list-item" data-i18n="svc_6_4">Bảo hiểm xã hội & quyền lợi người lao động</li>
+                        </ul>
+                        <div class="service-card__lawyer">
+                            <div class="service-card__lawyer-avatar">PH</div>
+                            <div class="service-card__lawyer-info">
+                                <div class="service-card__lawyer-name" data-i18n="law_4">Ls. Phạm Thu Hà</div>
+                                <div class="service-card__lawyer-exp" data-i18n="law_4_exp">Luật sư · 12 năm kinh nghiệm</div>
+                            </div>
+                        </div>
+                        <button class="service-card__cta" onclick="openModal('luat-lao-dong')">
+                            <span data-i18n="cta_detail">Tư vấn ngay</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- 7. FDI -->
+                    <div class="service-card reveal" data-category="dau-tu" data-service="fdi">
+                        <div class="service-card__top">
+                            <div class="service-card__icon"><i class="fa-solid fa-earth-americas"></i></div>
+                            <span class="service-card__category" data-i18n="cat_fdi">Đầu tư nước ngoài</span>
+                        </div>
+                        <h2 class="service-card__name" data-i18n="svc_7_name">Đầu Tư Nước Ngoài (FDI)</h2>
+                        <p class="service-card__desc" data-i18n="svc_7_desc">Hỗ trợ nhà đầu tư nước ngoài hoàn tất thủ tục đầu tư, thành lập doanh nghiệp có vốn FDI tại Việt Nam.</p>
+                        <ul class="service-card__list">
+                            <li class="service-card__list-item" data-i18n="svc_7_1">Thủ tục cấp Giấy phép đầu tư</li>
+                            <li class="service-card__list-item" data-i18n="svc_7_2">Thành lập công ty có vốn FDI</li>
+                            <li class="service-card__list-item" data-i18n="svc_7_3">Work permit & visa cho người nước ngoài</li>
+                            <li class="service-card__list-item" data-i18n="svc_7_4">Tư vấn ưu đãi đầu tư & thuế</li>
+                        </ul>
+                        <div class="service-card__lawyer">
+                            <div class="service-card__lawyer-avatar">LS</div>
+                            <div class="service-card__lawyer-info">
+                                <div class="service-card__lawyer-name" data-i18n="law_1">Ls. Nguyễn Văn Hùng</div>
+                                <div class="service-card__lawyer-exp" data-i18n="law_1_exp">Trưởng VP · 22 năm kinh nghiệm</div>
+                            </div>
+                        </div>
+                        <button class="service-card__cta" onclick="openModal('fdi')">
+                            <span data-i18n="cta_detail">Tư vấn ngay</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- 8. SỞ HỮU TRÍ TUỆ -->
+                    <div class="service-card reveal" data-category="doanh-nghiep" data-service="so-huu-tri-tue">
+                        <div class="service-card__top">
+                            <div class="service-card__icon"><i class="fa-solid fa-lightbulb"></i></div>
+                            <span class="service-card__category" data-i18n="cat_ip">Sở hữu trí tuệ</span>
+                        </div>
+                        <h2 class="service-card__name" data-i18n="svc_8_name">Sở Hữu Trí Tuệ</h2>
+                        <p class="service-card__desc" data-i18n="svc_8_desc">Đăng ký và bảo vệ quyền sở hữu trí tuệ cho cá nhân và doanh nghiệp, xử lý các vụ việc xâm phạm SHTT.</p>
+                        <ul class="service-card__list">
+                            <li class="service-card__list-item" data-i18n="svc_8_1">Đăng ký nhãn hiệu, logo, thương hiệu</li>
+                            <li class="service-card__list-item" data-i18n="svc_8_2">Bảo hộ sáng chế, kiểu dáng công nghiệp</li>
+                            <li class="service-card__list-item" data-i18n="svc_8_3">Bản quyền tác giả & quyền liên quan</li>
+                            <li class="service-card__list-item" data-i18n="svc_8_4">Xử lý xâm phạm quyền SHTT</li>
+                        </ul>
+                        <div class="service-card__lawyer">
+                            <div class="service-card__lawyer-avatar">LT</div>
+                            <div class="service-card__lawyer-info">
+                                <div class="service-card__lawyer-name" data-i18n="law_2">Ls. Trần Thị Lan</div>
+                                <div class="service-card__lawyer-exp" data-i18n="law_2_exp">Phó Trưởng VP · 18 năm kinh nghiệm</div>
+                            </div>
+                        </div>
+                        <button class="service-card__cta" onclick="openModal('so-huu-tri-tue')">
+                            <span data-i18n="cta_detail">Tư vấn ngay</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             STATS / TRUST SECTION
+             ============================================================ -->
+        <section class="stats-trust" id="contact">
+            <div class="container">
+                <div class="stats-trust__grid">
+                    <div class="stats-trust__item">
+                        <div class="stats-trust__number" data-count="15">15</div>
+                        <div class="stats-trust__label" data-i18n="trust_years">Năm kinh nghiệm</div>
+                    </div>
+                    <div class="stats-trust__item">
+                        <div class="stats-trust__number" data-count="2000">2.000+</div>
+                        <div class="stats-trust__label" data-i18n="trust_cases">Vụ việc thành công</div>
+                    </div>
+                    <div class="stats-trust__item">
+                        <div class="stats-trust__number" data-count="98">98%</div>
+                        <div class="stats-trust__label" data-i18n="trust_rate">Tỷ lệ thành công</div>
+                    </div>
+                    <div class="stats-trust__item">
+                        <div class="stats-trust__number" data-count="20">20+</div>
+                        <div class="stats-trust__label" data-i18n="trust_lawyers">Luật sư chuyên nghiệp</div>
+                    </div>
+                </div>
+                <p class="stats-trust__text" data-i18n="trust_desc" style="margin-top:32px; text-align:center;">
+                    Với hơn 15 năm hoạt động, VP Luật Hùng & Cộng sự đã đồng hành cùng hàng nghìn khách hàng giải quyết các vấn đề pháp lý phức tạp. Cam kết chất lượng dịch vụ và kết quả tốt nhất.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <!-- ============================================================
+         MODAL – SERVICE DETAIL
+         ============================================================ -->
+    <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal" id="modalContent">
+            <button class="modal__close" onclick="closeModal()" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+
+            <!-- Content injected by JS -->
+            <div id="modalDynamicContent"></div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         FOOTER
+         ============================================================ -->
+    <footer class="footer" role="contentinfo">
+        <div class="container">
+            <div class="footer__top">
+                <div>
+                    <div class="footer__brand-logo">
+                        <div class="footer__brand-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                        <div class="footer__brand-name">VP Luật Hùng & Cộng sự</div>
+                    </div>
+                    <p class="footer__brand-desc" data-i18n="footer_desc">Văn phòng luật cao cấp hàng đầu Việt Nam. 15 năm kinh nghiệm, 2.000+ vụ việc thành công, đội ngũ 20+ luật sư chuyên nghiệp.</p>
+                    <div class="footer__socials">
+                        <a href="#" class="footer__social" aria-label="Facebook">f</a>
+                        <a href="#" class="footer__social" aria-label="LinkedIn">in</a>
+                        <a href="#" class="footer__social" aria-label="YouTube">▶</a>
+                        <a href="#" class="footer__social" aria-label="Zalo">Z</a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="footer__col-title" data-i18n="footer_services">Dịch vụ</h3>
+                    <div class="footer__links">
+                        <a href="#" class="footer__link" data-i18n="footer_svc_1">Luật Doanh nghiệp</a>
+                        <a href="#" class="footer__link" data-i18n="footer_svc_2">Luật Đất đai</a>
+                        <a href="#" class="footer__link" data-i18n="footer_svc_3">Luật Dân sự</a>
+                        <a href="#" class="footer__link" data-i18n="footer_svc_4">Luật Hình sự</a>
+                        <a href="#" class="footer__link" data-i18n="footer_svc_5">Luật Lao động</a>
+                        <a href="#" class="footer__link" data-i18n="footer_svc_6">Đầu tư nước ngoài</a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="footer__col-title" data-i18n="footer_team">Đội ngũ</h3>
+                    <div class="footer__links">
+                        <a href="#" class="footer__link" data-i18n="footer_team_1">Ls. Nguyễn Văn Hùng</a>
+                        <a href="#" class="footer__link" data-i18n="footer_team_2">Ls. Trần Thị Lan</a>
+                        <a href="#" class="footer__link" data-i18n="footer_team_3">Ls. Lê Đức Minh</a>
+                        <a href="#" class="footer__link" data-i18n="footer_team_4">Ls. Phạm Thu Hà</a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="footer__col-title" data-i18n="footer_contact">Liên hệ</h3>
+                    <div>
+                        <div class="footer__contact-item">
+                            <span class="footer__contact-icon"><i class="fa-solid fa-location-dot"></i></span>
+                            <span>Tầng 15, Landmark 72, Nam Từ Liêm, Hà Nội</span>
+                        </div>
+                        <div class="footer__contact-item">
+                            <span class="footer__contact-icon"><i class="fa-solid fa-phone"></i></span>
+                            <span>1900 6789</span>
+                        </div>
+                        <div class="footer__contact-item">
+                            <span class="footer__contact-icon"><i class="fa-regular fa-envelope"></i></span>
+                            <span>contact@vuongluat.vn</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer__bottom">
+                <p class="footer__copyright" data-i18n="footer_copyright">© 2026 VP Luật Hùng & Cộng sự. Giấy phép số: 123/GP-LSCP.</p>
+                <div class="footer__legal">
+                    <a href="#" data-i18n="footer_privacy">Chính sách bảo mật</a>
+                    <a href="#" data-i18n="footer_terms">Điều khoản sử dụng</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ============================================================
+         FLOATING WIDGETS
+         ============================================================ -->
+    <div class="floating-widget">
+        <button class="floating-widget__item floating-widget__item--chat" onclick="showToast('Chatbot đang được phát triển. Liên hệ Zalo: 1900 6789', 'success')">
+            <i class="fa-regular fa-comments"></i>
+            <span class="floating-widget__tooltip">Chat tư vấn</span>
+        </button>
+        <a href="https://zalo.me/19006789" target="_blank" class="floating-widget__item floating-widget__item--zalo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.49 3.53 1.34 4.98L2 22l5.02-1.34C8.47 21.51 10.18 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg>
+            <span class="floating-widget__tooltip">Chat Zalo</span>
+        </a>
+    </div>
+
+    <div class="call-widget">
+        <a href="tel:19006789" class="call-widget__btn" aria-label="Gọi điện"><i class="fa-solid fa-phone"></i></a>
+    </div>
+
+    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- ============================================================
+         JAVASCRIPT
+         ============================================================ -->
+    <script>
+    // ============================================================
+    // SERVICE DATA
+    // ============================================================
+    const serviceData = {
+        'luat-doanh-nghiep': {
+            icon: 'fa-solid fa-briefcase', category: 'Doanh nghiệp',
+            title: 'Luật Doanh Nghiệp',
+            subtitle: 'Tư vấn toàn diện về thành lập, hoạt động, tái cơ cấu và giải thể doanh nghiệp theo Luật Doanh nghiệp 2020 và các văn bản hướng dẫn thi hành.',
+            items: [
+                'Thành lập công ty TNHH, Cổ phần, DNTN, Công ty có vốn FDI',
+                'M&A – Sáp nhập, hợp nhất, mua lại doanh nghiệp',
+                'Soạn thảo & đàm phán hợp đồng thương mại, đại diện thương mại',
+                'Tái cơ cấu doanh nghiệp, chuyển đổi loại hình doanh nghiệp',
+                'Giải thể, phá sản doanh nghiệp theo Luật Phá sản',
+                'Tư vấn quản trị công ty, Đại hội đồng cổ đông, Hội đồng thành viên',
+                'Cấp phép kinh doanh, giấy phép con theo ngành nghề',
+                'Tư vấn pháp lý thường xuyên cho doanh nghiệp (retainer)'
+            ],
+            lawyer: { initials: 'LS', name: 'Ls. Nguyễn Văn Hùng', position: 'Trưởng Văn Phòng', exp: '22 năm kinh nghiệm', tags: ['Luật Doanh nghiệp', 'M&A', 'FDI', 'Hợp đồng'] },
+            faqs: [
+                { q: 'Thành lập công ty mất bao lâu?', a: 'Thông thường từ 3–5 ngày làm việc sau khi nộp hồ sơ, tùy thuộc loại hình doanh nghiệp và quận/huyện đăng ký.' },
+                { q: 'Chi phí thành lập công ty là bao nhiêu?', a: 'Phí dịch vụ từ 2–5 triệu VNĐ tùy loại hình. Chúng tôi báo giá chi tiết sau khi tìm hiểu nhu cầu cụ thể.' },
+                { q: 'Doanh nghiệp có cần luật sư tư vấn thường xuyên không?', a: 'Rất khuyến nghị. Tư vấn pháp lý thường xuyên giúp doanh nghiệp tránh rủi ro pháp lý, tiết kiệm chi phí xử lý tranh chấp về sau.' }
+            ]
+        },
+        'luat-dat-dai': {
+            icon: 'fa-solid fa-house', category: 'Đất đai & BĐS',
+            title: 'Luật Đất Đai & Bất Động Sản',
+            subtitle: 'Giải quyết mọi vấn đề pháp lý liên quan đến quyền sử dụng đất, tranh chấp đất đai, chuyển nhượng và giao dịch bất động sản theo Luật Đất đai 2013 và Luật Kinh doanh BĐS 2014.',
+            items: [
+                'Tranh chấp đất đai thừa kế, ranh giới, tranh chấp với Nhà nước',
+                'Chuyển nhượng, tặng cho, thuê quyền sử dụng đất',
+                'Bồi thường giải phóng mặt bằng (GPMB) & tái định cư',
+                'Đăng ký, cấp Giấy chứng nhận quyền sử dụng đất (GCN-QSDĐ)',
+                'Đấu giá quyền sử dụng đất, đấu thầu dự án có đất',
+                'Tư vấn pháp lý trong giao dịch mua bán, thuê nhà, căn hộ',
+                'Chia tách, hợp nhất thửa đất',
+                'Thế chấp quyền sử dụng đất tại ngân hàng'
+            ],
+            lawyer: { initials: 'LT', name: 'Ls. Trần Thị Lan', position: 'Phó Trưởng Văn Phòng', exp: '18 năm kinh nghiệm', tags: ['Luật Đất đai', 'Bất động sản', 'Tranh chấp'] },
+            faqs: [
+                { q: 'Tranh chấp đất đai mất bao lâu để giải quyết?', a: 'Tùy mức độ phức tạp: hòa giải tại UBND xã/phường (30–45 ngày), hoà giải tại Tòa (4–8 tháng), khởi kiện tại Tòa (6–18 tháng).' },
+                { q: 'Chi phí tư vấn tranh chấp đất đai?', a: 'Phí phụ thuộc vào giá trị tranh chấp và độ phức tạp. Chúng tôi cung cấp báo giá cụ thể sau khi nghe tóm tắt vụ việc.' },
+                { q: 'Có thể đòi lại đất đã bán không?', a: 'Căn cứ vào từng trường hợp cụ thể (bán tự nguyện, lừa đảo, vi phạng pháp luật...). Cần luật sư đánh giá hồ sơ để tư vấn chính xác.' }
+            ]
+        },
+        'luat-hinh-su': {
+            icon: 'fa-solid fa-gavel', category: 'Hình sự',
+            title: 'Luật Hình Sự & Tố Tụng Hình Sự',
+            subtitle: 'Bào chữa và bảo vệ quyền lợi hợp pháp cho bị can, bị cáo trong các vụ án hình sự từ giai đoạn điều tra, truy tố đến xét xử sơ thẩm, phúc thẩm.',
+            items: [
+                'Bào chữa bị can, bị cáo trong các vụ án hình sự',
+                'Bảo vệ quyền lợi của người bị hại, đương sự',
+                'Tư vấn thủ tục tố tụng hình sự cho gia đình người bị tạm giam',
+                'Khiếu nại hành vi vi phạm pháp luật của điều tra viên, kiểm sát viên',
+                'Xem xét, khiếu nại các quyết định tố tụng (bắt, khám xét, tạm giữ)',
+                'Bào chữa trong các vụ án ma túy, kinh tế, tham nhũng, bạo lực',
+                'Hỗ trợ pháp lý cho người chứng kiến, người làm chứng',
+                'Giám định tư pháp & đánh giá chứng cứ'
+            ],
+            lawyer: { initials: 'LM', name: 'Ls. Lê Đức Minh', position: 'Luật sư cao cấp', exp: '15 năm kinh nghiệm', tags: ['Luật Hình sự', 'Tố tụng', 'Bào chữa'] },
+            faqs: [
+                { q: 'Khi nào cần thuê luật sư bào chữa?', a: 'Ngay khi nhận được giấy triệu tập hoặc thông báo khởi tố. Luật sư tham gia sớm giúp bảo vệ quyền lợi tốt nhất từ giai đoạn điều tra.' },
+                { q: 'Phí bào chữa hình sự được tính như thế nào?', a: 'Phí dựa trên mức độ phức tạp của vụ án, giai đoạn tố tụng cần hỗ trợ và thời gian làm việc. Chúng tôi báo giá minh bạch trước khi ký hợp đồng.' },
+                { q: 'Luật sư có được gặp thân chủ khi bị tạm giam?', a: 'Có. Luật sư có quyền gặp thân chủ tại nhà tạm giữ, trại giam theo quy định của pháp luật tố tụng hình sự.' }
+            ]
+        },
+        'luat-dan-su': {
+            icon: 'fa-solid fa-landmark', category: 'Dân sự',
+            title: 'Luật Dân Sự',
+            subtitle: 'Tư vấn và đại diện giải quyết các tranh chấp dân sự, thương mại theo Bộ luật Dân sự 2015 và Bộ luật Tố tụng dân sự 2015.',
+            items: [
+                'Tranh chấp hợp đồng dân sự, thương mại, tín dụng',
+                'Thừa kế tài sản, di chúc, phân chia thừa kế',
+                'Bồi thường thiệt hại ngoài hợp đồng (tai nạn, sai phạm y khoa)',
+                'Tranh chấp quyền sở hữu, chiếm hữu, sử dụng tài sản',
+                'Khiếu nại quyết định hành chính ảnh hưởng đến quyền dân sự',
+                'Giải quyết yêu cầu ly hôn đơn phương tại Tòa',
+                'Tư vấn quyền và nghĩa vụ của các bên trong giao dịch dân sự',
+                'Thực hiện các giao dịch dân sự: ủy quyền, ủy thác'
+            ],
+            lawyer: { initials: 'PH', name: 'Ls. Phạm Thu Hà', position: 'Luật sư', exp: '12 năm kinh nghiệm', tags: ['Luật Dân sự', 'Thừa kế', 'Thương mại'] },
+            faqs: [
+                { q: 'Hết thời hiệu khởi kiện thì có khởi kiện được không?', a: 'Thời hiệu khởi kiện dân sự thông thường là 3 năm. Hết thời hiệu, Tòa vẫn thụ lý nhưng bị đơn có quyền yêu cầu Tòa áp dụng thời hiệu.' },
+                { q: 'Chi phí kiện tụng dân sự bao gồm những gì?', a: 'Án phí dân sự (theo biểu mức án phí), phí luật sư, chi phí định giá tài sản (nếu có). Chúng tôi ước tính chi phí ngay từ đầu.' },
+                { q: 'Có nên hòa giải trước khi kiện không?', a: 'Rất nên. Hòa giải tiết kiệm thời gian (2–6 tháng so với 1–2 năm kiện), giảm chi phí và bảo vệ mối quan hệ. Chúng tôi hỗ trợ cả hòa giải và kiện tụng.' }
+            ]
+        },
+        'luat-hon-nhan': {
+            icon: 'fa-solid fa-heart', category: 'Hôn nhân & Gia đình',
+            title: 'Luật Hôn Nhân & Gia Đình',
+            subtitle: 'Tư vấn và hỗ trợ giải quyết các vấn đề pháp lý liên quan đến hôn nhân, ly hôn, quyền nuôi con, cấp dưỡng và phân chia tài sản theo Luật HN&GĐ 2014.',
+            items: [
+                'Ly hôn thuận tình (2 bên đồng ý) – thủ tục nhanh tại UBND',
+                'Ly hôn đơn phương (1 bên yêu cầu) – thủ tục tại Tòa án',
+                'Phân chia tài sản chung khi ly hôn, tài sản riêng có thể chứng minh',
+                'Xác định quyền nuôi con & nghĩa vụ cấp dưỡng',
+                'Thay đổi người nuôi con, tăng/giảm mức cấp dưỡng',
+                'Kết hôn có yếu tố nước ngoài – thủ tục tại Sở Tư pháp',
+                'Công nhận ly hôn nước ngoài tại Việt Nam',
+                'Tư vấn chế độ tài sản vợ chồng: đồng đoạt hay phân biệt'
+            ],
+            lawyer: { initials: 'PH', name: 'Ls. Phạm Thu Hà', position: 'Luật sư', exp: '12 năm kinh nghiệm', tags: ['Hôn nhân GĐ', 'Ly hôn', 'Nuôi con'] },
+            faqs: [
+                { q: 'Ly hôn thuận tình mất bao lâu?', a: 'Ly hôn thuận tình tại UBND mất khoảng 1–2 tháng. Nếu có tranh chấp tài sản hoặc nuôi con phức tạp, cần ly hôn tại Tòa (3–6 tháng).' },
+                { q: 'Chồng/vo muốn ly hôn nhưng bên kia không đồng ý?', a: 'Có thể yêu cầu ly hôn đơn phương tại Tòa. Tòa sẽ xem xét các yếu tố: có hay không vi phạm nghĩa vụ vợ/chồng, có hay không sống ly thân trên 1 năm, v.v.' },
+                { q: 'Tài sản nào được chia khi ly hôn?', a: 'Tài sản hình thành trong thời kỳ hôn nhân là tài sản chung (chia đôi). Tài sản riêng có trước hôn nhân hoặc được thừa kế/tặng cho riêng trong hôn nhân là tài sản riêng (không chia).' }
+            ]
+        },
+        'luat-lao-dong': {
+            icon: 'fa-solid fa-user-tie', category: 'Lao động',
+            title: 'Luật Lao Động',
+            subtitle: 'Tư vấn toàn diện về quan hệ lao động, hợp đồng lao động, tranh chấp lao động, kỷ luật lao động và các quyền lợi bảo hiểm xã hội theo Bộ luật Lao động 2019.',
+            items: [
+                'Soạn thảo, ký kết & chấm dứt hợp đồng lao động (HĐLĐ)',
+                'Tư vấn quy định về thử việc, thời giờ làm việc, thời giờ nghỉ ngơi',
+                'Giải quyết tranh chấp lao động cá nhân & tập thể',
+                'Khiếu nại quyết định sa thải, kỷ luật lao động',
+                'Tư vấn trả lương, phụ cấp, thưởng, BHXH cho người lao động',
+                'Đàm phán với người sử dụng lao động trước khi kiện',
+                'Tư vấn thỏa ước lao động tập thể, nội quy lao động',
+                'Chuyển đổi hợp đồng lao động, thuyên chuyển công tác'
+            ],
+            lawyer: { initials: 'PH', name: 'Ls. Phạm Thu Hà', position: 'Luật sư', exp: '12 năm kinh nghiệm', tags: ['Luật Lao động', 'Tranh chấp LĐ', 'BHXH'] },
+            faqs: [
+                { q: 'Bị sa thải trái pháp luật, tôi có quyền gì?', a: 'Có quyền khiếu nại trong vòng 90 ngày kể từ ngày bị sa thải. Luật sư giúp bạn yêu cầu: (1) khôi phục quyền làm việc, (2) bồi thường 2 tháng tiền lương, (3) tiền lương trong thời gian chờ giải quyết.' },
+                { q: 'Hợp đồng thử việc có bắt buộc không?', a: 'Không bắt buộc. Thử việc chỉ áp dụng nếu 2 bên thỏa thuận, thời gian thử việc tối đa 180 ngày (với vị trí quản lý). Lương thử việc không được thấp hơn 85% lương chính thức.' },
+                { q: 'Công ty nợ lương, tôi phải làm gì?', a: 'Gửi văn bản yêu cầu thanh toán bằng bưu điện có xác nhận. Nếu không giải quyết, khiếu nại lên Sở LĐ-TB&XH hoặc khởi kiện tại Tòa án. Chúng tôi hỗ trợ từ giai đoạn đàm phán đến kiện tụng.' }
+            ]
+        },
+        'fdi': {
+            icon: 'fa-solid fa-earth-americas', category: 'Đầu tư nước ngoài',
+            title: 'Đầu Tư Nước Ngoài (FDI)',
+            subtitle: 'Hỗ trợ nhà đầu tư nước ngoài hoàn tất thủ tục cấp phép đầu tư, thành lập doanh nghiệp có vốn FDI và các thủ tục pháp lý liên quan tại Việt Nam.',
+            items: [
+                'Thủ tục cấp Giấy phép đầu tư (IRC) theo Luật Đầu tư 2020',
+                'Thành lập công ty có vốn 100% nước ngoài hoặc liên doanh',
+                'Đăng ký thay đổi nội dung Giấy phép đầu tư',
+                'Work permit (giấy phép lao động) cho người nước ngoài',
+                'Visa, tạm trú, thường trú cho người nước ngoài tại Việt Nam',
+                'Tư vấn ưu đãi đầu tư, miễn giảm thuế thu nhập doanh nghiệp',
+                'Tư vấn chuyển lợi nhuận ra nước ngoài, hợp đồng chuyển giá',
+                'Giải thể, chuyển nhượng vốn cho nhà đầu tư nước ngoài'
+            ],
+            lawyer: { initials: 'LS', name: 'Ls. Nguyễn Văn Hùng', position: 'Trưởng Văn Phòng', exp: '22 năm kinh nghiệm', tags: ['FDI', 'Đầu tư', 'Work permit'] },
+            faqs: [
+                { q: 'Thủ tục cấp Giấy phép đầu tư mất bao lâu?', a: 'Với dự án không thuộc diện chấp thuận Chính phủ: 15 ngày làm việc từ khi hồ sơ hợp lệ. Dự án thuộc diện chấp thuận Chính phủ: 35 ngày làm việc.' },
+                { q: 'Người nước ngoài có được sở hữu đất tại Việt Nam?', a: 'Người nước ngoài không được sở hữu đất nhưng có thể thuê đất, mua căn hộ chung cư (tối đa 30 năm với người nước ngoài, 50 năm với tổ chức).' },
+                { q: 'Work permit có thể xin nhanh không?', a: 'Thời gian tiêu chuẩn là 10 ngày làm việc. Trong trường hợp khẩn cấp, có thể xin cấp phép theo dạng ngắn hạn (3–5 ngày) với điều kiện đặc biệt.' }
+            ]
+        },
+        'so-huu-tri-tue': {
+            icon: 'fa-solid fa-lightbulb', category: 'Sở hữu trí tuệ',
+            title: 'Sở Hữu Trí Tuệ',
+            subtitle: 'Đăng ký và bảo vệ quyền sở hữu trí tuệ cho cá nhân, tổ chức và doanh nghiệp. Xử lý các vụ việc xâm phạm quyền SHTT theo Luật SHTT 2005 (sửa đổi 2022).',
+            items: [
+                'Đăng ký nhãn hiệu, logo, thương hiệu tại Cục SHTT Việt Nam',
+                'Đăng ký quốc tế nhãn hiệu (Madrid Protocol) cho 120+ quốc gia',
+                'Bảo hộ sáng chế, kiểu dáng công nghiệp, thiết kế bố trí',
+                'Đăng ký bản quyền tác giả & quyền liên quan',
+                'Giám sát phát hiện xâm phạm nhãn hiệu trên thị trường',
+                'Gửi thư cảnh cáo, đàm phán bồi thường khi bị xâm phạm',
+                'Yêu cầu kiểm soát hải quan đối với hàng hóa xâm phạm SHTT',
+                'Tư vấn chuyển nhượng, licencing quyền SHTT'
+            ],
+            lawyer: { initials: 'LT', name: 'Ls. Trần Thị Lan', position: 'Phó Trưởng Văn Phòng', exp: '18 năm kinh nghiệm', tags: ['SHTT', 'Nhãn hiệu', 'Bản quyền'] },
+            faqs: [
+                { q: 'Nhãn hiệu đã đăng ký ở nước ngoài có được bảo hộ ở Việt Nam?', a: 'Không tự động. Cần nộp đơn đăng ký tại Cục SHTT Việt Nam. Tuy nhiên, có thể yêu cầu hưởng quyền ưu tiên nếu nộp đơn trong 6 tháng kể từ ngày nộp đơn đầu tiên.' },
+                { q: 'Chi phí đăng ký nhãn hiệu là bao nhiêu?', a: 'Phí nộp đơn cơ bản tại Cục SHTT khoảng 1–2 triệu VNĐ/nhãn hiệu/1 nhóm sản phẩm. Phí dịch vụ tư vấn, soạn hồ sơ tùy theo số lượng nhãn hiệu và nhóm sản phẩm.' },
+                { q: 'Xâm phạm nhãn hiệu xử lý như thế nào?', a: 'Có 3 cách: (1) Thương lượng, hòa giải với bên vi phạm; (2) Yêu cầu cơ quan có thẩm quyền xử lý hành chính; (3) Khởi kiện tại Tòa án có thẩm quyền. Chúng tôi tư vấn phương án phù hợp nhất.' }
+            ]
+        }
+    };
+
+    // ============================================================
+    // TRANSLATIONS
+    // ============================================================
+    const translations = {
+        vi: {
+            bc_home: 'Trang chủ', bc_services: 'Dịch vụ',
+            hero_title: 'Dịch Vụ Pháp Lý <em>Toàn Diện</em>',
+            hero_subtitle: 'Đội ngũ 20+ luật sư chuyên nghiệp, kinh nghiệm 15 năm, hỗ trợ bạn trên mọi lĩnh vực pháp lý từ doanh nghiệp, đất đai đến hình sự, dân sự và đầu tư nước ngoài.',
+            filter_all: 'Tất cả', filter_business: 'Doanh nghiệp', filter_personal: 'Cá nhân',
+            filter_fdi: 'Đầu tư nước ngoài', filter_dispute: 'Tranh chấp',
+            cta_detail: 'Tư vấn ngay',
+            cat_business: 'Doanh nghiệp', cat_land: 'Đất đai & BĐS', cat_criminal: 'Hình sự',
+            cat_civil: 'Dân sự', cat_family: 'Hôn nhân & Gia đình', cat_labor: 'Lao động',
+            cat_fdi: 'Đầu tư nước ngoài', cat_ip: 'Sở hữu trí tuệ',
+            svc_1_name: 'Luật Doanh Nghiệp', svc_1_desc: 'Tư vấn toàn diện về thành lập, hoạt động, tái cơ cấu và giải thể doanh nghiệp theo Luật Doanh nghiệp 2020.',
+            svc_1_1: 'Thành lập công ty (TNHH, Cổ phần, DNTN)', svc_1_2: 'M&A – Sáp nhập & mua lại doanh nghiệp',
+            svc_1_3: 'Hợp đồng thương mại & đại diện', svc_1_4: 'Giải thể, phá sản doanh nghiệp',
+            svc_2_name: 'Luật Đất Đai & Bất Động Sản', svc_2_desc: 'Giải quyết mọi vấn đề pháp lý liên quan đến quyền sử dụng đất, tranh chấp đất đai và giao dịch BĐS.',
+            svc_2_1: 'Tranh chấp đất đai thừa kế, ranh giới', svc_2_2: 'Chuyển nhượng, thuê quyền sử dụng đất',
+            svc_2_3: 'Bồi thường GPMB & tái định cư', svc_2_4: 'Đăng ký, cấp GCN quyền sử dụng đất',
+            svc_3_name: 'Luật Hình Sự & Tố Tụng Hình Sự', svc_3_desc: 'Bào chữa và bảo vệ quyền lợi hợp pháp cho bị can, bị cáo trong các vụ án hình sự từ giai đoạn điều tra đến xét xử.',
+            svc_3_1: 'Bào chữa bị can, bị cáo các tội danh', svc_3_2: 'Tư vấn thủ tục tố tụng hình sự',
+            svc_3_3: 'Bảo vệ quyền lợi người bị hại', svc_3_4: 'Khiếu nại, tố cáo trong tố tụng',
+            svc_4_name: 'Luật Dân Sự', svc_4_desc: 'Tư vấn và đại diện giải quyết các tranh chấp dân sự, kinh doanh, thương mại theo Bộ luật Dân sự 2015.',
+            svc_4_1: 'Tranh chấp hợp đồng dân sự & thương mại', svc_4_2: 'Thừa kế tài sản & di chúc',
+            svc_4_3: 'Bồi thường thiệt hại ngoài hợp đồng', svc_4_4: 'Quyền sở hữu trí tuệ trong dân sự',
+            svc_5_name: 'Luật Hôn Nhân & Gia Đình', svc_5_desc: 'Tư vấn và hỗ trợ giải quyết các vấn đề pháp lý liên quan đến hôn nhân, ly hôn, quyền nuôi con và phân chia tài sản.',
+            svc_5_1: 'Thủ tục ly hôn thuận tình & đơn phương', svc_5_2: 'Phân chia tài sản khi ly hôn',
+            svc_5_3: 'Quyền nuôi con & cấp dưỡng', svc_5_4: 'Kết hôn có yếu tố nước ngoài',
+            svc_6_name: 'Luật Lao Động', svc_6_desc: 'Tư vấn toàn diện về quan hệ lao động, hợp đồng lao động, tranh chấp lao động và các quyền lợi bảo hiểm xã hội.',
+            svc_6_1: 'Soạn thảo & ký kết HĐLĐ', svc_6_2: 'Tranh chấp lao động cá nhân & tập thể',
+            svc_6_3: 'Sa thải, kỷ luật lao động đúng pháp luật', svc_6_4: 'Bảo hiểm xã hội & quyền lợi người lao động',
+            svc_7_name: 'Đầu Tư Nước Ngoài (FDI)', svc_7_desc: 'Hỗ trợ nhà đầu tư nước ngoài hoàn tất thủ tục đầu tư, thành lập doanh nghiệp có vốn FDI tại Việt Nam.',
+            svc_7_1: 'Thủ tục cấp Giấy phép đầu tư', svc_7_2: 'Thành lập công ty có vốn FDI',
+            svc_7_3: 'Work permit & visa cho người nước ngoài', svc_7_4: 'Tư vấn ưu đãi đầu tư & thuế',
+            svc_8_name: 'Sở Hữu Trí Tuệ', svc_8_desc: 'Đăng ký và bảo vệ quyền sở hữu trí tuệ cho cá nhân và doanh nghiệp, xử lý các vụ việc xâm phạm SHTT.',
+            svc_8_1: 'Đăng ký nhãn hiệu, logo, thương hiệu', svc_8_2: 'Bảo hộ sáng chế, kiểu dáng công nghiệp',
+            svc_8_3: 'Bản quyền tác giả & quyền liên quan', svc_8_4: 'Xử lý xâm phạm quyền SHTT',
+            law_1: 'Ls. Nguyễn Văn Hùng', law_1_exp: 'Trưởng VP · 22 năm kinh nghiệm',
+            law_2: 'Ls. Trần Thị Lan', law_2_exp: 'Phó Trưởng VP · 18 năm kinh nghiệm',
+            law_3: 'Ls. Lê Đức Minh', law_3_exp: 'Luật sư cao cấp · 15 năm kinh nghiệm',
+            law_4: 'Ls. Phạm Thu Hà', law_4_exp: 'Luật sư · 12 năm kinh nghiệm',
+            trust_years: 'Năm kinh nghiệm', trust_cases: 'Vụ việc thành công',
+            trust_rate: 'Tỷ lệ thành công', trust_lawyers: 'Luật sư chuyên nghiệp',
+            trust_desc: 'Với hơn 15 năm hoạt động, VP Luật Hùng & Cộng sự đã đồng hành cùng hàng nghìn khách hàng giải quyết các vấn đề pháp lý phức tạp.',
+            footer_desc: 'Văn phòng luật cao cấp hàng đầu Việt Nam. 15 năm kinh nghiệm, 2.000+ vụ việc thành công, đội ngũ 20+ luật sư chuyên nghiệp.',
+            footer_services: 'Dịch vụ', footer_svc_1: 'Luật Doanh nghiệp', footer_svc_2: 'Luật Đất đai',
+            footer_svc_3: 'Luật Dân sự', footer_svc_4: 'Luật Hình sự', footer_svc_5: 'Luật Lao động', footer_svc_6: 'Đầu tư nước ngoài',
+            footer_team: 'Đội ngũ', footer_team_1: 'Ls. Nguyễn Văn Hùng', footer_team_2: 'Ls. Trần Thị Lan',
+            footer_team_3: 'Ls. Lê Đức Minh', footer_team_4: 'Ls. Phạm Thu Hà',
+            footer_contact: 'Liên hệ', footer_copyright: '© 2026 VP Luật Hùng & Cộng sự. Giấy phép số: 123/GP-LSCP.',
+            footer_privacy: 'Chính sách bảo mật', footer_terms: 'Điều khoản sử dụng',
+            modal_what: 'Chúng tôi hỗ trợ gì?',
+            modal_process: 'Quy trình làm việc',
+            modal_lawyer: 'Luật sư phụ trách',
+            modal_faq: 'Câu hỏi thường gặp',
+            modal_cta: 'Bạn cần tư vấn về dịch vụ này?',
+            modal_cta_sub: 'Điền SĐT, luật sư sẽ gọi lại trong 30 phút',
+            modal_cta_placeholder: 'Nhập số điện thoại...',
+            modal_cta_btn: 'Gửi yêu cầu',
+            modal_process_1: 'Liên hệ & Đánh giá', modal_process_2: 'Ký hợp đồng', modal_process_3: 'Nghiên cứu & Xử lý', modal_process_4: 'Kết quả & Báo cáo',
+            modal_process_1d: 'Tiếp nhận thông tin, đánh giá sơ bộ vụ việc', modal_process_2d: 'Ký hợp đồng dịch vụ & cam kết bảo mật', modal_process_3d: 'Nghiên cứu hồ sơ, soạn tài liệu pháp lý', modal_process_4d: 'Báo cáo tiến độ & kết quả cuối cùng',
+            modal_note: 'Tư vấn miễn phí lần đầu · Bảo mật 100%',
+            toast_success: '<i class="fa-solid fa-check"></i> Gửi yêu cầu thành công! Chúng tôi sẽ gọi lại trong 30 phút.',
+        },
+        en: {
+            bc_home: 'Home', bc_services: 'Services',
+            hero_title: 'Comprehensive <em>Legal Services</em>',
+            hero_subtitle: 'Professional team of 20+ lawyers with 15 years of experience, supporting you across all legal areas from corporate to criminal, civil and foreign investment law.',
+            filter_all: 'All', filter_business: 'Corporate', filter_personal: 'Personal',
+            filter_fdi: 'Foreign Investment', filter_dispute: 'Disputes',
+            cta_detail: 'Consult now',
+            cat_business: 'Corporate', cat_land: 'Land & Real Estate', cat_criminal: 'Criminal',
+            cat_civil: 'Civil', cat_family: 'Family Law', cat_labor: 'Labor Law',
+            cat_fdi: 'Foreign Investment', cat_ip: 'Intellectual Property',
+            svc_1_name: 'Corporate Law', svc_1_desc: 'Comprehensive advisory on company formation, operation, restructuring and dissolution under Enterprise Law 2020.',
+            svc_1_1: 'Company formation (LLC, JSC, Private enterprise)', svc_1_2: 'M&A – Merger, consolidation & acquisition',
+            svc_1_3: 'Commercial contracts & representation', svc_1_4: 'Dissolution & bankruptcy',
+            svc_2_name: 'Land & Real Estate Law', svc_2_desc: 'Resolving all legal issues related to land use rights, land disputes and real estate transactions.',
+            svc_2_1: 'Land inheritance & boundary disputes', svc_2_2: 'Transfer & lease of land use rights',
+            svc_2_3: 'Land acquisition compensation & resettlement', svc_2_4: 'Land use rights certificate registration',
+            svc_3_name: 'Criminal Law & Procedure', svc_3_desc: 'Defense and protection of legitimate rights for suspects, defendants in criminal cases from investigation to trial.',
+            svc_3_1: 'Defense of suspects & defendants', svc_3_2: 'Criminal procedure advisory',
+            svc_3_3: 'Victim rights protection', svc_3_4: 'Complaints in criminal procedure',
+            svc_4_name: 'Civil Law', svc_4_desc: 'Advisory and representation in civil and commercial disputes under the Civil Code 2015.',
+            svc_4_1: 'Civil & commercial contract disputes', svc_4_2: 'Inheritance & wills',
+            svc_4_3: 'Tortious liability & compensation', svc_4_4: 'Intellectual property in civil matters',
+            svc_5_name: 'Family Law', svc_5_desc: 'Advisory and support in legal matters related to marriage, divorce, child custody and asset division.',
+            svc_5_1: 'Consensual & contested divorce procedures', svc_5_2: 'Asset division upon divorce',
+            svc_5_3: 'Child custody & child support', svc_5_4: 'International marriage',
+            svc_6_name: 'Labor Law', svc_6_desc: 'Comprehensive advisory on labor relations, employment contracts, labor disputes and social insurance benefits.',
+            svc_6_1: 'Drafting & signing employment contracts', svc_6_2: 'Individual & collective labor disputes',
+            svc_6_3: 'Lawful dismissal & labor discipline', svc_6_4: 'Social insurance & employee rights',
+            svc_7_name: 'Foreign Investment (FDI)', svc_7_desc: 'Supporting foreign investors in completing investment procedures, establishing FDI enterprises in Vietnam.',
+            svc_7_1: 'Investment Registration Certificate procedures', svc_7_2: 'Establishing 100% foreign-owned companies',
+            svc_7_3: 'Work permits & visas for foreigners', svc_7_4: 'Investment incentives & tax advisory',
+            svc_8_name: 'Intellectual Property', svc_8_desc: 'Registering and protecting intellectual property rights for individuals and businesses, handling IP infringement cases.',
+            svc_8_1: 'Trademark & brand registration', svc_8_2: 'Patent & industrial design protection',
+            svc_8_3: 'Copyright & related rights', svc_8_4: 'IP infringement enforcement',
+            law_1: 'Atty. Nguyen Van Hung', law_1_exp: 'Managing Partner · 22 years experience',
+            law_2: 'Atty. Tran Thi Lan', law_2_exp: 'Deputy Managing Partner · 18 years',
+            law_3: 'Atty. Le Duc Minh', law_3_exp: 'Senior Attorney · 15 years',
+            law_4: 'Atty. Pham Thu Ha', law_4_exp: 'Attorney · 12 years',
+            trust_years: 'Years Experience', trust_cases: 'Successful Cases',
+            trust_rate: 'Success Rate', trust_lawyers: 'Professional Lawyers',
+            trust_desc: 'With over 15 years of operation, VP Luat Hung & Cong Su has accompanied thousands of clients in resolving complex legal matters.',
+            footer_desc: 'Vietnam\'s leading premier law firm. 15 years experience, 2,000+ successful cases, 20+ professional lawyers.',
+            footer_services: 'Services', footer_svc_1: 'Corporate Law', footer_svc_2: 'Land Law',
+            footer_svc_3: 'Civil Law', footer_svc_4: 'Criminal Law', footer_svc_5: 'Labor Law', footer_svc_6: 'Foreign Investment',
+            footer_team: 'Our Team', footer_team_1: 'Atty. Nguyen Van Hung', footer_team_2: 'Atty. Tran Thi Lan',
+            footer_team_3: 'Atty. Le Duc Minh', footer_team_4: 'Atty. Pham Thu Ha',
+            footer_contact: 'Contact', footer_copyright: '© 2026 VP Luat Hung & Cong Su. License No: 123/GP-LSCP.',
+            footer_privacy: 'Privacy Policy', footer_terms: 'Terms of Service',
+            modal_what: 'What We Support',
+            modal_process: 'Our Process',
+            modal_lawyer: 'Assigned Attorney',
+            modal_faq: 'Frequently Asked Questions',
+            modal_cta: 'Need consultation on this service?',
+            modal_cta_sub: 'Enter your phone, attorney will call back in 30 minutes',
+            modal_cta_placeholder: 'Enter phone number...',
+            modal_cta_btn: 'Submit Request',
+            modal_process_1: 'Contact & Assess', modal_process_2: 'Sign Contract', modal_process_3: 'Research & Process', modal_process_4: 'Result & Report',
+            modal_process_1d: 'Receive info, initial case assessment', modal_process_2d: 'Sign service contract & NDA', modal_process_3d: 'Research files, draft legal documents', modal_process_4d: 'Progress reports & final results',
+            modal_note: 'First consultation free · 100% Confidential',
+            toast_success: '<i class="fa-solid fa-check"></i> Request submitted! We will call back in 30 minutes.',
+        }
+    };
+
+    let currentLang = 'vi';
+
+    function setLang(lang) {
+        currentLang = lang;
+        document.documentElement.lang = lang;
+        document.getElementById('langVI').classList.toggle('active', lang === 'vi');
+        document.getElementById('langEN').classList.toggle('active', lang === 'en');
+
+        const t = translations[lang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key] !== undefined) {
+                    el.innerHTML = t[key];
+                }
+            });
+    }
+
+    // ============================================================
+    // STICKY NAVBAR
+    // ============================================================
+    function handleScroll() {
+        const navbar = document.getElementById('navbar');
+        const backToTop = document.getElementById('backToTop');
+        const scrollY = window.scrollY;
+        if (navbar) navbar.classList.toggle('scrolled', scrollY > 50);
+        if (backToTop) backToTop.classList.toggle('visible', scrollY > 600);
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // ============================================================
+    // MOBILE MENU
+    // ============================================================
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        const hamburger = document.getElementById('hamburger');
+        const isOpen = menu.classList.toggle('active');
+        hamburger.classList.toggle('active');
+        document.body.style.overflow = isOpen ? 'hidden' : '';
+    }
+
+    // ============================================================
+    // SCROLL TO SECTION
+    // ============================================================
+    function scrollToSection(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            const top = el.getBoundingClientRect().top + window.scrollY - 80;
+            window.scrollTo({ top, behavior: 'smooth' });
+        }
+    }
+
+    // ============================================================
+    // FILTER TABS
+    // ============================================================
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const serviceCards = document.querySelectorAll('.service-card');
+
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const filter = tab.dataset.filter;
+
+            // Update active tab
+            filterTabs.forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            tab.classList.add('active');
+            tab.setAttribute('aria-selected', 'true');
+
+            // Filter cards with animation
+            serviceCards.forEach(card => {
+                const categories = card.dataset.category || '';
+                let show = false;
+
+                if (filter === 'all') {
+                    show = true;
+                } else {
+                    show = categories.split(' ').includes(filter);
+                }
+
+                if (show) {
+                    if (card.classList.contains('hidden')) {
+                        card.classList.remove('hidden');
+                        card.classList.add('fade-in');
+                        setTimeout(() => card.classList.remove('fade-in'), 400);
+                    }
+                } else {
+                    card.classList.add('fade-out');
+                    setTimeout(() => {
+                        card.classList.add('hidden');
+                        card.classList.remove('fade-out');
+                    }, 300);
+                }
+            });
+        });
+    });
+
+    // ============================================================
+    // MODAL – SERVICE DETAIL
+    // ============================================================
+    function openModal(serviceKey) {
+        const data = serviceData[serviceKey];
+        if (!data) return;
+
+        const overlay = document.getElementById('modalOverlay');
+        const container = document.getElementById('modalDynamicContent');
+
+        const t = translations[currentLang];
+
+        container.innerHTML = `
+            <div class="modal__hero">
+                <nav class="modal__breadcrumb">
+                    <span class="modal__breadcrumb-item">${t.bc_home || 'Trang chủ'}</span>
+                    <span class="modal__breadcrumb-sep">›</span>
+                    <span class="modal__breadcrumb-item">${t.bc_services || 'Dịch vụ'}</span>
+                    <span class="modal__breadcrumb-sep">›</span>
+                    <span class="modal__breadcrumb-item active">${data.title}</span>
+                </nav>
+                <div class="modal__icon"><i class="${data.icon}"></i></div>
+                <h2 class="modal__title" id="modalTitle">${data.title}</h2>
+                <p class="modal__subtitle">${data.subtitle}</p>
+            </div>
+            <div class="modal__body">
+                <!-- What we support -->
+                <div class="modal__section">
+                    <h3 class="modal__section-title">${t.modal_what || 'Chúng tôi hỗ trợ gì?'}</h3>
+                    <div class="modal__list">
+                        ${data.items.map(item => `<div class="modal__list-item">${item}</div>`).join('')}
+                    </div>
+                </div>
+
+                <!-- Process Timeline -->
+                <div class="modal__section">
+                    <h3 class="modal__section-title">${t.modal_process || 'Quy trình làm việc'}</h3>
+                    <div class="process-timeline">
+                        <div class="process-step active">
+                            <div class="process-step__num">1</div>
+                            <div class="process-step__title">${t.modal_process_1}</div>
+                            <div class="process-step__desc">${t.modal_process_1d}</div>
+                        </div>
+                        <div class="process-step">
+                            <div class="process-step__num">2</div>
+                            <div class="process-step__title">${t.modal_process_2}</div>
+                            <div class="process-step__desc">${t.modal_process_2d}</div>
+                        </div>
+                        <div class="process-step">
+                            <div class="process-step__num">3</div>
+                            <div class="process-step__title">${t.modal_process_3}</div>
+                            <div class="process-step__desc">${t.modal_process_3d}</div>
+                        </div>
+                        <div class="process-step">
+                            <div class="process-step__num">4</div>
+                            <div class="process-step__title">${t.modal_process_4}</div>
+                            <div class="process-step__desc">${t.modal_process_4d}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lawyer -->
+                <div class="modal__section">
+                    <h3 class="modal__section-title">${t.modal_lawyer || 'Luật sư phụ trách'}</h3>
+                    <div class="modal__lawyer-card">
+                        <div class="modal__lawyer-avatar">${data.lawyer.initials}</div>
+                        <div class="modal__lawyer-info">
+                            <div class="modal__lawyer-name">${data.lawyer.name}</div>
+                            <div class="modal__lawyer-position">${data.lawyer.position}</div>
+                            <div class="modal__lawyer-tags">
+                                ${data.lawyer.tags.map(tag => `<span class="modal__lawyer-tag">${tag}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="modal__lawyer-exp"><i class="fa-solid fa-award"></i> ${data.lawyer.exp}</div>
+                    </div>
+                </div>
+
+                <!-- FAQ -->
+                <div class="modal__section">
+                    <h3 class="modal__section-title">${t.modal_faq || 'Câu hỏi thường gặp'}</h3>
+                    ${data.faqs.map((faq, i) => `
+                        <div class="modal__faq-item ${i === 0 ? 'active' : ''}">
+                            <button class="modal__faq-q" onclick="toggleModalFaq(this)">
+                                <span>${faq.q}</span>
+                                <div class="modal__faq-q-icon"><i class="fa-solid fa-plus"></i></div>
+                            </button>
+                            <div class="modal__faq-a">
+                                <div class="modal__faq-a-inner">${faq.a}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <!-- CTA -->
+                <div class="modal__cta">
+                    <div class="modal__cta-title">${t.modal_cta}</div>
+                    <div class="modal__cta-sub">${t.modal_cta_sub}</div>
+                    <form class="modal__cta-form" onsubmit="handleModalSubmit(event)">
+                        <input type="tel" class="modal__cta-input" placeholder="${t.modal_cta_placeholder}" required>
+                        <button type="submit" class="modal__cta-btn">${t.modal_cta_btn}</button>
+                    </form>
+                    <div class="modal__cta-note">${t.modal_note}</div>
+                </div>
+            </div>
+        `;
+
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        const overlay = document.getElementById('modalOverlay');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Close modal on overlay click
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeModal();
+    });
+
+    // Close modal on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    // Modal FAQ accordion
+    function toggleModalFaq(btn) {
+        const item = btn.closest('.modal__faq-item');
+        const isActive = item.classList.contains('active');
+        item.closest('.modal__section').querySelectorAll('.modal__faq-item').forEach(faq => {
+            faq.classList.remove('active');
+        });
+        if (!isActive) item.classList.add('active');
+    }
+
+    // Modal CTA form
+    function handleModalSubmit(e) {
+        e.preventDefault();
+        showToast(translations[currentLang].toast_success, 'success');
+        e.target.reset();
+    }
+
+    // ============================================================
+    // SCROLL REVEAL
+    // ============================================================
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // ============================================================
+    // TOAST
+    // ============================================================
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast';
+        if (type === 'success') toast.classList.add('toast--success');
+        if (type === 'error') toast.classList.add('toast--error');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    // Initial scroll check
+    handleScroll();
+    </script>
+</body>
+</html>

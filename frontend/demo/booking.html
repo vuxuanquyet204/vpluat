@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt Lịch Tư Vấn | VP Luật Hùng & Cộng sự</title>
+    <meta name="description" content="Đặt lịch tư vấn pháp lý trực tuyến với đội ngũ luật sư Văn Phòng Luật Hùng & Cộng sự. Nhanh chóng, tiện lợi, miễn phí lần đầu.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #1E3A5F;
+            --primary-dark: #152A45;
+            --primary-light: #2A4F7A;
+            --primary-faint: #EFF3F8;
+            --accent: #C9A84C;
+            --accent-dark: #B8953D;
+            --accent-light: #D4B76A;
+            --white: #FFFFFF;
+            --off-white: #F8F9FA;
+            --gray-50: #F8F9FA;
+            --gray-100: #F0F2F5;
+            --gray-200: #E4E8EF;
+            --gray-300: #CBD2DC;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --green: #059669;
+            --green-bg: #ECFDF5;
+            --red: #DC2626;
+            --red-bg: #FEF2F2;
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.07);
+            --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 9999px;
+            --transition-fast: 0.2s ease;
+            --transition-base: 0.3s ease;
+            --font-heading: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
+        }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body);
+            color: var(--primary);
+            background: var(--off-white);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, h4 { font-family: var(--font-heading); line-height: 1.2; }
+        button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+        input, textarea { font-family: inherit; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+
+        /* Mini Nav */
+        .mini-nav {
+            background: var(--primary);
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .mini-nav__brand { display: flex; align-items: center; gap: 10px; }
+        .mini-nav__icon {
+            width: 34px; height: 34px;
+            background: var(--accent); border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; font-weight: 800;
+            color: var(--primary-dark); font-family: var(--font-heading);
+        }
+        .mini-nav__name { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 700; color: var(--white); }
+        .mini-nav__phone { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 700; color: var(--accent); }
+        .mini-nav__phone i { font-size: 0.85rem; }
+
+        /* Hero */
+        .booking-hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 40px 24px 36px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .booking-hero::before {
+            content: ''; position: absolute; inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .booking-hero__inner { position: relative; z-index: 1; }
+        .booking-hero__title {
+            font-family: var(--font-heading);
+            font-size: clamp(1.5rem, 3vw, 2.2rem);
+            font-weight: 700; color: var(--white); margin-bottom: 6px;
+        }
+        .booking-hero__sub { font-size: 0.9rem; color: rgba(255,255,255,0.65); margin-bottom: 16px; }
+        .booking-hero__trust { display: flex; justify-content: center; gap: 28px; flex-wrap: wrap; }
+        .booking-hero__trust-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: rgba(255,255,255,0.7); }
+        .booking-hero__trust-item i { color: var(--accent); font-size: 0.75rem; }
+
+        /* Progress Bar */
+        .progress-bar {
+            background: var(--white);
+            padding: 24px 24px 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .progress-bar__inner { max-width: 700px; margin: 0 auto; display: flex; align-items: flex-start; position: relative; }
+        .progress-bar__line {
+            position: absolute; top: 20px;
+            left: calc(50% / 3); right: calc(50% / 3);
+            height: 2px; background: var(--gray-200); z-index: 0;
+        }
+        .progress-bar__line-fill { height: 100%; background: var(--primary); width: 0; transition: width 0.5s ease; }
+        .progress-step {
+            flex: 1; text-align: center; position: relative; z-index: 1;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .progress-step__circle {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--white); border: 2px solid var(--gray-200);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; font-weight: 700; color: var(--gray-400);
+            transition: all var(--transition-base);
+        }
+        .progress-step.active .progress-step__circle {
+            background: var(--primary); border-color: var(--primary); color: var(--white);
+            box-shadow: 0 0 0 4px rgba(30,58,95,0.12);
+        }
+        .progress-step.done .progress-step__circle {
+            background: var(--green); border-color: var(--green); color: var(--white);
+        }
+        .progress-step__label {
+            font-size: 0.75rem; font-weight: 600; color: var(--gray-400);
+            padding-bottom: 20px; transition: color var(--transition-base);
+        }
+        .progress-step.active .progress-step__label { color: var(--primary); }
+        .progress-step.done .progress-step__label { color: var(--green); }
+
+        /* Booking Body */
+        .booking-body { max-width: 1100px; margin: 0 auto; padding: 40px 16px 80px; }
+
+        /* Step wrapper */
+        .step { display: none; animation: stepIn 0.4s ease; }
+        .step.active { display: block; }
+        @keyframes stepIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .step__heading { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+        .step__sub { font-size: 0.875rem; color: var(--gray-500); margin-bottom: 28px; }
+
+        /* Service Cards */
+        .service-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 36px; }
+        .service-card {
+            border: 2px solid var(--gray-200); border-radius: var(--radius-lg);
+            padding: 20px 14px; cursor: pointer; transition: all var(--transition-fast);
+            position: relative; background: var(--white); text-align: center;
+        }
+        .service-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+        .service-card.selected { border-color: var(--accent); background: #FEF9EF; box-shadow: 0 0 0 1px var(--accent); }
+        .service-card__check {
+            position: absolute; top: 8px; right: 8px;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: var(--accent); display: none; align-items: center; justify-content: center;
+            font-size: 0.65rem; color: var(--white);
+        }
+        .service-card.selected .service-card__check { display: flex; }
+        .service-card__icon {
+            width: 44px; height: 44px; background: var(--primary-faint);
+            border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 10px; font-size: 1.1rem; color: var(--primary); transition: all var(--transition-fast);
+        }
+        .service-card.selected .service-card__icon { background: rgba(201,168,76,0.15); color: var(--accent-dark); }
+        .service-card__name { font-size: 0.8rem; font-weight: 700; color: var(--primary); line-height: 1.3; }
+
+        /* Lawyer selection */
+        .lawyer-section { display: none; animation: fadeSlideUp 0.4s ease; }
+        .lawyer-section.visible { display: block; }
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .lawyer-section__title {
+            font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700;
+            color: var(--primary); margin-bottom: 18px; padding-top: 28px; border-top: 1px solid var(--gray-100);
+        }
+        .lawyer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 36px; }
+        .lawyer-select-card {
+            border: 2px solid var(--gray-200); border-radius: var(--radius-lg);
+            padding: 20px 16px; cursor: pointer; transition: all var(--transition-fast);
+            background: var(--white); position: relative; text-align: center;
+        }
+        .lawyer-select-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+        .lawyer-select-card.selected { border-color: var(--accent); background: #FEF9EF; box-shadow: 0 0 0 1px var(--accent); }
+        .lawyer-select-card__check {
+            position: absolute; top: 8px; right: 8px;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: var(--accent); display: none; align-items: center; justify-content: center;
+            font-size: 0.65rem; color: var(--white);
+        }
+        .lawyer-select-card.selected .lawyer-select-card__check { display: flex; }
+        .lawyer-select-card__avatar {
+            width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700;
+            color: var(--white); border: 2px solid rgba(255,255,255,0.3);
+        }
+        .lawyer-select-card__name { font-size: 0.875rem; font-weight: 700; color: var(--primary); margin-bottom: 3px; }
+        .lawyer-select-card__specialty { font-size: 0.75rem; color: var(--gray-500); margin-bottom: 8px; }
+        .lawyer-select-card__rating { display: flex; align-items: center; justify-content: center; gap: 3px; font-size: 0.75rem; color: var(--gray-500); margin-bottom: 8px; }
+        .lawyer-select-card__rating i { color: var(--accent); font-size: 0.65rem; }
+        .lawyer-select-card__available {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.72rem; font-weight: 600; color: var(--green);
+            background: var(--green-bg); padding: 3px 10px; border-radius: var(--radius-full);
+        }
+
+        /* DateTime Grid */
+        .datetime-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+        .calendar-card { background: var(--white); border: 1px solid var(--gray-100); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-sm); }
+        .calendar__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .calendar__title { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; color: var(--primary); }
+        .calendar__nav { display: flex; gap: 8px; }
+        .calendar__nav-btn {
+            width: 32px; height: 32px; border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; color: var(--gray-600); background: var(--white);
+            cursor: pointer; transition: all var(--transition-fast);
+        }
+        .calendar__nav-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .calendar__weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 8px; }
+        .calendar__wd { text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--gray-400); padding: 4px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .calendar__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .calendar__day {
+            aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+            font-size: 0.82rem; font-weight: 500; border-radius: var(--radius-md);
+            cursor: pointer; transition: all var(--transition-fast);
+            color: var(--primary); border: 2px solid transparent;
+            position: relative;
+        }
+        .calendar__day:hover:not(.disabled):not(.selected) { background: var(--primary-faint); color: var(--primary); }
+        .calendar__day.has-slot { font-weight: 700; }
+        .calendar__day.has-slot::after {
+            content: ''; position: absolute; bottom: 3px; left: 50%;
+            transform: translateX(-50%); width: 4px; height: 4px;
+            border-radius: 50%; background: var(--accent);
+        }
+        .calendar__day.selected { background: var(--accent) !important; color: var(--primary-dark) !important; font-weight: 700; border-color: var(--accent); }
+        .calendar__day.selected::after { background: var(--primary-dark); }
+        .calendar__day.disabled { color: var(--gray-300); cursor: not-allowed; pointer-events: none; }
+        .calendar__day.today { border-color: var(--primary-light); font-weight: 700; }
+        .calendar__day.other-month { color: var(--gray-300); }
+
+        /* Slots */
+        .slots-card { background: var(--white); border: 1px solid var(--gray-100); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-sm); }
+        .slots-card__title { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+        .slots-card__date { font-size: 0.82rem; color: var(--gray-500); margin-bottom: 18px; display: flex; align-items: center; gap: 6px; }
+        .slots-card__date i { color: var(--accent); }
+        .slots-empty { text-align: center; padding: 32px 16px; color: var(--gray-400); font-size: 0.875rem; }
+        .slots-empty i { font-size: 2rem; margin-bottom: 10px; display: block; color: var(--gray-300); }
+        .slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .slot-btn {
+            padding: 10px 6px; border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 600;
+            color: var(--primary); background: var(--white); cursor: pointer;
+            transition: all var(--transition-fast); text-align: center;
+        }
+        .slot-btn:hover:not(.booked) { border-color: var(--primary); background: var(--primary-faint); }
+        .slot-btn.selected { background: var(--accent); border-color: var(--accent); color: var(--primary-dark); }
+        .slot-btn.booked { color: var(--gray-300); background: var(--gray-50); cursor: not-allowed; text-decoration: line-through; }
+
+        /* Consult Type */
+        .consult-type { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--gray-100); }
+        .consult-type__title { font-size: 0.875rem; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+        .consult-options { display: flex; flex-direction: column; gap: 8px; }
+        .consult-option {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px; border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast); font-size: 0.875rem;
+        }
+        .consult-option:hover { border-color: var(--primary); }
+        .consult-option.selected { border-color: var(--accent); background: #FEF9EF; }
+        .consult-option__radio {
+            width: 18px; height: 18px; border-radius: 50%;
+            border: 2px solid var(--gray-300); display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all var(--transition-fast);
+        }
+        .consult-option.selected .consult-option__radio { border-color: var(--accent); background: var(--accent); }
+        .consult-option.selected .consult-option__radio::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--white); }
+        .consult-option__icon { color: var(--primary); font-size: 0.875rem; }
+        .consult-option__text { flex: 1; }
+        .consult-option__text strong { display: block; font-size: 0.875rem; color: var(--primary); }
+        .consult-option__text span { font-size: 0.75rem; color: var(--gray-500); }
+
+        /* Step3 grid */
+        .step3-grid { display: grid; grid-template-columns: 1fr 340px; gap: 32px; align-items: start; }
+        .info-form { background: var(--white); border: 1px solid var(--gray-100); border-radius: var(--radius-xl); padding: 28px; box-shadow: var(--shadow-sm); }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 0.82rem; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+        .form-group label .required { color: var(--red); margin-left: 2px; }
+        .form-control {
+            width: 100%; padding: 11px 14px; border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md); font-size: 0.9rem; color: var(--primary);
+            background: var(--white); transition: border-color var(--transition-fast); outline: none;
+        }
+        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,58,95,0.07); }
+        .form-control.error { border-color: var(--red); }
+        .form-control::placeholder { color: var(--gray-400); }
+        textarea.form-control { resize: vertical; min-height: 110px; }
+        .phone-input-wrap { position: relative; display: flex; align-items: center; }
+        .phone-prefix { position: absolute; left: 14px; display: flex; align-items: center; gap: 4px; font-size: 0.875rem; color: var(--gray-600); pointer-events: none; }
+        .phone-input-wrap .form-control { padding-left: 52px; }
+        .field-error { font-size: 0.75rem; color: var(--red); margin-top: 4px; display: none; }
+        .field-error.show { display: block; }
+
+        /* Checkbox */
+        .form-check { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; cursor: pointer; }
+        .form-check__box {
+            width: 18px; height: 18px; border: 2px solid var(--gray-300);
+            border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; margin-top: 2px; transition: all var(--transition-fast);
+        }
+        .form-check.checked .form-check__box { background: var(--primary); border-color: var(--primary); }
+        .form-check.checked .form-check__box::after {
+            content: ''; width: 8px; height: 5px;
+            border-left: 2px solid white; border-bottom: 2px solid white;
+            transform: rotate(-45deg) translateY(-1px);
+        }
+        .form-check__text { font-size: 0.82rem; color: var(--gray-600); line-height: 1.5; }
+        .form-check__text a { color: var(--primary); font-weight: 600; text-decoration: underline; }
+
+        /* Summary */
+        .summary-card { background: var(--white); border: 1px solid var(--gray-100); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-sm); position: sticky; top: 24px; }
+        .summary-card__title {
+            font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700;
+            color: var(--primary); margin-bottom: 18px; padding-bottom: 14px;
+            border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 8px;
+        }
+        .summary-card__title i { color: var(--accent); font-size: 0.9rem; }
+        .summary-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
+        .summary-item:last-of-type { border-bottom: none; }
+        .summary-item__icon {
+            width: 32px; height: 32px; background: var(--primary-faint);
+            border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; font-size: 0.8rem; color: var(--primary);
+        }
+        .summary-item__label { font-size: 0.72rem; color: var(--gray-500); margin-bottom: 2px; }
+        .summary-item__value { font-size: 0.85rem; font-weight: 600; color: var(--primary); line-height: 1.3; }
+        .summary-card__price { margin-top: 16px; padding: 14px; background: var(--green-bg); border-radius: var(--radius-md); text-align: center; }
+        .summary-card__price-label { font-size: 0.78rem; color: var(--gray-500); margin-bottom: 2px; }
+        .summary-card__price-value { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; color: var(--green); }
+        .summary-card__note { font-size: 0.72rem; color: var(--gray-400); text-align: center; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .summary-card__note i { color: var(--green); }
+        .summary-placeholder { font-size: 0.82rem; color: var(--gray-400); font-weight: 400 !important; }
+
+        /* Confirmation */
+        .confirmation { text-align: center; max-width: 600px; margin: 0 auto; padding: 20px 0 60px; animation: stepIn 0.5s ease; }
+        .confirmation__icon {
+            width: 80px; height: 80px; background: var(--green-bg); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 24px; animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes popIn { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .confirmation__icon i { font-size: 2rem; color: var(--green); }
+        .confirmation__title { font-family: var(--font-heading); font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 10px; }
+        .confirmation__sub { font-size: 0.9rem; color: var(--gray-500); margin-bottom: 28px; }
+        .booking-receipt { background: var(--white); border: 1px solid var(--gray-100); border-radius: var(--radius-xl); padding: 28px; box-shadow: var(--shadow-md); text-align: left; margin-bottom: 24px; }
+        .booking-receipt__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--gray-100); }
+        .booking-receipt__id-label { font-size: 0.72rem; color: var(--gray-500); margin-bottom: 2px; }
+        .booking-receipt__id-val { font-size: 1rem; font-weight: 700; color: var(--primary); }
+        .booking-receipt__status { display: inline-flex; align-items: center; gap: 6px; background: var(--green-bg); color: var(--green); font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: var(--radius-full); }
+        .booking-receipt__row { display: flex; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--gray-50); }
+        .booking-receipt__row:last-child { border-bottom: none; }
+        .booking-receipt__row-icon { width: 32px; height: 32px; background: var(--primary-faint); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem; color: var(--primary); }
+        .booking-receipt__row-label { font-size: 0.75rem; color: var(--gray-500); }
+        .booking-receipt__row-value { font-size: 0.875rem; font-weight: 600; color: var(--primary); }
+        .confirmation__notice { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.85rem; color: var(--gray-500); background: var(--primary-faint); padding: 12px 20px; border-radius: var(--radius-md); margin-bottom: 24px; }
+        .confirmation__notice i { color: var(--primary); font-size: 0.875rem; }
+        .confirmation__actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .confirmation__btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: all var(--transition-fast); border: none; }
+        .confirmation__btn--primary { background: var(--primary); color: var(--white); }
+        .confirmation__btn--primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .confirmation__btn--outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+        .confirmation__btn--outline:hover { background: var(--primary-faint); }
+
+        /* Nav Buttons */
+        .step-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--gray-100); }
+        .step-nav--right { justify-content: flex-end; }
+        .btn-back {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 11px 22px; border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 600;
+            color: var(--gray-600); background: var(--white); cursor: pointer; transition: all var(--transition-fast);
+        }
+        .btn-back:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-next {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 11px 28px; background: var(--accent); color: var(--primary-dark);
+            border: none; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 700;
+            cursor: pointer; transition: all var(--transition-fast);
+        }
+        .btn-next:hover:not(:disabled) { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 4px 15px rgba(201,168,76,0.3); }
+        .btn-next:disabled { background: var(--gray-200); color: var(--gray-400); cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Footer */
+        .booking-footer { background: var(--primary-dark); padding: 24px; text-align: center; }
+        .booking-footer p { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+        .booking-footer a { color: var(--accent); }
+
+        /* Shake animation */
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .service-grid { grid-template-columns: repeat(2, 1fr); }
+            .lawyer-grid { grid-template-columns: 1fr 1fr; }
+            .datetime-grid { grid-template-columns: 1fr; }
+            .step3-grid { grid-template-columns: 1fr; }
+            .summary-card { position: static; }
+            .slots-grid { grid-template-columns: repeat(4, 1fr); }
+            .confirmation__actions { flex-direction: column; }
+            .confirmation__btn { justify-content: center; }
+        }
+        @media (max-width: 480px) {
+            .service-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .lawyer-grid { grid-template-columns: 1fr; }
+            .mini-nav__name { display: none; }
+            .booking-hero__trust { gap: 16px; }
+            .progress-step__label { font-size: 0.68rem; }
+            .slots-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- MINI NAVBAR -->
+<header class="mini-nav">
+    <div class="mini-nav__brand">
+        <div class="mini-nav__icon"><i class="fa-solid fa-scale-balanced"></i></div>
+        <span class="mini-nav__name">VP Luật Hùng &amp; Cộng sự</span>
+    </div>
+    <div class="mini-nav__phone">
+        <i class="fa-solid fa-phone-volume"></i>
+        <span>1900 1234</span>
+    </div>
+</header>
+
+<!-- HERO -->
+<section class="booking-hero">
+    <div class="booking-hero__inner">
+        <h1 class="booking-hero__title" data-i18n="hero.title">Đặt Lịch Tư Vấn Pháp Lý</h1>
+        <p class="booking-hero__sub" data-i18n="hero.sub">Chọn dịch vụ, luật sư và thời gian phù hợp với bạn trong 2 phút.</p>
+        <div class="booking-hero__trust">
+            <span class="booking-hero__trust-item"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="hero.trust1">Miễn phí lần đầu tư vấn</span></span>
+            <span class="booking-hero__trust-item"><i class="fa-solid fa-bolt"></i> <span data-i18n="hero.trust2">Phản hồi trong 15 phút</span></span>
+            <span class="booking-hero__trust-item"><i class="fa-solid fa-lock"></i> <span data-i18n="hero.trust3">Bảo mật thông tin 100%</span></span>
+        </div>
+    </div>
+</section>
+
+<!-- PROGRESS BAR -->
+<div class="progress-bar">
+    <div class="progress-bar__inner">
+        <div class="progress-bar__line">
+            <div class="progress-bar__line-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-step active" data-step="1">
+            <div class="progress-step__circle"><i class="fa-solid fa-briefcase"></i></div>
+            <span class="progress-step__label" data-i18n="step1.label">Chọn dịch vụ</span>
+        </div>
+        <div class="progress-step" data-step="2">
+            <div class="progress-step__circle"><i class="fa-solid fa-calendar-day"></i></div>
+            <span class="progress-step__label" data-i18n="step2.label">Chọn lịch</span>
+        </div>
+        <div class="progress-step" data-step="3">
+            <div class="progress-step__circle"><i class="fa-solid fa-user"></i></div>
+            <span class="progress-step__label" data-i18n="step3.label">Thông tin</span>
+        </div>
+    </div>
+</div>
+
+<!-- BOOKING BODY -->
+<div class="booking-body">
+
+    <!-- ====== STEP 1 ====== -->
+    <div class="step active" id="step1">
+        <h2 class="step__heading" data-i18n="step1.heading">Bạn cần tư vấn về lĩnh vực nào?</h2>
+        <p class="step__sub" data-i18n="step1.sub">Chọn lĩnh vực pháp lý bạn cần hỗ trợ để được kết nối với luật sư chuyên môn.</p>
+
+        <div class="service-grid" id="serviceGrid">
+            <div class="service-card" data-service="doanh-nghiep" data-service-name="Luật Doanh nghiệp &amp; M&amp;A">
+                <div class="service-card__check"><i class="fa-solid fa-check"></i></div>
+                <div class="service-card__icon"><i class="fa-solid fa-building"></i></div>
+                <div class="service-card__name">Luật Doanh nghiệp &amp; M&amp;A</div>
+            </div>
+            <div class="service-card" data-service="hinh-su" data-service-name="Luật Hình sự">
+                <div class="service-card__check"><i class="fa-solid fa-check"></i></div>
+                <div class="service-card__icon"><i class="fa-solid fa-gavel"></i></div>
+                <div class="service-card__name">Luật Hình sự</div>
+            </div>
+            <div class="service-card" data-service="dan-su" data-service-name="Luật Dân sự">
+                <div class="service-card__check"><i class="fa-solid fa-check"></i></div>
+                <div class="service-card__icon"><i class="fa-solid fa-file-contract"></i></div>
+                <div class="service-card__name">Luật Dân sự</div>
+            </div>
+            <div class="service-card" data-service="dat-dai" data-service-name="Luật Đất đai &amp; BĐS">
+                <div class="service-card__check"><i class="fa-solid fa-check"></i></div>
+                <div class="service-card__icon"><i class="fa-solid fa-land-plot"></i></div>
+                <div class="service-card__name">Luật Đất đai &amp; BĐS</div>
+            </div>
+            <div class="service-card" data-service="lao-dong" data-service-name="Luật Lao động &amp; BHXH">
+                <div class="service-card__check"><i class="fa-solid fa-check"></i></div>
+                <div class="service-card__icon"><i class="fa-solid fa-users-gear"></i></div>
+                <div class="service-card__name">Luật Lao động &amp; BHXH</div>
+            </div>
+            <div class="service-card" data-service="fdi" data-service-name="Đầu tư nước ngoài (FDI)">
+                <div class="service-card__check"><i class="fa-solid fa-check"></i></div>
+                <div class="service-card__icon"><i class="fa-solid fa-globe"></i></div>
+                <div class="service-card__name">Đầu tư nước ngoài (FDI)</div>
+            </div>
+            <div class="service-card" data-service="shtt" data-service-name="Sở hữu trí tuệ">
+                <div class="service-card__check"><i class="fa-solid fa-check"></i></div>
+                <div class="service-card__icon"><i class="fa-solid fa-lightbulb"></i></div>
+                <div class="service-card__name">Sở hữu trí tuệ</div>
+            </div>
+            <div class="service-card" data-service="khac" data-service-name="Tư vấn khác">
+                <div class="service-card__check"><i class="fa-solid fa-check"></i></div>
+                <div class="service-card__icon"><i class="fa-solid fa-circle-question"></i></div>
+                <div class="service-card__name">Tư vấn khác</div>
+            </div>
+        </div>
+
+        <!-- Lawyer selection -->
+        <div class="lawyer-section" id="lawyerSection">
+            <h3 class="lawyer-section__title" data-i18n="step1.lawyer_title">Chọn luật sư bạn muốn tư vấn</h3>
+            <div class="lawyer-grid" id="lawyerGrid">
+                <div class="lawyer-select-card" data-lawyer="0" data-lawyer-name="Ls. Nguyễn Văn Hùng">
+                    <div class="lawyer-select-card__check"><i class="fa-solid fa-check"></i></div>
+                    <div class="lawyer-select-card__avatar" style="background: linear-gradient(135deg, #1E3A5F, #2A4F7A);">NVH</div>
+                    <div class="lawyer-select-card__name">Ls. Nguyễn Văn Hùng</div>
+                    <div class="lawyer-select-card__specialty">Doanh nghiệp &amp; M&amp;A</div>
+                    <div class="lawyer-select-card__rating">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                        <span>4.9</span>
+                    </div>
+                    <div class="lawyer-select-card__available"><i class="fa-solid fa-circle"></i> Còn lịch hôm nay</div>
+                </div>
+                <div class="lawyer-select-card" data-lawyer="1" data-lawyer-name="Ls. Trần Thị Lan">
+                    <div class="lawyer-select-card__check"><i class="fa-solid fa-check"></i></div>
+                    <div class="lawyer-select-card__avatar" style="background: linear-gradient(135deg, #2A4F7A, #C9A84C);">TTL</div>
+                    <div class="lawyer-select-card__name">Ls. Trần Thị Lan</div>
+                    <div class="lawyer-select-card__specialty">Hình sự &amp; Dân sự</div>
+                    <div class="lawyer-select-card__rating">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
+                        <span>4.7</span>
+                    </div>
+                    <div class="lawyer-select-card__available"><i class="fa-solid fa-circle"></i> Còn lịch hôm nay</div>
+                </div>
+                <div class="lawyer-select-card" data-lawyer="2" data-lawyer-name="Ls. Phạm Minh Tuấn">
+                    <div class="lawyer-select-card__check"><i class="fa-solid fa-check"></i></div>
+                    <div class="lawyer-select-card__avatar" style="background: linear-gradient(135deg, #152A45, #1E3A5F);">PMT</div>
+                    <div class="lawyer-select-card__name">Ls. Phạm Minh Tuấn</div>
+                    <div class="lawyer-select-card__specialty">Đất đai &amp; BĐS</div>
+                    <div class="lawyer-select-card__rating">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                        <span>4.8</span>
+                    </div>
+                    <div class="lawyer-select-card__available"><i class="fa-solid fa-circle"></i> Còn lịch hôm nay</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="step-nav step-nav--right">
+            <button class="btn-next" id="step1Next" disabled>
+                <span data-i18n="btn.next">Tiếp theo</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== STEP 2 ====== -->
+    <div class="step" id="step2">
+        <h2 class="step__heading" data-i18n="step2.heading">Chọn ngày và giờ tư vấn</h2>
+        <p class="step__sub" data-i18n="step2.sub">Chọn khung giờ phù hợp với bạn. Lịch hẹn có thể đặt từ 08:00 đến 17:30, thứ 2 đến thứ 6.</p>
+
+        <div class="datetime-grid">
+            <div class="calendar-card">
+                <div class="calendar__header">
+                    <span class="calendar__title" id="calendarTitle"></span>
+                    <div class="calendar__nav">
+                        <button class="calendar__nav-btn" id="calPrev" aria-label="Tháng trước"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button class="calendar__nav-btn" id="calNext" aria-label="Tháng sau"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                <div class="calendar__weekdays">
+                    <div class="calendar__wd">T2</div><div class="calendar__wd">T3</div><div class="calendar__wd">T4</div>
+                    <div class="calendar__wd">T5</div><div class="calendar__wd">T6</div><div class="calendar__wd">T7</div><div class="calendar__wd">CN</div>
+                </div>
+                <div class="calendar__grid" id="calendarGrid"></div>
+            </div>
+
+            <div class="slots-card">
+                <div class="slots-card__title" data-i18n="slots.title">Khung giờ có sẵn</div>
+                <div class="slots-card__date" id="slotsDate">
+                    <i class="fa-solid fa-calendar-day"></i>
+                    <span data-i18n="slots.select_date">Vui lòng chọn ngày</span>
+                </div>
+                <div id="slotsArea">
+                    <div class="slots-empty">
+                        <i class="fa-regular fa-calendar-xmark"></i>
+                        <span data-i18n="slots.empty">Chọn ngày để xem khung giờ trống</span>
+                    </div>
+                </div>
+
+                <div class="consult-type">
+                    <div class="consult-type__title" data-i18n="consult.title">Hình thức tư vấn</div>
+                    <div class="consult-options">
+                        <div class="consult-option selected" data-type="office">
+                            <div class="consult-option__radio"></div>
+                            <i class="fa-solid fa-building consult-option__icon"></i>
+                            <div class="consult-option__text">
+                                <strong data-i18n="consult.office">Tại văn phòng</strong>
+                                <span data-i18n="consult.office_desc">Tầng 12, 123 Lê Lợi, Q.1, TP.HCM</span>
+                            </div>
+                        </div>
+                        <div class="consult-option" data-type="video">
+                            <div class="consult-option__radio"></div>
+                            <i class="fa-solid fa-video consult-option__icon"></i>
+                            <div class="consult-option__text">
+                                <strong data-i18n="consult.video">Online (Video call)</strong>
+                                <span data-i18n="consult.video_desc">Qua Zoom / Google Meet</span>
+                            </div>
+                        </div>
+                        <div class="consult-option" data-type="phone">
+                            <div class="consult-option__radio"></div>
+                            <i class="fa-solid fa-phone consult-option__icon"></i>
+                            <div class="consult-option__text">
+                                <strong data-i18n="consult.phone">Qua điện thoại</strong>
+                                <span data-i18n="consult.phone_desc">Gọi trực tiếp với luật sư</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="step-nav">
+            <button class="btn-back" id="step2Back">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span data-i18n="btn.back">Quay lại</span>
+            </button>
+            <button class="btn-next" id="step2Next" disabled>
+                <span data-i18n="btn.next">Tiếp theo</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== STEP 3 ====== -->
+    <div class="step" id="step3">
+        <h2 class="step__heading" data-i18n="step3.heading">Nhập thông tin của bạn</h2>
+        <p class="step__sub" data-i18n="step3.sub">Thông tin của bạn được bảo mật hoàn toàn và chỉ dùng để xác nhận lịch hẹn.</p>
+
+        <div class="step3-grid">
+            <div class="info-form">
+                <div class="form-group">
+                    <label>Họ và tên <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="fieldName" data-i18n-placeholder="form.name.ph" placeholder="Nhập họ và tên đầy đủ">
+                    <div class="field-error" id="errorName" data-i18n="form.error.required">Vui lòng nhập họ và tên</div>
+                </div>
+                <div class="form-group">
+                    <label>Số điện thoại <span class="required">*</span></label>
+                    <div class="phone-input-wrap">
+                        <span class="phone-prefix">+84</span>
+                        <input type="tel" class="form-control" id="fieldPhone" data-i18n-placeholder="form.phone.ph" placeholder="0xxx xxx xxx">
+                    </div>
+                    <div class="field-error" id="errorPhone" data-i18n="form.error.phone">Vui lòng nhập số điện thoại hợp lệ</div>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="form-control" id="fieldEmail" data-i18n-placeholder="form.email.ph" placeholder="email@example.com">
+                    <div class="field-error" id="errorEmail" data-i18n="form.error.email">Vui lòng nhập email hợp lệ</div>
+                </div>
+                <div class="form-group">
+                    <label>Mô tả vấn đề pháp lý cần tư vấn <span class="required">*</span></label>
+                    <textarea class="form-control" id="fieldIssue" data-i18n-placeholder="form.issue.ph" placeholder="Mô tả ngắn gọn vấn đề bạn cần hỗ trợ..."></textarea>
+                    <div class="field-error" id="errorIssue" data-i18n="form.error.required">Vui lòng mô tả vấn đề của bạn</div>
+                </div>
+
+                <div class="form-check" id="agreeCheck">
+                    <div class="form-check__box"></div>
+                    <div class="form-check__text">
+                        Tôi đồng ý với <a href="#" onclick="event.preventDefault()">Điều khoản sử dụng</a> và <a href="#" onclick="event.preventDefault()">Chính sách bảo mật</a> của Văn Phòng Luật Hùng &amp; Cộng sự. <span class="required">*</span>
+                    </div>
+                </div>
+
+                <button class="btn-next" id="submitBtn" style="width:100%;padding:14px;font-size:1rem;margin-top:8px;">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span data-i18n="btn.confirm">XÁC NHẬN ĐẶT LỊCH</span>
+                </button>
+            </div>
+
+            <!-- Summary -->
+            <div class="summary-card" id="summaryCard">
+                <div class="summary-card__title">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                    <span data-i18n="summary.title">Tóm tắt lịch hẹn</span>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item__icon"><i class="fa-solid fa-briefcase"></i></div>
+                    <div>
+                        <div class="summary-item__label" data-i18n="summary.service">Dịch vụ</div>
+                        <div class="summary-item__value" id="summaryService"><span class="summary-placeholder" data-i18n="summary.none">Chưa chọn</span></div>
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item__icon"><i class="fa-solid fa-user-tie"></i></div>
+                    <div>
+                        <div class="summary-item__label" data-i18n="summary.lawyer">Luật sư</div>
+                        <div class="summary-item__value" id="summaryLawyer"><span class="summary-placeholder" data-i18n="summary.none">Chưa chọn</span></div>
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item__icon"><i class="fa-solid fa-calendar-day"></i></div>
+                    <div>
+                        <div class="summary-item__label" data-i18n="summary.date">Ngày</div>
+                        <div class="summary-item__value" id="summaryDate"><span class="summary-placeholder" data-i18n="summary.none">Chưa chọn</span></div>
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item__icon"><i class="fa-solid fa-clock"></i></div>
+                    <div>
+                        <div class="summary-item__label" data-i18n="summary.time">Giờ</div>
+                        <div class="summary-item__value" id="summaryTime"><span class="summary-placeholder" data-i18n="summary.none">Chưa chọn</span></div>
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item__icon"><i class="fa-solid fa-location-dot"></i></div>
+                    <div>
+                        <div class="summary-item__label" data-i18n="summary.method">Hình thức</div>
+                        <div class="summary-item__value" id="summaryMethod"><span class="summary-placeholder" data-i18n="summary.none">Chưa chọn</span></div>
+                    </div>
+                </div>
+                <div class="summary-card__price">
+                    <div class="summary-card__price-label" data-i18n="summary.fee">Phí tư vấn lần đầu</div>
+                    <div class="summary-card__price-value" data-i18n="summary.free">MIỄN PHÍ</div>
+                </div>
+                <div class="summary-card__note">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span data-i18n="summary.note">Thông tin của bạn được bảo mật 100%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="step-nav">
+            <button class="btn-back" id="step3Back">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span data-i18n="btn.back">Quay lại</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== STEP 4 ====== -->
+    <div class="step" id="step4">
+        <div class="confirmation">
+            <div class="confirmation__icon">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h2 class="confirmation__title" data-i18n="confirm.title">Đặt lịch thành công!</h2>
+            <p class="confirmation__sub" data-i18n="confirm.sub">Cảm ơn bạn đã đặt lịch tư vấn. Dưới đây là thông tin lịch hẹn của bạn.</p>
+
+            <div class="booking-receipt" id="receiptContent"></div>
+
+            <div class="confirmation__notice">
+                <i class="fa-solid fa-bell"></i>
+                <span data-i18n="confirm.notice">Chúng tôi sẽ xác nhận qua SMS và email trong vòng 15 phút.</span>
+            </div>
+
+            <div class="confirmation__actions">
+                <button class="confirmation__btn confirmation__btn--primary" id="addCalBtn">
+                    <i class="fa-solid fa-calendar-plus"></i>
+                    <span data-i18n="confirm.calendar">Thêm vào Google Calendar</span>
+                </button>
+                <button class="confirmation__btn confirmation__btn--outline" id="homeBtn">
+                    <i class="fa-solid fa-house"></i>
+                    <span data-i18n="confirm.home">Về trang chủ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="booking-footer">
+    <p>&copy; 2026 Văn Phòng Luật Hùng &amp; Cộng sự. Mọi quyền được bảo lưu. | <a href="#">Chính sách bảo mật</a> | <a href="#">Điều khoản sử dụng</a></p>
+</footer>
+
+<script>
+(function() {
+'use strict';
+
+// ================================================================
+// STATE
+// ================================================================
+const state = {
+    service: null,
+    serviceName: '',
+    lawyer: null,
+    lawyerName: '',
+    date: null,
+    time: null,
+    consultType: 'office',
+    currentMonth: new Date(),
+    bookingId: 'LC' + Math.floor(100000 + Math.random() * 900000),
+};
+
+// ================================================================
+// TRANSLATIONS
+// ================================================================
+const T = {
+    vi: {
+        'hero.title': 'Đặt Lịch Tư Vấn Pháp Lý',
+        'hero.sub': 'Chọn dịch vụ, luật sư và thời gian phù hợp với bạn trong 2 phút.',
+        'hero.trust1': 'Miễn phí lần đầu tư vấn',
+        'hero.trust2': 'Phản hồi trong 15 phút',
+        'hero.trust3': 'Bảo mật thông tin 100%',
+        'step1.label': 'Chọn dịch vụ',
+        'step2.label': 'Chọn lịch',
+        'step3.label': 'Thông tin',
+        'step1.heading': 'Bạn cần tư vấn về lĩnh vực nào?',
+        'step1.sub': 'Chọn lĩnh vực pháp lý bạn cần hỗ trợ để được kết nối với luật sư chuyên môn.',
+        'step1.lawyer_title': 'Chọn luật sư bạn muốn tư vấn',
+        'step2.heading': 'Chọn ngày và giờ tư vấn',
+        'step2.sub': 'Chọn khung giờ phù hợp với bạn. Lịch hẹn có thể đặt từ 08:00 đến 17:30, thứ 2 đến thứ 6.',
+        'step3.heading': 'Nhập thông tin của bạn',
+        'step3.sub': 'Thông tin của bạn được bảo mật hoàn toàn và chỉ dùng để xác nhận lịch hẹn.',
+        'btn.back': 'Quay lại',
+        'btn.next': 'Tiếp theo',
+        'btn.confirm': 'XÁC NHẬN ĐẶT LỊCH',
+        'slots.title': 'Khung giờ có sẵn',
+        'slots.select_date': 'Vui lòng chọn ngày',
+        'slots.empty': 'Chọn ngày để xem khung giờ trống',
+        'consult.title': 'Hình thức tư vấn',
+        'consult.office': 'Tại văn phòng',
+        'consult.office_desc': 'Tầng 12, 123 Lê Lợi, Q.1, TP.HCM',
+        'consult.video': 'Online (Video call)',
+        'consult.video_desc': 'Qua Zoom / Google Meet',
+        'consult.phone': 'Qua điện thoại',
+        'consult.phone_desc': 'Gọi trực tiếp với luật sư',
+        'summary.title': 'Tóm tắt lịch hẹn',
+        'summary.service': 'Dịch vụ',
+        'summary.lawyer': 'Luật sư',
+        'summary.date': 'Ngày',
+        'summary.time': 'Giờ',
+        'summary.method': 'Hình thức',
+        'summary.none': 'Chưa chọn',
+        'summary.fee': 'Phí tư vấn lần đầu',
+        'summary.free': 'MIỄN PHÍ',
+        'summary.note': 'Thông tin của bạn được bảo mật 100%',
+        'form.name.ph': 'Nhập họ và tên đầy đủ',
+        'form.phone.ph': '0xxx xxx xxx',
+        'form.email.ph': 'email@example.com',
+        'form.issue.ph': 'Mô tả ngắn gọn vấn đề bạn cần hỗ trợ...',
+        'form.error.required': 'Vui lòng nhập đầy đủ thông tin',
+        'form.error.phone': 'Vui lòng nhập số điện thoại hợp lệ (0xxx xxx xxx)',
+        'form.error.email': 'Vui lòng nhập email hợp lệ',
+        'confirm.title': 'Đặt lịch thành công!',
+        'confirm.sub': 'Cảm ơn bạn đã đặt lịch tư vấn. Dưới đây là thông tin lịch hẹn của bạn.',
+        'confirm.notice': 'Chúng tôi sẽ xác nhận qua SMS và email trong vòng 15 phút.',
+        'confirm.calendar': 'Thêm vào Google Calendar',
+        'confirm.home': 'Về trang chủ',
+        'confirm.booking_id': 'Mã đặt lịch',
+        'confirm.status': 'Đã xác nhận',
+    },
+    en: {
+        'hero.title': 'Book a Legal Consultation',
+        'hero.sub': 'Choose your service, attorney and time in just 2 minutes.',
+        'hero.trust1': 'Free first consultation',
+        'hero.trust2': 'Response within 15 minutes',
+        'hero.trust3': '100% information security',
+        'step1.label': 'Select Service',
+        'step2.label': 'Choose Schedule',
+        'step3.label': 'Your Info',
+        'step1.heading': 'Which legal area do you need help with?',
+        'step1.sub': 'Select your legal area to be connected with a specialist attorney.',
+        'step1.lawyer_title': 'Choose your preferred attorney',
+        'step2.heading': 'Choose consultation date and time',
+        'step2.sub': 'Book from 08:00 to 17:30, Monday to Friday.',
+        'step3.heading': 'Enter your information',
+        'step3.sub': 'Your information is kept strictly confidential.',
+        'btn.back': 'Back',
+        'btn.next': 'Next',
+        'btn.confirm': 'CONFIRM BOOKING',
+        'slots.title': 'Available time slots',
+        'slots.select_date': 'Please select a date',
+        'slots.empty': 'Select a date to view available times',
+        'consult.title': 'Consultation method',
+        'consult.office': 'At office',
+        'consult.office_desc': 'Floor 12, 123 Le Loi, Dist. 1, HCMC',
+        'consult.video': 'Online (Video call)',
+        'consult.video_desc': 'Via Zoom / Google Meet',
+        'consult.phone': 'By phone',
+        'consult.phone_desc': 'Direct call with attorney',
+        'summary.title': 'Booking Summary',
+        'summary.service': 'Service',
+        'summary.lawyer': 'Attorney',
+        'summary.date': 'Date',
+        'summary.time': 'Time',
+        'summary.method': 'Method',
+        'summary.none': 'Not selected',
+        'summary.fee': 'First consultation fee',
+        'summary.free': 'FREE',
+        'summary.note': 'Your info is 100% confidential',
+        'form.name.ph': 'Enter your full name',
+        'form.phone.ph': '0xxx xxx xxx',
+        'form.email.ph': 'email@example.com',
+        'form.issue.ph': 'Briefly describe your legal issue...',
+        'form.error.required': 'Please fill in all required fields',
+        'form.error.phone': 'Please enter a valid phone number (0xxx xxx xxx)',
+        'form.error.email': 'Please enter a valid email',
+        'confirm.title': 'Booking Confirmed!',
+        'confirm.sub': 'Thank you for booking. Here is your appointment details.',
+        'confirm.notice': 'We will confirm via SMS and email within 15 minutes.',
+        'confirm.calendar': 'Add to Google Calendar',
+        'confirm.home': 'Back to Home',
+        'confirm.booking_id': 'Booking ID',
+        'confirm.status': 'Confirmed',
+    }
+};
+
+let currentLang = 'vi';
+
+// ================================================================
+// HELPERS
+// ================================================================
+var $ = function(id) { return document.getElementById(id); };
+var $$ = function(sel) { return document.querySelectorAll(sel); };
+
+function setLang(lang) {
+    currentLang = lang;
+    var t = T[lang];
+    $$('[data-i18n]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) el.textContent = t[key];
+    });
+    $$('[data-i18n-placeholder]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n-placeholder');
+        if (t[key] !== undefined) el.placeholder = t[key];
+    });
+}
+
+// ================================================================
+// STEPS
+// ================================================================
+function goToStep(step) {
+    // validate
+    if (step > 1 && step <= 3 && !validateStep(step - 1)) return;
+
+    $$('.step').forEach(function(s) { s.classList.remove('active'); });
+    $('step' + step).classList.add('active');
+
+    $$('.progress-step').forEach(function(s, i) {
+        s.classList.remove('active', 'done');
+        if (i + 1 < step) s.classList.add('done');
+        else if (i + 1 === step) s.classList.add('active');
+    });
+
+    var fill = $('progressFill');
+    var pct = step === 1 ? 0 : step === 2 ? 50 : step === 3 ? 100 : 100;
+    fill.style.width = pct + '%';
+
+    if (step === 2) renderCalendar();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function validateStep(step) {
+    if (step === 1) {
+        if (!state.service || !state.lawyer) {
+            var target = $('lawyerSection') || $('serviceGrid');
+            shake(target); return false;
+        }
+    }
+    if (step === 2) {
+        if (!state.date || !state.time) {
+            shake($('slotsArea')); return false;
+        }
+    }
+    return true;
+}
+
+function shake(el) {
+    if (!el) return;
+    el.style.animation = 'none';
+    el.offsetHeight;
+    el.style.animation = 'shake 0.4s ease';
+    setTimeout(function() { el.style.animation = ''; }, 400);
+}
+
+// ================================================================
+// SERVICE SELECTION
+// ================================================================
+$$('.service-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+        $$('.service-card').forEach(function(c) { c.classList.remove('selected'); });
+        card.classList.add('selected');
+        state.service = card.dataset.service;
+        state.serviceName = card.dataset.serviceName;
+        updateSummary();
+        var ls = $('lawyerSection');
+        ls.classList.add('visible');
+        ls.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        checkStep1Complete();
+    });
+});
+
+$$('.lawyer-select-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+        $$('.lawyer-select-card').forEach(function(c) { c.classList.remove('selected'); });
+        card.classList.add('selected');
+        state.lawyer = parseInt(card.dataset.lawyer, 10);
+        state.lawyerName = card.dataset.lawyerName;
+        updateSummary();
+        checkStep1Complete();
+    });
+});
+
+function checkStep1Complete() {
+    $('step1Next').disabled = !(state.service && state.lawyer);
+}
+
+// ================================================================
+// CALENDAR
+// ================================================================
+var MONTHS_VI = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+var DAY_NAMES = ['CN','T2','T3','T4','T5','T6','T7'];
+
+function renderCalendar() {
+    var y = state.currentMonth.getFullYear();
+    var m = state.currentMonth.getMonth();
+    $('calendarTitle').textContent = MONTHS_VI[m] + ' ' + y;
+
+    var firstDay = new Date(y, m, 1).getDay(); // 0=Sun
+    var daysIn = new Date(y, m + 1, 0).getDate();
+    var today = new Date(); today.setHours(0,0,0,0);
+
+    var grid = $('calendarGrid');
+    grid.innerHTML = '';
+
+    // padding before first day (Mon=0)
+    var startPad = firstDay === 0 ? 6 : firstDay - 1;
+    for (var p = 0; p < startPad; p++) {
+        grid.innerHTML += '<div class="calendar__day other-month"></div>';
+    }
+
+    for (var d = 1; d <= daysIn; d++) {
+        var dt = new Date(y, m, d);
+        var isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+        var isPast = dt < today;
+        var isToday = dt.getTime() === today.getTime();
+        var hasSlot = !isWeekend && !isPast;
+        var selected = state.date &&
+            dt.getDate() === state.date.getDate() &&
+            dt.getMonth() === state.date.getMonth() &&
+            dt.getFullYear() === state.date.getFullYear();
+
+        var cls = 'calendar__day';
+        if (isToday) cls += ' today';
+        if (isPast || isWeekend) cls += ' disabled';
+        if (hasSlot) cls += ' has-slot';
+        if (selected) cls += ' selected';
+
+        grid.innerHTML += '<div class="' + cls + '" onclick="selectDate(' + y + ',' + m + ',' + d + ',' + (isPast || isWeekend) + ')">' + d + '</div>';
+    }
+}
+
+function changeMonth(delta) {
+    state.currentMonth = new Date(state.currentMonth.getFullYear(), state.currentMonth.getMonth() + delta, 1);
+    renderCalendar();
+}
+
+function selectDate(y, m, d, disabled) {
+    if (disabled) return;
+    state.date = new Date(y, m, d);
+    state.time = null;
+    renderCalendar();
+    renderTimeSlots();
+    updateSummary();
+    checkStep2Complete();
+}
+
+// ================================================================
+// TIME SLOTS
+// ================================================================
+var ALL_SLOTS = ['08:00','08:30','09:00','09:30','10:00','10:30','14:00','14:30','15:00','15:30','16:00','16:30'];
+var BOOKED = ['08:00','09:30','10:00','15:00'];
+
+function renderTimeSlots() {
+    if (!state.date) return;
+    var d = state.date.getDate();
+    var mo = state.date.getMonth() + 1;
+    var dayNames = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+    var dayName = dayNames[state.date.getDay()];
+    $('slotsDate').innerHTML = '<i class="fa-solid fa-calendar-day"></i> <span>' + dayName + ', ' + d + '/' + mo + '/' + state.date.getFullYear() + '</span>';
+
+    var area = $('slotsArea');
+    area.innerHTML = '<div class="slots-grid" id="slotsGrid"></div>';
+    var g = $('slotsGrid');
+    ALL_SLOTS.forEach(function(slot) {
+        var booked = BOOKED.indexOf(slot) !== -1;
+        var selected = state.time === slot;
+        var cls = booked ? 'slot-btn booked' : selected ? 'slot-btn selected' : 'slot-btn';
+        g.innerHTML += '<button class="' + cls + '" ' + (booked ? 'disabled' : '') + ' onclick="selectSlot(\'' + slot + '\',' + booked + ')">' + slot + '</button>';
+    });
+}
+
+function selectSlot(slot, booked) {
+    if (booked) return;
+    state.time = slot;
+    renderTimeSlots();
+    updateSummary();
+    checkStep2Complete();
+}
+
+function checkStep2Complete() {
+    $('step2Next').disabled = !(state.date && state.time);
+}
+
+// ================================================================
+// CONSULT TYPE
+// ================================================================
+function selectConsultType(el) {
+    $$('.consult-option').forEach(function(o) { o.classList.remove('selected'); });
+    el.classList.add('selected');
+    state.consultType = el.dataset.type;
+    updateSummary();
+}
+
+// ================================================================
+// CHECKBOX
+// ================================================================
+function toggleCheck(el) {
+    el.classList.toggle('checked');
+}
+
+// ================================================================
+// SUMMARY
+// ================================================================
+function updateSummary() {
+    function setVal(id, val) {
+        var el = $('summary' + id.charAt(0).toUpperCase() + id.slice(1));
+        if (!el) return;
+        if (val) {
+            el.innerHTML = '<span style="font-size:0.875rem;font-weight:600;color:var(--primary)">' + val + '</span>';
+        } else {
+            el.innerHTML = '<span class="summary-placeholder" data-i18n="summary.none">Chưa chọn</span>';
+        }
+    }
+
+    setVal('Service', state.serviceName || '');
+    setVal('Lawyer', state.lawyerName || '');
+
+    if (state.date) {
+        var dayNames = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+        var dn = dayNames[state.date.getDay()];
+        setVal('Date', dn + ', ' + state.date.getDate() + '/' + (state.date.getMonth()+1) + '/' + state.date.getFullYear());
+    } else {
+        setVal('Date', '');
+    }
+
+    setVal('Time', state.time || '');
+
+    var methods = { office: 'Tại văn phòng', video: 'Online (Video call)', phone: 'Qua điện thoại' };
+    setVal('Method', methods[state.consultType] || '');
+}
+
+// ================================================================
+// VALIDATION & SUBMIT
+// ================================================================
+function showError(id, msg) {
+    var el = $('error' + id.charAt(0).toUpperCase() + id.slice(1));
+    if (!el) return;
+    el.classList.add('show');
+    if (msg) el.textContent = msg;
+    var input = el.previousElementSibling;
+    while (input && input.classList && !input.classList.contains('form-control')) {
+        input = input.previousElementSibling;
+    }
+    if (input && input.classList) input.classList.add('error');
+}
+
+function clearError(id) {
+    var el = $('error' + id.charAt(0).toUpperCase() + id.slice(1));
+    if (!el) return;
+    el.classList.remove('show');
+    var input = el.previousElementSibling;
+    while (input && input.classList && !input.classList.contains('form-control')) {
+        input = input.previousElementSibling;
+    }
+    if (input && input.classList) input.classList.remove('error');
+}
+
+function validateVietnamPhone(phone) {
+    return /^(0[1-9]\d{8,9})$/.test(phone.replace(/\s/g, ''));
+}
+
+function validateEmail(email) {
+    return !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function submitBooking() {
+    var valid = true;
+    var t = T[currentLang];
+
+    var name = $('fieldName').value.trim();
+    if (!name) { showError('Name', t['form.error.required']); valid = false; }
+    else clearError('Name');
+
+    var phone = $('fieldPhone').value.trim();
+    if (!phone || !validateVietnamPhone(phone)) { showError('Phone', t['form.error.phone']); valid = false; }
+    else clearError('Phone');
+
+    var email = $('fieldEmail').value.trim();
+    if (email && !validateEmail(email)) { showError('Email', t['form.error.email']); valid = false; }
+    else clearError('Email');
+
+    var issue = $('fieldIssue').value.trim();
+    if (!issue) { showError('Issue', t['form.error.required']); valid = false; }
+    else clearError('Issue');
+
+    var agree = $('agreeCheck').classList.contains('checked');
+    if (!agree) { shake($('agreeCheck')); valid = false; }
+
+    if (!valid) return;
+
+    renderReceipt();
+    goToStep(4);
+}
+
+// ================================================================
+// RECEIPT
+// ================================================================
+function renderReceipt() {
+    var dayNames = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+    var methods = { office: 'Tại văn phòng', video: 'Online (Video call)', phone: 'Qua điện thoại' };
+    var dn = dayNames[state.date.getDay()];
+    var t = T[currentLang];
+
+    $('receiptContent').innerHTML =
+        '<div class="booking-receipt__header">' +
+            '<div>' +
+                '<div class="booking-receipt__id-label">' + t['confirm.booking_id'] + '</div>' +
+                '<div class="booking-receipt__id-val">' + state.bookingId + '</div>' +
+            '</div>' +
+            '<div class="booking-receipt__status"><i class="fa-solid fa-circle-check"></i> ' + t['confirm.status'] + '</div>' +
+        '</div>' +
+        '<div class="booking-receipt__row">' +
+            '<div class="booking-receipt__row-icon"><i class="fa-solid fa-user"></i></div>' +
+            '<div><div class="booking-receipt__row-label">Khách hàng</div><div class="booking-receipt__row-value">' + $('fieldName').value.trim() + '</div></div>' +
+        '</div>' +
+        '<div class="booking-receipt__row">' +
+            '<div class="booking-receipt__row-icon"><i class="fa-solid fa-briefcase"></i></div>' +
+            '<div><div class="booking-receipt__row-label">Dịch vụ</div><div class="booking-receipt__row-value">' + state.serviceName + '</div></div>' +
+        '</div>' +
+        '<div class="booking-receipt__row">' +
+            '<div class="booking-receipt__row-icon"><i class="fa-solid fa-user-tie"></i></div>' +
+            '<div><div class="booking-receipt__row-label">Luật sư</div><div class="booking-receipt__row-value">' + state.lawyerName + '</div></div>' +
+        '</div>' +
+        '<div class="booking-receipt__row">' +
+            '<div class="booking-receipt__row-icon"><i class="fa-solid fa-calendar-day"></i></div>' +
+            '<div><div class="booking-receipt__row-label">Ngày</div><div class="booking-receipt__row-value">' + dn + ', ' + state.date.getDate() + '/' + (state.date.getMonth()+1) + '/' + state.date.getFullYear() + '</div></div>' +
+        '</div>' +
+        '<div class="booking-receipt__row">' +
+            '<div class="booking-receipt__row-icon"><i class="fa-solid fa-clock"></i></div>' +
+            '<div><div class="booking-receipt__row-label">Giờ</div><div class="booking-receipt__row-value">' + state.time + '</div></div>' +
+        '</div>' +
+        '<div class="booking-receipt__row">' +
+            '<div class="booking-receipt__row-icon"><i class="fa-solid fa-location-dot"></i></div>' +
+            '<div><div class="booking-receipt__row-label">Hình thức</div><div class="booking-receipt__row-value">' + methods[state.consultType] + '</div></div>' +
+        '</div>' +
+        '<div class="booking-receipt__row">' +
+            '<div class="booking-receipt__row-icon"><i class="fa-solid fa-phone"></i></div>' +
+            '<div><div class="booking-receipt__row-label">Liên hệ</div><div class="booking-receipt__row-value">' + $('fieldPhone').value.trim() + '</div></div>' +
+        '</div>';
+}
+
+// ================================================================
+// CALENDAR & HOME
+// ================================================================
+function addToCalendar() {
+    if (!state.date) return;
+    var title = encodeURIComponent('Tư vấn pháp lý - VP Luật Hùng & Cộng sự');
+    var start = new Date(state.date);
+    var parts = state.time.split(':');
+    start.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+    var end = new Date(start.getTime() + 45 * 60000);
+    function fmt(d) { return d.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z'; }
+    var dates = fmt(start) + '/' + fmt(end);
+    var details = encodeURIComponent('Mã đặt lịch: ' + state.bookingId + '\nLuật sư: ' + state.lawyerName);
+    var loc = encodeURIComponent('Tầng 12, 123 Lê Lợi, Q.1, TP.HCM');
+    window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + title + '&dates=' + dates + '&details=' + details + '&location=' + loc, '_blank');
+}
+
+function goHome() { window.location.href = 'index.html'; }
+
+// ================================================================
+// INIT
+// ================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    setLang('vi');
+    renderCalendar();
+
+    // Step navigation
+    $('step1Next').addEventListener('click', function() { goToStep(2); });
+    $('step2Back').addEventListener('click', function() { goToStep(1); });
+    $('step2Next').addEventListener('click', function() { goToStep(3); });
+    $('step3Back').addEventListener('click', function() { goToStep(2); });
+
+    // Calendar nav
+    $('calPrev').addEventListener('click', function() { changeMonth(-1); });
+    $('calNext').addEventListener('click', function() { changeMonth(1); });
+
+    // Consult type
+    $$('.consult-option').forEach(function(el) {
+        el.addEventListener('click', function() { selectConsultType(el); });
+    });
+
+    // Checkbox
+    $('agreeCheck').addEventListener('click', function() { toggleCheck($('agreeCheck')); });
+
+    // Submit
+    $('submitBtn').addEventListener('click', submitBooking);
+
+    // Confirmation
+    $('addCalBtn').addEventListener('click', addToCalendar);
+    $('homeBtn').addEventListener('click', goHome);
+});
+
+// Expose to global scope so inline onclick handlers in calendar HTML work
+window.selectDate = selectDate;
+window.selectSlot = selectSlot;
+window.changeMonth = changeMonth;
+window.selectConsultType = selectConsultType;
+window.toggleCheck = toggleCheck;
+
+})();
+</script>
+</body>
+</html>

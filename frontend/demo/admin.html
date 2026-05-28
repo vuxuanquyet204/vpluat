@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | VP Luật Hùng & Cộng sự</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #1E3A5F;
+            --primary-dark: #152A45;
+            --primary-light: #2A4F7A;
+            --primary-faint: #EFF3F8;
+            --accent: #C9A84C;
+            --accent-dark: #B8953D;
+            --white: #FFFFFF;
+            --bg: #F0F2F5;
+            --gray-50: #F8F9FA;
+            --gray-100: #F0F2F5;
+            --gray-200: #E4E8EF;
+            --gray-300: #CBD2DC;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --green: #059669;
+            --green-bg: #ECFDF5;
+            --yellow: #D97706;
+            --yellow-bg: #FFFBEB;
+            --red: #DC2626;
+            --red-bg: #FEF2F2;
+            --blue: #2563EB;
+            --blue-bg: #EFF6FF;
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 9999px;
+            --transition: 0.2s ease;
+            --sidebar-w: 240px;
+            --topbar-h: 64px;
+            --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
+        }
+        html { font-size: 16px; }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--gray-700);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+        button { font-family: inherit; cursor: pointer; }
+        a { text-decoration: none; color: inherit; }
+
+        /* ============================================================
+           LAYOUT
+           ============================================================ */
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ============================================================
+           SIDEBAR
+           ============================================================ */
+        .sidebar {
+            width: var(--sidebar-w);
+            min-height: 100vh;
+            background: var(--primary);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0; top: 0; bottom: 0;
+            z-index: 100;
+            transition: transform var(--transition);
+        }
+        .sidebar__logo {
+            padding: 20px 16px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .sidebar__logo-icon {
+            width: 36px; height: 36px;
+            background: var(--accent);
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; font-weight: 800;
+            color: var(--primary-dark);
+            flex-shrink: 0;
+        }
+        .sidebar__logo-text { flex: 1; }
+        .sidebar__logo-name {
+            font-size: 0.82rem; font-weight: 700;
+            color: var(--white); line-height: 1.2;
+        }
+        .sidebar__logo-sub {
+            font-size: 0.68rem; color: rgba(255,255,255,0.4);
+        }
+
+        .sidebar__nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+        .sidebar__nav::-webkit-scrollbar { width: 0; }
+
+        .sidebar__section-label {
+            font-size: 0.65rem; font-weight: 700;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 1px; text-transform: uppercase;
+            padding: 12px 16px 6px;
+        }
+
+        .sidebar__item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 16px;
+            font-size: 0.84rem; font-weight: 500;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            transition: all var(--transition);
+            border-left: 3px solid transparent;
+            position: relative;
+        }
+        .sidebar__item:hover {
+            color: var(--white);
+            background: rgba(255,255,255,0.06);
+        }
+        .sidebar__item.active {
+            color: var(--white);
+            background: rgba(255,255,255,0.1);
+            border-left-color: var(--accent);
+        }
+        .sidebar__item i { font-size: 0.9rem; width: 18px; text-align: center; flex-shrink: 0; }
+        .sidebar__item span { flex: 1; }
+
+        .sidebar__badge {
+            background: var(--accent);
+            color: var(--primary-dark);
+            font-size: 0.63rem; font-weight: 800;
+            padding: 1px 6px; border-radius: var(--radius-full);
+            min-width: 18px; text-align: center;
+        }
+        .sidebar__badge--red { background: var(--red); color: var(--white); }
+
+        .sidebar__divider {
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+            margin: 8px 16px;
+        }
+
+        .sidebar__footer {
+            padding: 12px 16px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .sidebar__user {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px; border-radius: var(--radius-md);
+            transition: background var(--transition);
+            cursor: pointer;
+        }
+        .sidebar__user:hover { background: rgba(255,255,255,0.06); }
+        .sidebar__avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: var(--accent);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 800;
+            color: var(--primary-dark); flex-shrink: 0;
+        }
+        .sidebar__user-name { font-size: 0.8rem; font-weight: 600; color: var(--white); }
+        .sidebar__user-role { font-size: 0.68rem; color: rgba(255,255,255,0.4); }
+
+        .sidebar__logout {
+            display: flex; align-items: center; gap: 8px;
+            width: 100%; padding: 9px 10px;
+            background: rgba(220,38,38,0.15);
+            border: none; border-radius: var(--radius-md);
+            font-size: 0.8rem; font-weight: 600;
+            color: #fca5a5;
+            cursor: pointer;
+            transition: all var(--transition);
+            margin-top: 8px;
+        }
+        .sidebar__logout:hover { background: rgba(220,38,38,0.25); color: #fecaca; }
+
+        /* ============================================================
+           MAIN CONTENT
+           ============================================================ */
+        .main {
+            flex: 1;
+            margin-left: var(--sidebar-w);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top bar */
+        .topbar {
+            height: var(--topbar-h);
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            display: flex; align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky; top: 0; z-index: 50;
+        }
+        .topbar__left { display: flex; align-items: center; gap: 16px; }
+        .topbar__toggle {
+            display: none;
+            width: 36px; height: 36px;
+            border: none; border-radius: var(--radius-md);
+            background: var(--gray-100); color: var(--gray-600);
+            font-size: 1rem; cursor: pointer;
+            align-items: center; justify-content: center;
+        }
+        .topbar__title {
+            font-size: 1.05rem; font-weight: 700;
+            color: var(--primary);
+        }
+        .topbar__date {
+            font-size: 0.82rem; color: var(--gray-400);
+        }
+        .topbar__right { display: flex; align-items: center; gap: 12px; }
+        .topbar__btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 14px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            font-size: 0.82rem; font-weight: 600;
+            color: var(--gray-600);
+            background: var(--white);
+            cursor: pointer; transition: all var(--transition);
+        }
+        .topbar__btn:hover { border-color: var(--primary); color: var(--primary); }
+        .topbar__btn--primary {
+            background: var(--primary); color: var(--white);
+            border-color: var(--primary);
+        }
+        .topbar__btn--primary:hover { background: var(--primary-dark); }
+        .topbar__icon-btn {
+            width: 36px; height: 36px;
+            border: none; border-radius: var(--radius-md);
+            background: var(--gray-100); color: var(--gray-500);
+            font-size: 0.9rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all var(--transition); position: relative;
+        }
+        .topbar__icon-btn:hover { background: var(--gray-200); color: var(--gray-700); }
+        .topbar__icon-btn .dot {
+            position: absolute; top: 6px; right: 6px;
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--red); border: 1.5px solid var(--white);
+        }
+
+        /* Content */
+        .content { flex: 1; padding: 24px; }
+
+        /* View */
+        .view { display: none; }
+        .view.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+        /* Page header */
+        .page-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        .page-header__title {
+            font-size: 1.2rem; font-weight: 700;
+            color: var(--primary);
+        }
+        .page-header__sub { font-size: 0.8rem; color: var(--gray-400); margin-top: 2px; }
+
+        /* ============================================================
+           STATS CARDS
+           ============================================================ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            transition: box-shadow var(--transition), transform var(--transition);
+            cursor: pointer;
+        }
+        .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .stat-card__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .stat-card__icon {
+            width: 40px; height: 40px; border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+        }
+        .stat-card__icon--blue { background: var(--blue-bg); color: var(--blue); }
+        .stat-card__icon--green { background: var(--green-bg); color: var(--green); }
+        .stat-card__icon--yellow { background: var(--yellow-bg); color: var(--yellow); }
+        .stat-card__icon--purple { background: #F5F3FF; color: #7C3AED; }
+        .stat-card__trend {
+            font-size: 0.72rem; font-weight: 700;
+            padding: 2px 8px; border-radius: var(--radius-full);
+            display: flex; align-items: center; gap: 3px;
+        }
+        .stat-card__trend--up { background: var(--green-bg); color: var(--green); }
+        .stat-card__trend--down { background: var(--red-bg); color: var(--red); }
+        .stat-card__value {
+            font-size: 2rem; font-weight: 800; color: var(--primary);
+            line-height: 1; margin-bottom: 4px;
+        }
+        .stat-card__label { font-size: 0.8rem; color: var(--gray-500); }
+        .stat-card__sub { font-size: 0.72rem; color: var(--gray-400); margin-top: 4px; }
+
+        /* ============================================================
+           CHARTS ROW
+           ============================================================ */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
+        .card__header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .card__title { font-size: 0.9rem; font-weight: 700; color: var(--primary); }
+        .card__action { font-size: 0.78rem; color: var(--gray-500); cursor: pointer; }
+        .card__action:hover { color: var(--primary); }
+
+        /* Line chart */
+        .chart-line { position: relative; height: 200px; }
+        .chart-line svg { width: 100%; height: 100%; }
+        .chart-legend { display: flex; gap: 16px; margin-top: 12px; }
+        .chart-legend__item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--gray-500); }
+        .chart-legend__dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        /* Donut chart */
+        .donut-wrap { display: flex; align-items: center; gap: 24px; }
+        .donut-svg { width: 140px; height: 140px; flex-shrink: 0; }
+        .donut-legend { flex: 1; }
+        .donut-legend__item { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--gray-100); }
+        .donut-legend__item:last-child { border-bottom: none; }
+        .donut-legend__label { display: flex; align-items: center; gap: 7px; font-size: 0.78rem; color: var(--gray-600); }
+        .donut-legend__dot { width: 8px; height: 8px; border-radius: 50%; }
+        .donut-legend__val { font-size: 0.78rem; font-weight: 700; color: var(--gray-700); }
+
+        /* ============================================================
+           TABLES
+           ============================================================ */
+        .table-card { margin-bottom: 24px; }
+        .table-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .table-title { font-size: 0.95rem; font-weight: 700; color: var(--primary); }
+        .table-title span { font-size: 0.8rem; font-weight: 400; color: var(--gray-400); margin-left: 8px; }
+
+        .table-wrap { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--gray-200); }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: var(--gray-50); }
+        th {
+            padding: 10px 14px;
+            font-size: 0.72rem; font-weight: 700;
+            color: var(--gray-500);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        td {
+            padding: 12px 14px;
+            font-size: 0.82rem;
+            color: var(--gray-700);
+            border-bottom: 1px solid var(--gray-100);
+            white-space: nowrap;
+        }
+        tbody tr:hover { background: var(--gray-50); }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; border-radius: var(--radius-full);
+            font-size: 0.72rem; font-weight: 700;
+        }
+        .badge--green { background: var(--green-bg); color: var(--green); }
+        .badge--yellow { background: var(--yellow-bg); color: var(--yellow); }
+        .badge--red { background: var(--red-bg); color: var(--red); }
+        .badge--blue { background: var(--blue-bg); color: var(--blue); }
+        .badge--purple { background: #F5F3FF; color: #7C3AED; }
+
+        .row-user { display: flex; align-items: center; gap: 10px; }
+        .row-user__avatar {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: var(--primary-faint);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.65rem; font-weight: 800; color: var(--primary);
+            flex-shrink: 0;
+        }
+        .row-user__name { font-weight: 600; color: var(--gray-700); }
+        .row-user__sub { font-size: 0.72rem; color: var(--gray-400); }
+
+        .action-btns { display: flex; gap: 6px; }
+        .action-btn {
+            padding: 4px 10px; border-radius: var(--radius-sm);
+            font-size: 0.72rem; font-weight: 600;
+            border: 1px solid var(--gray-200);
+            background: var(--white); color: var(--gray-600);
+            cursor: pointer; transition: all var(--transition);
+        }
+        .action-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .action-btn--primary { background: var(--primary); color: var(--white); border-color: var(--primary); }
+        .action-btn--primary:hover { background: var(--primary-dark); }
+        .action-btn--danger { color: var(--red); border-color: var(--red-bg); }
+        .action-btn--danger:hover { background: var(--red-bg); }
+
+        /* ============================================================
+           KANBAN PREVIEW
+           ============================================================ */
+        .kanban {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .kanban__col {
+            background: var(--gray-50);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            min-width: 160px;
+        }
+        .kanban__col-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .kanban__col-title { font-size: 0.75rem; font-weight: 700; color: var(--gray-600); }
+        .kanban__col-count {
+            width: 20px; height: 20px; border-radius: var(--radius-full);
+            background: var(--gray-200); font-size: 0.68rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; color: var(--gray-500);
+        }
+        .kanban__col--new .kanban__col-count { background: var(--blue-bg); color: var(--blue); }
+        .kanban__col--contacted .kanban__col-count { background: var(--yellow-bg); color: var(--yellow); }
+        .kanban__col--progress .kanban__col-count { background: var(--purple); color: var(--white); font-size: 0.62rem; }
+        .kanban__col--done .kanban__col-count { background: var(--green-bg); color: var(--green); }
+
+        .kanban__card {
+            background: var(--white); border-radius: var(--radius-md);
+            padding: 10px 12px; margin-bottom: 8px;
+            border: 1px solid var(--gray-200);
+            cursor: pointer; transition: all var(--transition);
+        }
+        .kanban__card:hover { box-shadow: var(--shadow-sm); border-color: var(--primary-light); }
+        .kanban__card-name { font-size: 0.8rem; font-weight: 700; color: var(--primary); margin-bottom: 3px; }
+        .kanban__card-service { font-size: 0.7rem; color: var(--gray-500); }
+        .kanban__card-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+        .kanban__card-time { font-size: 0.65rem; color: var(--gray-400); }
+        .kanban__card-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+        /* ============================================================
+           ACTIVITY TIMELINE
+           ============================================================ */
+        .activity-list { display: flex; flex-direction: column; gap: 0; }
+        .activity-item { display: flex; gap: 12px; padding: 10px 0; position: relative; }
+        .activity-item::before {
+            content: ''; position: absolute;
+            left: 14px; top: 36px; bottom: -12px;
+            width: 1px; background: var(--gray-200);
+        }
+        .activity-item:last-child::before { display: none; }
+        .activity-item__icon {
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.72rem; flex-shrink: 0; z-index: 1;
+        }
+        .activity-item__content { flex: 1; }
+        .activity-item__text { font-size: 0.82rem; color: var(--gray-700); line-height: 1.4; }
+        .activity-item__text strong { color: var(--primary); }
+        .activity-item__time { font-size: 0.72rem; color: var(--gray-400); margin-top: 2px; }
+
+        /* ============================================================
+           QUICK ACTIONS
+           ============================================================ */
+        .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .quick-action {
+            background: var(--white); border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-lg); padding: 18px 16px;
+            display: flex; align-items: center; gap: 12px;
+            cursor: pointer; transition: all var(--transition);
+        }
+        .quick-action:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+        .quick-action__icon {
+            width: 40px; height: 40px; border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; flex-shrink: 0;
+        }
+        .quick-action__label { font-size: 0.82rem; font-weight: 700; color: var(--primary); }
+
+        /* ============================================================
+           CRM VIEW
+           ============================================================ */
+        .filter-bar {
+            display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+        }
+        .filter-tab {
+            padding: 6px 14px; border-radius: var(--radius-full);
+            font-size: 0.78rem; font-weight: 600;
+            border: 1.5px solid var(--gray-200);
+            background: var(--white); color: var(--gray-600);
+            cursor: pointer; transition: all var(--transition);
+        }
+        .filter-tab:hover { border-color: var(--primary); color: var(--primary); }
+        .filter-tab.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
+        .filter-tab .count {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 18px; height: 18px; border-radius: var(--radius-full);
+            background: rgba(0,0,0,0.1);
+            font-size: 0.65rem; font-weight: 800; margin-left: 4px;
+        }
+        .filter-tab.active .count { background: rgba(255,255,255,0.2); }
+
+        .search-bar {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--white); border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-md); padding: 0 12px;
+            margin-bottom: 16px; max-width: 320px;
+        }
+        .search-bar i { color: var(--gray-400); font-size: 0.85rem; }
+        .search-bar input {
+            flex: 1; border: none; outline: none;
+            font-size: 0.85rem; color: var(--gray-700);
+            padding: 9px 0; font-family: var(--font);
+            background: transparent;
+        }
+        .search-bar input::placeholder { color: var(--gray-400); }
+        .search-bar:focus-within { border-color: var(--primary); }
+
+        .source-tag {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border-radius: var(--radius-sm);
+            font-size: 0.68rem; font-weight: 600;
+            background: var(--gray-100); color: var(--gray-600);
+        }
+        .source-tag--ga { background: var(--blue-bg); color: var(--blue); }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-row { grid-template-columns: 1fr; }
+            .quick-actions { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            :root { --sidebar-w: 0px; }
+            .sidebar { transform: translateX(-240px); width: 240px; }
+            .sidebar.open { transform: translateX(0); }
+            .main { margin-left: 0; }
+            .topbar__toggle { display: flex; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .kanban { grid-template-columns: repeat(2, 1fr); }
+            .quick-actions { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .quick-actions { grid-template-columns: 1fr; }
+            .content { padding: 16px; }
+            .topbar { padding: 0 16px; }
+        }
+
+        /* Mobile overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 99;
+        }
+        .sidebar-overlay.show { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar__logo">
+            <div class="sidebar__logo-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+            <div class="sidebar__logo-text">
+                <div class="sidebar__logo-name">VP Luật</div>
+                <div class="sidebar__logo-sub">Admin Panel</div>
+            </div>
+        </div>
+
+        <nav class="sidebar__nav">
+            <div class="sidebar__section-label">Quản lý</div>
+
+            <div class="sidebar__item active" data-view="dashboard" onclick="switchView('dashboard')">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span data-i18n="nav.dashboard">Bảng điều khiển</span>
+            </div>
+            <div class="sidebar__item" data-view="bookings" onclick="switchView('bookings')">
+                <i class="fa-solid fa-calendar-check"></i>
+                <span data-i18n="nav.bookings">Lịch hẹn & Booking</span>
+            </div>
+            <div class="sidebar__item" data-view="crm" onclick="switchView('crm')">
+                <i class="fa-solid fa-users-line"></i>
+                <span data-i18n="nav.crm">Quản lý Lead / CRM</span>
+                <span class="sidebar__badge">12</span>
+            </div>
+            <div class="sidebar__item" data-view="blog" onclick="switchView('blog')">
+                <i class="fa-solid fa-newspaper"></i>
+                <span data-i18n="nav.blog">Bài viết & Blog</span>
+            </div>
+            <div class="sidebar__item" data-view="services" onclick="switchView('services')">
+                <i class="fa-solid fa-gavel"></i>
+                <span data-i18n="nav.services">Dịch vụ & Luật sư</span>
+            </div>
+            <div class="sidebar__item" data-view="reviews" onclick="switchView('reviews')">
+                <i class="fa-solid fa-star"></i>
+                <span data-i18n="nav.reviews">Đánh giá khách hàng</span>
+            </div>
+            <div class="sidebar__item" data-view="chatbot" onclick="switchView('chatbot')">
+                <i class="fa-solid fa-robot"></i>
+                <span data-i18n="nav.chatbot">Chatbot Logs</span>
+            </div>
+            <div class="sidebar__item" data-view="newsletter" onclick="switchView('newsletter')">
+                <i class="fa-solid fa-envelope"></i>
+                <span data-i18n="nav.newsletter">Newsletter</span>
+            </div>
+
+            <div class="sidebar__divider"></div>
+            <div class="sidebar__section-label">Hệ thống</div>
+
+            <div class="sidebar__item" data-view="users" onclick="switchView('users')">
+                <i class="fa-solid fa-user-gear"></i>
+                <span data-i18n="nav.users">Người dùng & Phân quyền</span>
+            </div>
+            <div class="sidebar__item" data-view="settings" onclick="switchView('settings')">
+                <i class="fa-solid fa-gear"></i>
+                <span data-i18n="nav.settings">Cài đặt hệ thống</span>
+            </div>
+        </nav>
+
+        <div class="sidebar__footer">
+            <div class="sidebar__user">
+                <div class="sidebar__avatar">HT</div>
+                <div>
+                    <div class="sidebar__user-name">Hoàng Minh</div>
+                    <div class="sidebar__user-role">Quản trị viên</div>
+                </div>
+            </div>
+            <button class="sidebar__logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                Đăng xuất
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- Top bar -->
+        <header class="topbar">
+            <div class="topbar__left">
+                <button class="topbar__toggle" onclick="toggleSidebar()">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div>
+                    <div class="topbar__title" id="topbarTitle" data-i18n="topbar.dashboard">Bảng điều khiển</div>
+                    <div class="topbar__date" id="topbarDate"></div>
+                </div>
+            </div>
+            <div class="topbar__right">
+                <button class="topbar__btn">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span data-i18n="topbar.date_range">Tháng 5/2026</span>
+                </button>
+                <button class="topbar__btn topbar__btn--primary">
+                    <i class="fa-solid fa-file-export"></i>
+                    <span data-i18n="topbar.export">Xuất báo cáo</span>
+                </button>
+                <button class="topbar__icon-btn">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="dot"></span>
+                </button>
+                <button class="topbar__icon-btn">
+                    <i class="fa-solid fa-globe"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="content">
+
+            <!-- =================== DASHBOARD =================== -->
+            <div class="view active" id="view-dashboard">
+
+                <div class="page-header">
+                    <div>
+                        <div class="page-header__title" data-i18n="dashboard.title">Bảng điều khiển</div>
+                        <div class="page-header__sub" data-i18n="dashboard.sub">Tổng quan hoạt động của Văn Phòng Luật</div>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card__header">
+                            <div class="stat-card__icon stat-card__icon--blue"><i class="fa-solid fa-calendar-day"></i></div>
+                            <div class="stat-card__trend stat-card__trend--up"><i class="fa-solid fa-arrow-up"></i>+2</div>
+                        </div>
+                        <div class="stat-card__value">8</div>
+                        <div class="stat-card__label" data-i18n="stat.appointments">Lịch hẹn hôm nay</div>
+                        <div class="stat-card__sub" data-i18n="stat.appointments_vs">so với 6 hôm qua</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card__header">
+                            <div class="stat-card__icon stat-card__icon--green"><i class="fa-solid fa-user-plus"></i></div>
+                            <div class="stat-card__trend stat-card__trend--up"><i class="fa-solid fa-arrow-up"></i>+15%</div>
+                        </div>
+                        <div class="stat-card__value">23</div>
+                        <div class="stat-card__label" data-i18n="stat.leads_week">Lead mới tuần này</div>
+                        <div class="stat-card__sub" data-i18n="stat.leads_vs">vs 20 tuần trước</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card__header">
+                            <div class="stat-card__icon stat-card__icon--yellow"><i class="fa-solid fa-chart-line"></i></div>
+                            <div class="stat-card__trend stat-card__trend--up"><i class="fa-solid fa-arrow-up"></i>+0.8%</div>
+                        </div>
+                        <div class="stat-card__value">4.2%</div>
+                        <div class="stat-card__label" data-i18n="stat.conversion">Tỷ lệ chuyển đổi</div>
+                        <div class="stat-card__sub" data-i18n="stat.conversion_vs">vs 3.4% tháng trước</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card__header">
+                            <div class="stat-card__icon stat-card__icon--purple"><i class="fa-solid fa-comments"></i></div>
+                            <div class="stat-card__trend stat-card__trend--up"><i class="fa-solid fa-arrow-up"></i>+34</div>
+                        </div>
+                        <div class="stat-card__value">147</div>
+                        <div class="stat-card__label" data-i18n="stat.chatbot">Chatbot cuộc hội thoại</div>
+                        <div class="stat-card__sub" data-i18n="stat.chatbot_vs">hôm nay so với 113 hôm qua</div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-row">
+                    <div class="card">
+                        <div class="card__header">
+                            <div class="card__title" data-i18n="chart.access.title">Lượt truy cập &amp; Lead – 30 ngày qua</div>
+                            <div class="card__action" data-i18n="chart.access.action">Xem chi tiết</div>
+                        </div>
+                        <div class="chart-line">
+                            <svg viewBox="0 0 600 200" preserveAspectRatio="none">
+                                <!-- Grid -->
+                                <line x1="0" y1="50" x2="600" y2="50" stroke="#F0F2F5" stroke-width="1"/>
+                                <line x1="0" y1="100" x2="600" y2="100" stroke="#F0F2F5" stroke-width="1"/>
+                                <line x1="0" y1="150" x2="600" y2="150" stroke="#F0F2F5" stroke-width="1"/>
+                                <!-- Visits area -->
+                                <path d="M0,150 C50,140 100,130 150,120 C200,110 250,100 300,90 C350,80 400,70 450,75 C500,80 550,65 600,60 L600,200 L0,200 Z" fill="rgba(30,58,95,0.08)"/>
+                                <!-- Visits line -->
+                                <path d="M0,150 C50,140 100,130 150,120 C200,110 250,100 300,90 C350,80 400,70 450,75 C500,80 550,65 600,60" fill="none" stroke="#1E3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+                                <!-- Lead area -->
+                                <path d="M0,175 C50,170 100,165 150,160 C200,155 250,148 300,145 C350,142 400,135 450,138 C500,141 550,130 600,128 L600,200 L0,200 Z" fill="rgba(201,168,76,0.1)"/>
+                                <!-- Lead line -->
+                                <path d="M0,175 C50,170 100,165 150,160 C200,155 250,148 300,145 C350,142 400,135 450,138 C500,141 550,130 600,128" fill="none" stroke="#C9A84C" stroke-width="2.5" stroke-linejoin="round"/>
+                                <!-- Data points -->
+                                <circle cx="300" cy="90" r="4" fill="#1E3A5F"/>
+                                <circle cx="450" cy="75" r="4" fill="#1E3A5F"/>
+                                <circle cx="600" cy="60" r="4" fill="#1E3A5F"/>
+                                <circle cx="300" cy="145" r="4" fill="#C9A84C"/>
+                                <circle cx="600" cy="128" r="4" fill="#C9A84C"/>
+                                <!-- X axis labels -->
+                                <text x="0" y="196" font-size="9" fill="#9CA3AF" font-family="Plus Jakarta Sans">01/05</text>
+                                <text x="280" y="196" font-size="9" fill="#9CA3AF" font-family="Plus Jakarta Sans">15/05</text>
+                                <text x="570" y="196" font-size="9" fill="#9CA3AF" font-family="Plus Jakarta Sans">30/05</text>
+                            </svg>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="chart-legend__item"><div class="chart-legend__dot" style="background:#1E3A5F"></div> Lượt truy cập</div>
+                            <div class="chart-legend__item"><div class="chart-legend__dot" style="background:#C9A84C"></div> Lead mới</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card__header">
+                            <div class="card__title" data-i18n="chart.lead_dist.title">Phân bổ Lead theo dịch vụ</div>
+                        </div>
+                        <div class="donut-wrap">
+                            <svg class="donut-svg" viewBox="0 0 120 120">
+                                <circle cx="60" cy="60" r="44" fill="none" stroke="#F0F2F5" stroke-width="20"/>
+                                <!-- DN 35% -->
+                                <circle cx="60" cy="60" r="44" fill="none" stroke="#1E3A5F" stroke-width="20"
+                                    stroke-dasharray="96.8 200" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+                                <!-- Dat Dai 25% -->
+                                <circle cx="60" cy="60" r="44" fill="none" stroke="#C9A84C" stroke-width="20"
+                                    stroke-dasharray="69.1 200" stroke-dashoffset="-96.8" transform="rotate(-90 60 60)"/>
+                                <!-- Dan su 18% -->
+                                <circle cx="60" cy="60" r="44" fill="none" stroke="#2563EB" stroke-width="20"
+                                    stroke-dasharray="49.8 200" stroke-dashoffset="-165.9" transform="rotate(-90 60 60)"/>
+                                <!-- Hinh su 12% -->
+                                <circle cx="60" cy="60" r="44" fill="none" stroke="#059669" stroke-width="20"
+                                    stroke-dasharray="33.2 200" stroke-dashoffset="-215.7" transform="rotate(-90 60 60)"/>
+                                <!-- Khac 10% -->
+                                <circle cx="60" cy="60" r="44" fill="none" stroke="#9CA3AF" stroke-width="20"
+                                    stroke-dasharray="27.6 200" stroke-dashoffset="-248.9" transform="rotate(-90 60 60)"/>
+                                <text x="60" y="55" text-anchor="middle" font-size="16" font-weight="800" fill="#1E3A5F" font-family="Plus Jakarta Sans">247</text>
+                                <text x="60" y="70" text-anchor="middle" font-size="8" fill="#9CA3AF" font-family="Plus Jakarta Sans">Tổng lead</text>
+                            </svg>
+                            <div class="donut-legend">
+                                <div class="donut-legend__item">
+                                    <div class="donut-legend__label"><div class="donut-legend__dot" style="background:#1E3A5F"></div> Luật Doanh nghiệp</div>
+                                    <div class="donut-legend__val">35%</div>
+                                </div>
+                                <div class="donut-legend__item">
+                                    <div class="donut-legend__label"><div class="donut-legend__dot" style="background:#C9A84C"></div> Đất đai &amp; BĐS</div>
+                                    <div class="donut-legend__val">25%</div>
+                                </div>
+                                <div class="donut-legend__item">
+                                    <div class="donut-legend__label"><div class="donut-legend__dot" style="background:#2563EB"></div> Luật Dân sự</div>
+                                    <div class="donut-legend__val">18%</div>
+                                </div>
+                                <div class="donut-legend__item">
+                                    <div class="donut-legend__label"><div class="donut-legend__dot" style="background:#059669"></div> Luật Hình sự</div>
+                                    <div class="donut-legend__val">12%</div>
+                                </div>
+                                <div class="donut-legend__item">
+                                    <div class="donut-legend__label"><div class="donut-legend__dot" style="background:#9CA3AF"></div> Lĩnh vực khác</div>
+                                    <div class="donut-legend__val">10%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Booking Table -->
+                <div class="card table-card">
+                    <div class="table-header">
+                        <div class="table-title">
+                            Lịch hẹn hôm nay <span>(8 cuộc)</span>
+                        </div>
+                        <div class="card__action" data-i18n="table.view_all">Xem tất cả</div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th data-i18n="th.time">Giờ</th>
+                                    <th data-i18n="th.customer">Khách hàng</th>
+                                    <th data-i18n="th.service">Dịch vụ</th>
+                                    <th data-i18n="th.lawyer">Luật sư</th>
+                                    <th data-i18n="th.method">Hình thức</th>
+                                    <th data-i18n="th.status">Trạng thái</th>
+                                    <th data-i18n="th.actions">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>08:30</strong></td>
+                                    <td>
+                                        <div class="row-user">
+                                            <div class="row-user__avatar">NA</div>
+                                            <div>
+                                                <div class="row-user__name">Nguyễn Văn A</div>
+                                                <div class="row-user__sub">nguyenvana@email.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Luật Doanh nghiệp</td>
+                                    <td>Ls. Hùng</td>
+                                    <td>Tại VP</td>
+                                    <td><span class="badge badge--green"><i class="fa-solid fa-circle-check" style="font-size:0.6rem"></i> Đã xác nhận</span></td>
+                                    <td><div class="action-btns"><button class="action-btn">Xem</button><button class="action-btn">Ghi chú</button></div></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>09:00</strong></td>
+                                    <td>
+                                        <div class="row-user">
+                                            <div class="row-user__avatar">TB</div>
+                                            <div>
+                                                <div class="row-user__name">Trần Thị B</div>
+                                                <div class="row-user__sub">0901 xxx xxx</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Đất đai &amp; BĐS</td>
+                                    <td>Ls. Tuấn</td>
+                                    <td>Online</td>
+                                    <td><span class="badge badge--yellow"><i class="fa-solid fa-clock" style="font-size:0.6rem"></i> Chờ xác nhận</span></td>
+                                    <td><div class="action-btns"><button class="action-btn action-btn--primary">Duyệt</button><button class="action-btn action-btn--danger">Từ chối</button></div></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>10:00</strong></td>
+                                    <td>
+                                        <div class="row-user">
+                                            <div class="row-user__avatar">ABC</div>
+                                            <div>
+                                                <div class="row-user__name">Công ty ABC</div>
+                                                <div class="row-user__sub">ctyabc@vnbiz.vn</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Luật Hình sự</td>
+                                    <td>Ls. Lan</td>
+                                    <td>Tại VP</td>
+                                    <td><span class="badge badge--green"><i class="fa-solid fa-circle-check" style="font-size:0.6rem"></i> Đã xác nhận</span></td>
+                                    <td><div class="action-btns"><button class="action-btn">Xem</button></div></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>14:00</strong></td>
+                                    <td>
+                                        <div class="row-user">
+                                            <div class="row-user__avatar">JS</div>
+                                            <div>
+                                                <div class="row-user__name">John Smith</div>
+                                                <div class="row-user__sub">johnsmith@gmail.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>FDI – Đầu tư</td>
+                                    <td>Ls. Anh</td>
+                                    <td>Online</td>
+                                    <td><span class="badge badge--green"><i class="fa-solid fa-circle-check" style="font-size:0.6rem"></i> Đã xác nhận</span></td>
+                                    <td><div class="action-btns"><button class="action-btn">Xem</button></div></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>15:30</strong></td>
+                                    <td>
+                                        <div class="row-user">
+                                            <div class="row-user__avatar">LC</div>
+                                            <div>
+                                                <div class="row-user__name">Lê Văn C</div>
+                                                <div class="row-user__sub">levanc@email.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Luật Dân sự</td>
+                                    <td>Ls. Mai</td>
+                                    <td>ĐT</td>
+                                    <td><span class="badge badge--red"><i class="fa-solid fa-xmark" style="font-size:0.6rem"></i> Đã hủy</span></td>
+                                    <td><div class="action-btns"><button class="action-btn">Xem lý do</button></div></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Kanban + Activity -->
+                <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:24px">
+
+                    <!-- Kanban -->
+                    <div class="card">
+                        <div class="card__header">
+                            <div class="card__title" data-i18n="kanban.title">Lead Pipeline – Tuần này</div>
+                            <div class="card__action" data-i18n="kanban.action">Quản lý CRM</div>
+                        </div>
+                        <div class="kanban">
+                            <div class="kanban__col kanban__col--new">
+                                <div class="kanban__col-header">
+                                    <div class="kanban__col-title" data-i18n="kanban.new">Mới</div>
+                                    <div class="kanban__col-count">8</div>
+                                </div>
+                                <div class="kanban__card">
+                                    <div class="kanban__card-name">Phạm Thị Dung</div>
+                                    <div class="kanban__card-service">Luật Dân sự</div>
+                                    <div class="kanban__card-meta">
+                                        <div class="kanban__card-time">2 giờ trước</div>
+                                        <div class="kanban__card-dot" style="background:#2563EB"></div>
+                                    </div>
+                                </div>
+                                <div class="kanban__card">
+                                    <div class="kanban__card-name">Công ty XYZ</div>
+                                    <div class="kanban__card-service">Luật Doanh nghiệp</div>
+                                    <div class="kanban__card-meta">
+                                        <div class="kanban__card-time">4 giờ trước</div>
+                                        <div class="kanban__card-dot" style="background:#2563EB"></div>
+                                    </div>
+                                </div>
+                                <div class="kanban__card">
+                                    <div class="kanban__card-name">Ngô Đình E</div>
+                                    <div class="kanban__card-service">Đất đai &amp; BĐS</div>
+                                    <div class="kanban__card-meta">
+                                        <div class="kanban__card-time">6 giờ trước</div>
+                                        <div class="kanban__card-dot" style="background:#2563EB"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="kanban__col kanban__col--contacted">
+                                <div class="kanban__col-header">
+                                    <div class="kanban__col-title" data-i18n="kanban.contacted">Đã liên hệ</div>
+                                    <div class="kanban__col-count">15</div>
+                                </div>
+                                <div class="kanban__card">
+                                    <div class="kanban__card-name">Vũ Thị F</div>
+                                    <div class="kanban__card-service">Luật Lao động</div>
+                                    <div class="kanban__card-meta">
+                                        <div class="kanban__card-time">Hôm qua</div>
+                                        <div class="kanban__card-dot" style="background:#D97706"></div>
+                                    </div>
+                                </div>
+                                <div class="kanban__card">
+                                    <div class="kanban__card-name">Lý Gia H</div>
+                                    <div class="kanban__card-service">FDI</div>
+                                    <div class="kanban__card-meta">
+                                        <div class="kanban__card-time">Hôm qua</div>
+                                        <div class="kanban__card-dot" style="background:#D97706"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="kanban__col kanban__col--progress">
+                                <div class="kanban__col-header">
+                                    <div class="kanban__col-title" data-i18n="kanban.progress">Đang tư vấn</div>
+                                    <div class="kanban__col-count">6</div>
+                                </div>
+                                <div class="kanban__card">
+                                    <div class="kanban__card-name">Trần Văn I</div>
+                                    <div class="kanban__card-service">Luật Hình sự</div>
+                                    <div class="kanban__card-meta">
+                                        <div class="kanban__card-time">3 ngày trước</div>
+                                        <div class="kanban__card-dot" style="background:#7C3AED"></div>
+                                    </div>
+                                </div>
+                                <div class="kanban__card">
+                                    <div class="kanban__card-name">Hoàng Corp</div>
+                                    <div class="kanban__card-service">M&amp;A</div>
+                                    <div class="kanban__card-meta">
+                                        <div class="kanban__card-time">5 ngày trước</div>
+                                        <div class="kanban__card-dot" style="background:#7C3AED"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="kanban__col kanban__col--done">
+                                <div class="kanban__col-header">
+                                    <div class="kanban__col-title" data-i18n="kanban.done">Đã chuyển đổi</div>
+                                    <div class="kanban__col-count">4</div>
+                                </div>
+                                <div class="kanban__card">
+                                    <div class="kanban__card-name">Nguyễn Thị K</div>
+                                    <div class="kanban__card-service">Luật Doanh nghiệp</div>
+                                    <div class="kanban__card-meta">
+                                        <div class="kanban__card-time">Đã đặt lịch</div>
+                                        <div class="kanban__card-dot" style="background:#059669"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activity -->
+                    <div class="card">
+                        <div class="card__header">
+                            <div class="card__title" data-i18n="activity.title">Hoạt động gần đây</div>
+                        </div>
+                        <div class="activity-list">
+                            <div class="activity-item">
+                                <div class="activity-item__icon" style="background:#ECFDF5;color:#059669"><i class="fa-solid fa-calendar-check"></i></div>
+                                <div class="activity-item__content">
+                                    <div class="activity-item__text"><strong>Nguyễn Văn A</strong> vừa đặt lịch tư vấn Luật Doanh nghiệp với <strong>Ls. Hùng</strong> lúc 08:30.</div>
+                                    <div class="activity-item__time">5 phút trước</div>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-item__icon" style="background:#EFF6FF;color:#2563EB"><i class="fa-solid fa-user-plus"></i></div>
+                                <div class="activity-item__content">
+                                    <div class="activity-item__text"><strong>Phạm Thị Dung</strong> vừa gửi yêu cầu tư vấn mới qua chatbot.</div>
+                                    <div class="activity-item__time">12 phút trước</div>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-item__icon" style="background:#F5F3FF;color:#7C3AED"><i class="fa-solid fa-message"></i></div>
+                                <div class="activity-item__content">
+                                    <div class="activity-item__text">Chatbot trả lời 8 cuộc hội thoại mới trong 30 phút qua.</div>
+                                    <div class="activity-item__time">30 phút trước</div>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-item__icon" style="background:#FFFBEB;color:#D97706"><i class="fa-solid fa-envelope-open"></i></div>
+                                <div class="activity-item__content">
+                                    <div class="activity-item__text"><strong>Trần Thị B</strong> đăng ký nhận newsletter.</div>
+                                    <div class="activity-item__time">1 giờ trước</div>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-item__icon" style="background:#FEF2F2;color:#DC2626"><i class="fa-solid fa-calendar-xmark"></i></div>
+                                <div class="activity-item__content">
+                                    <div class="activity-item__text"><strong>Lê Văn C</strong> đã hủy lịch hẹn 15:30 với <strong>Ls. Mai</strong>.</div>
+                                    <div class="activity-item__time">2 giờ trước</div>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-item__icon" style="background:#ECFDF5;color:#059669"><i class="fa-solid fa-star"></i></div>
+                                <div class="activity-item__content">
+                                    <div class="activity-item__text"><strong>Hoàng Minh</strong> vừa đánh giá 5 sao cho dịch vụ tư vấn.</div>
+                                    <div class="activity-item__time">3 giờ trước</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card__header">
+                        <div class="card__title" data-i18n="quick.title">Thao tác nhanh</div>
+                    </div>
+                    <div class="quick-actions">
+                        <div class="quick-action">
+                            <div class="quick-action__icon" style="background:#EFF3F8;color:#1E3A5F"><i class="fa-solid fa-pen-nib"></i></div>
+                            <div class="quick-action__label" data-i18n="quick.article">Tạo bài viết mới</div>
+                        </div>
+                        <div class="quick-action">
+                            <div class="quick-action__icon" style="background:#FEF9EF;color:#C9A84C"><i class="fa-solid fa-user-plus"></i></div>
+                            <div class="quick-action__label" data-i18n="quick.lead">Thêm Lead</div>
+                        </div>
+                        <div class="quick-action">
+                            <div class="quick-action__icon" style="background:#ECFDF5;color:#059669"><i class="fa-solid fa-calendar-days"></i></div>
+                            <div class="quick-action__label" data-i18n="quick.schedule">Xem lịch hẹn</div>
+                        </div>
+                        <div class="quick-action">
+                            <div class="quick-action__icon" style="background:#EFF6FF;color:#2563EB"><i class="fa-solid fa-chart-simple"></i></div>
+                            <div class="quick-action__label" data-i18n="quick.seo">Báo cáo SEO</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================== CRM =================== -->
+            <div class="view" id="view-crm">
+                <div class="page-header">
+                    <div>
+                        <div class="page-header__title" data-i18n="crm.title">Quản lý Lead / CRM</div>
+                        <div class="page-header__sub">247 leads | 33 chuyển đổi tuần này</div>
+                    </div>
+                    <button class="topbar__btn topbar__btn--primary">
+                        <i class="fa-solid fa-plus"></i>
+                        <span data-i18n="crm.add">Thêm Lead</span>
+                    </button>
+                </div>
+
+                <div class="filter-bar">
+                    <button class="filter-tab active" onclick="filterCRM('all', this)">Tất cả <span class="count">247</span></button>
+                    <button class="filter-tab" onclick="filterCRM('new', this)">Mới <span class="count">42</span></button>
+                    <button class="filter-tab" onclick="filterCRM('contacted', this)">Đã liên hệ <span class="count">89</span></button>
+                    <button class="filter-tab" onclick="filterCRM('progress', this)">Đang tư vấn <span class="count">63</span></button>
+                    <button class="filter-tab" onclick="filterCRM('converted', this)">Đã chuyển đổi <span class="count">33</span></button>
+                    <button class="filter-tab" onclick="filterCRM('lost', this)">Mất <span class="count">20</span></button>
+                </div>
+
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Tìm kiếm theo tên, email, số điện thoại..." id="crmSearch" oninput="searchCRM()">
+                </div>
+
+                <div class="card">
+                    <div class="table-wrap">
+                        <table id="crmTable">
+                            <thead>
+                                <tr>
+                                    <th>Khách hàng</th>
+                                    <th>Điện thoại</th>
+                                    <th>Email</th>
+                                    <th>Dịch vụ quan tâm</th>
+                                    <th>Nguồn</th>
+                                    <th>Ngày tạo</th>
+                                    <th>CSKH</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crmTableBody">
+                                <tr>
+                                    <td>
+                                        <div class="row-user">
+                                            <div class="row-user__avatar">PTD</div>
+                                            <div>
+                                                <div class="row-user__name">Phạm Thị Dung</div>
+                                                <div class="row-user__sub">Facebook</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>0902 xxx xxx</td>
+                                    <td>dungpham@gmail.com</td>
+                                    <td>Luật Dân sự</td>
+                                    <td><span class="source-tag source-tag--ga"><i class="fa-brands fa-facebook" style="font-size:0.65rem"></i> Facebook</span></td>
+                                    <td>25/05/2026</td>
+                                    <td>Hoàng Minh</td>
+                                    <td><span class="badge badge--blue"><i class="fa-solid fa-circle" style="font-size:0.5rem"></i> Mới</span></td>
+                                    <td><div class="action-btns"><button class="action-btn action-btn--primary">Liên hệ</button></div></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="row-user">
+                                            <div class="row-user__avatar">CTX</div>
+                                            <div>
+                                                <div class="row-user__name">Công ty XYZ</div>
+                                                <div class="row-user__sub">Website</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>0283 xxx xxx</td>
+                                    <td>contact@xyz.vn</td>
+                                    <td>Luật Doanh nghiệp</td>
+                                    <td><span class="source-tag source-tag--ga"><i class="fa-solid fa-globe" style="font-size:0.65rem"></i> Organic</span></td>
+                                    <td>24/05/2026</td>
+                                    <td>Hoàng Minh</td>
+                                    <td><span class="badge badge--yellow"><i class="fa-solid fa-phone" style="font-size:0.5rem"></i> Đã liên hệ</span></td>
+                                    <td><div class="action-btns"><button class="action-btn">Xem</button></div></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="row-user">
+                                            <div class="row-user__avatar">NDE</div>
+                                            <div>
+                                                <div class="row-user__name">Ngô Đình E</div>
+                                                <div class="row-user__sub">Chatbot</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>0903 xxx xxx</td>
+                                    <td>nde@email.com</td>
+                                    <td>Đất đai &amp; BĐS</td>
+                                    <td><span class="source-tag source-tag--ga"><i class="fa-solid fa-robot" style="font-size:0.65rem"></i> Chatbot</span></td>
+                                    <td>23/05/2026</td>
+                                    <td>Ls. Tuấn</td>
+                                    <td><span class="badge badge--purple"><i class="fa-solid fa-comments" style="font-size:0.5rem"></i> Đang tư vấn</span></td>
+                                    <td><div class="action-btns"><button class="action-btn action-btn--primary">Cập nhật</button></div></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="row-user">
+                                            <div class="row-user__avatar">VTH</div>
+                                            <div>
+                                                <div class="row-user__name">Vũ Thị Hà</div>
+                                                <div class="row-user__sub">Google Ads</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>0904 xxx xxx</td>
+                                    <td>vuthiha@gmail.com</td>
+                                    <td>Luật Lao động</td>
+                                    <td><span class="source-tag source-tag--ga"><i class="fa-brands fa-google" style="font-size:0.65rem"></i> Google Ads</span></td>
+                                    <td>22/05/2026</td>
+                                    <td>Ls. Mai</td>
+                                    <td><span class="badge badge--green"><i class="fa-solid fa-circle-check" style="font-size:0.5rem"></i> Đã chuyển đổi</span></td>
+                                    <td><div class="action-btns"><button class="action-btn">Xem</button></div></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="row-user">
+                                            <div class="row-user__avatar">LGH</div>
+                                            <div>
+                                                <div class="row-user__name">Lý Gia Hùng</div>
+                                                <div class="row-user__sub">Referral</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>0905 xxx xxx</td>
+                                    <td>hungly@corp.com</td>
+                                    <td>FDI – Đầu tư</td>
+                                    <td><span class="source-tag source-tag--ga"><i class="fa-solid fa-user-tag" style="font-size:0.65rem"></i> Referral</span></td>
+                                    <td>21/05/2026</td>
+                                    <td>Ls. Anh</td>
+                                    <td><span class="badge badge--red"><i class="fa-solid fa-circle-xmark" style="font-size:0.5rem"></i> Mất</span></td>
+                                    <td><div class="action-btns"><button class="action-btn">Xem lý do</button></div></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================== PLACEHOLDER VIEWS =================== -->
+            <div class="view" id="view-bookings">
+                <div class="page-header">
+                    <div>
+                        <div class="page-header__title" data-i18n="bookings.title">Lịch hẹn &amp; Booking</div>
+                        <div class="page-header__sub">Quản lý tất cả lịch hẹn tư vấn</div>
+                    </div>
+                </div>
+                <div class="card" style="text-align:center;padding:60px 24px">
+                    <div style="font-size:2.5rem;color:var(--gray-300);margin-bottom:12px"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div style="font-size:1rem;font-weight:700;color:var(--gray-500);margin-bottom:6px">Trang quản lý lịch hẹn</div>
+                    <div style="font-size:0.85rem;color:var(--gray-400)">Chọn từ menu bên trái để xem chi tiết từng mục quản lý.</div>
+                </div>
+            </div>
+            <div class="view" id="view-blog">
+                <div class="page-header">
+                    <div>
+                        <div class="page-header__title" data-i18n="blog.title">Bài viết &amp; Blog</div>
+                        <div class="page-header__sub">Quản lý nội dung pháp luật</div>
+                    </div>
+                    <button class="topbar__btn topbar__btn--primary"><i class="fa-solid fa-plus"></i> Tạo bài viết</button>
+                </div>
+                <div class="card" style="text-align:center;padding:60px 24px">
+                    <div style="font-size:2.5rem;color:var(--gray-300);margin-bottom:12px"><i class="fa-solid fa-newspaper"></i></div>
+                    <div style="font-size:1rem;font-weight:700;color:var(--gray-500);margin-bottom:6px">Trang quản lý bài viết</div>
+                    <div style="font-size:0.85rem;color:var(--gray-400)">Quản lý blog pháp luật, bài hướng dẫn, case study và tin tức.</div>
+                </div>
+            </div>
+            <div class="view" id="view-services">
+                <div class="page-header"><div class="page-header__title">Dịch vụ &amp; Luật sư</div><div class="page-header__sub">Quản lý đội ngũ và dịch vụ pháp lý</div></div>
+                <div class="card" style="text-align:center;padding:60px 24px"><div style="font-size:2.5rem;color:var(--gray-300);margin-bottom:12px"><i class="fa-solid fa-gavel"></i></div><div style="font-size:1rem;font-weight:700;color:var(--gray-500)">Trang quản lý dịch vụ &amp; luật sư</div></div>
+            </div>
+            <div class="view" id="view-reviews">
+                <div class="page-header"><div class="page-header__title">Đánh giá khách hàng</div><div class="page-header__sub">Feedback &amp; nhận xét từ khách hàng</div></div>
+                <div class="card" style="text-align:center;padding:60px 24px"><div style="font-size:2.5rem;color:var(--gray-300);margin-bottom:12px"><i class="fa-solid fa-star"></i></div><div style="font-size:1rem;font-weight:700;color:var(--gray-500)">Trang quản lý đánh giá</div></div>
+            </div>
+            <div class="view" id="view-chatbot">
+                <div class="page-header"><div class="page-header__title">Chatbot Logs</div><div class="page-header__sub">Nhật ký hội thoại AI chatbot</div></div>
+                <div class="card" style="text-align:center;padding:60px 24px"><div style="font-size:2.5rem;color:var(--gray-300);margin-bottom:12px"><i class="fa-solid fa-robot"></i></div><div style="font-size:1rem;font-weight:700;color:var(--gray-500)">Trang quản lý chatbot logs</div></div>
+            </div>
+            <div class="view" id="view-newsletter">
+                <div class="page-header"><div class="page-header__title">Newsletter</div><div class="page-header__sub">Quản lý email marketing</div></div>
+                <div class="card" style="text-align:center;padding:60px 24px"><div style="font-size:2.5rem;color:var(--gray-300);margin-bottom:12px"><i class="fa-solid fa-envelope"></i></div><div style="font-size:1rem;font-weight:700;color:var(--gray-500)">Trang quản lý newsletter</div></div>
+            </div>
+            <div class="view" id="view-users">
+                <div class="page-header"><div class="page-header__title">Người dùng &amp; Phân quyền</div><div class="page-header__sub">Quản lý tài khoản nhân viên</div></div>
+                <div class="card" style="text-align:center;padding:60px 24px"><div style="font-size:2.5rem;color:var(--gray-300);margin-bottom:12px"><i class="fa-solid fa-user-gear"></i></div><div style="font-size:1rem;font-weight:700;color:var(--gray-500)">Trang quản lý người dùng</div></div>
+            </div>
+            <div class="view" id="view-settings">
+                <div class="page-header"><div class="page-header__title">Cài đặt hệ thống</div><div class="page-header__sub">Cấu hình website và ứng dụng</div></div>
+                <div class="card" style="text-align:center;padding:60px 24px"><div style="font-size:2.5rem;color:var(--gray-300);margin-bottom:12px"><i class="fa-solid fa-gear"></i></div><div style="font-size:1rem;font-weight:700;color:var(--gray-500)">Trang cài đặt hệ thống</div></div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script>
+// ================================================================
+// TRANSLATIONS
+// ================================================================
+var T = {
+    vi: {
+        'nav.dashboard': 'Bảng điều khiển',
+        'nav.bookings': 'Lịch hẹn & Booking',
+        'nav.crm': 'Quản lý Lead / CRM',
+        'nav.blog': 'Bài viết & Blog',
+        'nav.services': 'Dịch vụ & Luật sư',
+        'nav.reviews': 'Đánh giá khách hàng',
+        'nav.chatbot': 'Chatbot Logs',
+        'nav.newsletter': 'Newsletter',
+        'nav.users': 'Người dùng & Phân quyền',
+        'nav.settings': 'Cài đặt hệ thống',
+        'topbar.dashboard': 'Bảng điều khiển',
+        'topbar.date_range': 'Tháng 5/2026',
+        'topbar.export': 'Xuất báo cáo',
+        'dashboard.title': 'Bảng điều khiển',
+        'dashboard.sub': 'Tổng quan hoạt động của Văn Phòng Luật',
+        'stat.appointments': 'Lịch hẹn hôm nay',
+        'stat.appointments_vs': 'so với 6 hôm qua',
+        'stat.leads_week': 'Lead mới tuần này',
+        'stat.leads_vs': 'vs 20 tuần trước',
+        'stat.conversion': 'Tỷ lệ chuyển đổi',
+        'stat.conversion_vs': 'vs 3.4% tháng trước',
+        'stat.chatbot': 'Chatbot cuộc hội thoại',
+        'stat.chatbot_vs': 'hôm nay so với 113 hôm qua',
+        'chart.access.title': 'Lượt truy cập & Lead – 30 ngày qua',
+        'chart.access.action': 'Xem chi tiết',
+        'chart.lead_dist.title': 'Phân bổ Lead theo dịch vụ',
+        'table.view_all': 'Xem tất cả',
+        'th.time': 'Giờ', 'th.customer': 'Khách hàng', 'th.service': 'Dịch vụ',
+        'th.lawyer': 'Luật sư', 'th.method': 'Hình thức', 'th.status': 'Trạng thái', 'th.actions': 'Thao tác',
+        'kanban.title': 'Lead Pipeline – Tuần này', 'kanban.action': 'Quản lý CRM',
+        'kanban.new': 'Mới', 'kanban.contacted': 'Đã liên hệ', 'kanban.progress': 'Đang tư vấn', 'kanban.done': 'Đã chuyển đổi',
+        'activity.title': 'Hoạt động gần đây',
+        'quick.title': 'Thao tác nhanh',
+        'quick.article': 'Tạo bài viết mới', 'quick.lead': 'Thêm Lead',
+        'quick.schedule': 'Xem lịch hẹn', 'quick.seo': 'Báo cáo SEO',
+        'crm.title': 'Quản lý Lead / CRM', 'crm.add': 'Thêm Lead',
+        'bookings.title': 'Lịch hẹn & Booking',
+        'blog.title': 'Bài viết & Blog',
+    },
+    en: {
+        'nav.dashboard': 'Dashboard',
+        'nav.bookings': 'Appointments & Booking',
+        'nav.crm': 'Lead Management / CRM',
+        'nav.blog': 'Articles & Blog',
+        'nav.services': 'Services & Lawyers',
+        'nav.reviews': 'Customer Reviews',
+        'nav.chatbot': 'Chatbot Logs',
+        'nav.newsletter': 'Newsletter',
+        'nav.users': 'Users & Permissions',
+        'nav.settings': 'System Settings',
+        'topbar.dashboard': 'Dashboard',
+        'topbar.date_range': 'May 2026',
+        'topbar.export': 'Export Report',
+        'dashboard.title': 'Dashboard',
+        'dashboard.sub': 'Law Firm Activity Overview',
+        'stat.appointments': 'Appointments today',
+        'stat.appointments_vs': 'vs 6 yesterday',
+        'stat.leads_week': 'New leads this week',
+        'stat.leads_vs': 'vs 20 last week',
+        'stat.conversion': 'Conversion rate',
+        'stat.conversion_vs': 'vs 3.4% last month',
+        'stat.chatbot': 'Chatbot conversations',
+        'stat.chatbot_vs': 'today vs 113 yesterday',
+        'chart.access.title': 'Visits & Leads – Last 30 days',
+        'chart.access.action': 'View details',
+        'chart.lead_dist.title': 'Lead distribution by service',
+        'table.view_all': 'View all',
+        'th.time': 'Time', 'th.customer': 'Customer', 'th.service': 'Service',
+        'th.lawyer': 'Lawyer', 'th.method': 'Method', 'th.status': 'Status', 'th.actions': 'Actions',
+        'kanban.title': 'Lead Pipeline – This Week', 'kanban.action': 'Manage CRM',
+        'kanban.new': 'New', 'kanban.contacted': 'Contacted', 'kanban.progress': 'In Progress', 'kanban.done': 'Converted',
+        'activity.title': 'Recent Activity',
+        'quick.title': 'Quick Actions',
+        'quick.article': 'New Article', 'quick.lead': 'Add Lead',
+        'quick.schedule': 'View Schedule', 'quick.seo': 'SEO Report',
+        'crm.title': 'Lead Management / CRM', 'crm.add': 'Add Lead',
+        'bookings.title': 'Appointments & Booking',
+        'blog.title': 'Articles & Blog',
+    }
+};
+var currentLang = 'vi';
+
+// ================================================================
+// LANGUAGE
+// ================================================================
+function setLang(lang) {
+    currentLang = lang;
+    var t = T[lang];
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) el.textContent = t[key];
+    });
+    // Update sidebar active item label
+    updateTopbarTitle();
+}
+
+function updateTopbarTitle() {
+    var active = document.querySelector('.sidebar__item.active');
+    if (active) {
+        var span = active.querySelector('span');
+        var label = span ? span.textContent : '';
+        var titleEl = document.getElementById('topbarTitle');
+        if (titleEl) titleEl.textContent = label;
+    }
+}
+
+// ================================================================
+// SIDEBAR NAVIGATION
+// ================================================================
+function switchView(viewId) {
+    // Update sidebar active
+    document.querySelectorAll('.sidebar__item').forEach(function(item) {
+        item.classList.remove('active');
+        if (item.getAttribute('data-view') === viewId) item.classList.add('active');
+    });
+
+    // Show/hide views
+    document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+    var view = document.getElementById('view-' + viewId);
+    if (view) view.classList.add('active');
+
+    updateTopbarTitle();
+    closeSidebar();
+}
+
+// ================================================================
+// SIDEBAR TOGGLE (mobile)
+// ================================================================
+function toggleSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+}
+
+function closeSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+}
+
+// ================================================================
+// CRM FILTER
+// ================================================================
+function filterCRM(status, btn) {
+    document.querySelectorAll('.filter-tab').forEach(function(t) { t.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    // In a real app, filter the table rows here
+    // For demo, just highlight the tab
+}
+
+function searchCRM() {
+    var query = document.getElementById('crmSearch').value.toLowerCase();
+    var rows = document.querySelectorAll('#crmTableBody tr');
+    rows.forEach(function(row) {
+        var text = row.textContent.toLowerCase();
+        row.style.display = text.indexOf(query) === -1 ? 'none' : '';
+    });
+}
+
+// ================================================================
+// INIT
+// ================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Set today's date in topbar
+    var dateEl = document.getElementById('topbarDate');
+    if (dateEl) {
+        var today = new Date();
+        var options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+        dateEl.textContent = today.toLocaleDateString('vi-VN', options);
+    }
+
+    // Close sidebar on overlay click
+    document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+});
+</script>
+</body>
+</html>
