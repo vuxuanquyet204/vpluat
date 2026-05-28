@@ -1,4 +1,4 @@
-package com.lawfirm.brs.repository.jpa;
+package com.lawfirm.brs.repository;
 
 import com.lawfirm.brs.entity.OutboxEvent;
 import org.springframework.data.domain.Page;

@@ -2,7 +2,7 @@ package com.lawfirm.brs.service.admin;
 
 import com.lawfirm.brs.entity.AuditLog;
 import com.lawfirm.brs.entity.User;
-import com.lawfirm.brs.repository.jpa.AuditLogRepository;
+import com.lawfirm.brs.repository.AuditLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;

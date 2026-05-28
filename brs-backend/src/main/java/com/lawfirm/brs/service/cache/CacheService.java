@@ -1,7 +1,7 @@
 package com.lawfirm.brs.service.cache;
 
 import com.lawfirm.brs.entity.ServiceEntity;
-import com.lawfirm.brs.repository.jpa.ServiceEntityRepository;
+import com.lawfirm.brs.repository.ServiceEntityRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;

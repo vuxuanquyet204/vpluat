@@ -4,7 +4,7 @@ import com.lawfirm.brs.dto.response.LawyerDTO;
 import com.lawfirm.brs.entity.LawyerProfile;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
 import com.lawfirm.brs.mapper.LawyerMapper;
-import com.lawfirm.brs.repository.jpa.LawyerProfileRepository;
+import com.lawfirm.brs.repository.LawyerProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;

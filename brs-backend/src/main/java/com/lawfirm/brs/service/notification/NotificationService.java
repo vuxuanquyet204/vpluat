@@ -2,7 +2,7 @@ package com.lawfirm.brs.service.notification;
 
 import com.lawfirm.brs.entity.User;
 import com.lawfirm.brs.exception.BusinessException;
-import com.lawfirm.brs.repository.jpa.UserRepository;
+import com.lawfirm.brs.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;

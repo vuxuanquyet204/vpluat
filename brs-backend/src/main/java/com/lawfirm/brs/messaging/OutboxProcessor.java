@@ -1,7 +1,7 @@
 package com.lawfirm.brs.messaging;
 
 import com.lawfirm.brs.entity.OutboxEvent;
-import com.lawfirm.brs.repository.jpa.OutboxEventRepository;
+import com.lawfirm.brs.repository.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

@@ -1,11 +1,11 @@
 package com.lawfirm.brs.service.admin;
 
 import com.lawfirm.brs.dto.response.DashboardStatsDTO;
-import com.lawfirm.brs.repository.jpa.AppointmentRepository;
-import com.lawfirm.brs.repository.jpa.LeadRepository;
-import com.lawfirm.brs.repository.jpa.NewsletterSubscriberRepository;
-import com.lawfirm.brs.repository.jpa.PostRepository;
-import com.lawfirm.brs.repository.jpa.ReviewRepository;
+import com.lawfirm.brs.repository.AppointmentRepository;
+import com.lawfirm.brs.repository.LeadRepository;
+import com.lawfirm.brs.repository.NewsletterSubscriberRepository;
+import com.lawfirm.brs.repository.PostRepository;
+import com.lawfirm.brs.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

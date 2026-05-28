@@ -3,7 +3,7 @@ package com.lawfirm.brs.service.publicapi;
 import com.lawfirm.brs.dto.response.ReviewDTO;
 import com.lawfirm.brs.entity.Review;
 import com.lawfirm.brs.mapper.ReviewMapper;
-import com.lawfirm.brs.repository.jpa.ReviewRepository;
+import com.lawfirm.brs.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;

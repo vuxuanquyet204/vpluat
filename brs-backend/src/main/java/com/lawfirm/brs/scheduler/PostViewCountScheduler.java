@@ -1,7 +1,7 @@
 package com.lawfirm.brs.scheduler;
 
 import com.lawfirm.brs.entity.Post;
-import com.lawfirm.brs.repository.jpa.PostRepository;
+import com.lawfirm.brs.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;

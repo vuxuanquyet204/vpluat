@@ -1,4 +1,4 @@
-package com.lawfirm.brs.controller.admin;
+package com.lawfirm.brs.controller.content;
 
 import com.lawfirm.brs.dto.request.CategoryRequest;
 import com.lawfirm.brs.dto.response.ApiResponse;

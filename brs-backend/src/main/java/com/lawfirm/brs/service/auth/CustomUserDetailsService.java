@@ -1,7 +1,7 @@
 package com.lawfirm.brs.service.auth;
 
 import com.lawfirm.brs.entity.User;
-import com.lawfirm.brs.repository.jpa.UserRepository;
+import com.lawfirm.brs.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;

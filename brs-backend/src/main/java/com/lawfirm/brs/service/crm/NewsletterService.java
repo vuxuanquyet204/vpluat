@@ -4,7 +4,7 @@ import com.lawfirm.brs.dto.request.NewsletterSubscribeRequest;
 import com.lawfirm.brs.entity.NewsletterSubscriber;
 import com.lawfirm.brs.exception.BusinessException;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
-import com.lawfirm.brs.repository.jpa.NewsletterSubscriberRepository;
+import com.lawfirm.brs.repository.NewsletterSubscriberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

@@ -3,7 +3,7 @@ package com.lawfirm.brs.service.content;
 import com.lawfirm.brs.dto.request.CaseStudyRequest;
 import com.lawfirm.brs.entity.ServiceEntity;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
-import com.lawfirm.brs.repository.jpa.ServiceEntityRepository;
+import com.lawfirm.brs.repository.ServiceEntityRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

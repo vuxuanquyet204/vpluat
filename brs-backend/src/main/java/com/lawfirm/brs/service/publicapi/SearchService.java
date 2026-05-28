@@ -5,7 +5,7 @@ import com.lawfirm.brs.entity.*;
 import com.lawfirm.brs.mapper.ServiceEntityMapper;
 import com.lawfirm.brs.mapper.LawyerMapper;
 import com.lawfirm.brs.mapper.PostMapper;
-import com.lawfirm.brs.repository.jpa.*;
+import com.lawfirm.brs.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;

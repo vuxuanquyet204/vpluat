@@ -4,7 +4,7 @@ import com.lawfirm.brs.dto.response.UserDTO;
 import com.lawfirm.brs.entity.User;
 import com.lawfirm.brs.exception.BusinessException;
 import com.lawfirm.brs.exception.UnauthorizedException;
-import com.lawfirm.brs.repository.jpa.UserRepository;
+import com.lawfirm.brs.repository.UserRepository;
 import com.lawfirm.brs.util.HashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

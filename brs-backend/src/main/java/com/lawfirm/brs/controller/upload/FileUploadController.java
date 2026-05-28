@@ -1,4 +1,4 @@
-package com.lawfirm.brs.controller.admin;
+package com.lawfirm.brs.controller.upload;
 
 import com.lawfirm.brs.dto.response.ApiResponse;
 import com.lawfirm.brs.service.upload.FileStorageService;

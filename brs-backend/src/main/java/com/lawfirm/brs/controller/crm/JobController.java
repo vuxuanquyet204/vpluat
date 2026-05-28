@@ -1,4 +1,4 @@
-package com.lawfirm.brs.controller.admin;
+package com.lawfirm.brs.controller.crm;
 
 import com.lawfirm.brs.dto.request.JobApplicationRequest;
 import com.lawfirm.brs.dto.request.JobPostingRequest;

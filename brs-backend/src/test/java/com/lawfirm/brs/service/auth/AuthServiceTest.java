@@ -4,7 +4,7 @@ import com.lawfirm.brs.dto.response.UserDTO;
 import com.lawfirm.brs.entity.User;
 import com.lawfirm.brs.constants.Roles;
 import com.lawfirm.brs.exception.BusinessException;
-import com.lawfirm.brs.repository.jpa.UserRepository;
+import com.lawfirm.brs.repository.UserRepository;
 import com.lawfirm.brs.util.HashUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

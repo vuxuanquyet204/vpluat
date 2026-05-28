@@ -4,7 +4,7 @@ import com.lawfirm.brs.dto.response.FaqDTO;
 import com.lawfirm.brs.entity.Faq;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
 import com.lawfirm.brs.mapper.FaqMapper;
-import com.lawfirm.brs.repository.jpa.FaqRepository;
+import com.lawfirm.brs.repository.FaqRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;

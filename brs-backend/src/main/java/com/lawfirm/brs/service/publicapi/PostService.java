@@ -5,7 +5,7 @@ import com.lawfirm.brs.dto.response.PageResponse;
 import com.lawfirm.brs.entity.Post;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
 import com.lawfirm.brs.mapper.PostMapper;
-import com.lawfirm.brs.repository.jpa.PostRepository;
+import com.lawfirm.brs.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;

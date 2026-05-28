@@ -1,7 +1,7 @@
 package com.lawfirm.brs.config;
 
 import com.lawfirm.brs.entity.User;
-import com.lawfirm.brs.repository.jpa.UserRepository;
+import com.lawfirm.brs.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;

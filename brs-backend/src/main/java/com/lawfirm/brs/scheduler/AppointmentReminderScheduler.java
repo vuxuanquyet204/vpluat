@@ -2,7 +2,7 @@ package com.lawfirm.brs.scheduler;
 
 import com.lawfirm.brs.entity.Appointment;
 import com.lawfirm.brs.constants.AppointmentStatus;
-import com.lawfirm.brs.repository.jpa.AppointmentRepository;
+import com.lawfirm.brs.repository.AppointmentRepository;
 import com.lawfirm.brs.service.notification.EmailService;
 import com.lawfirm.brs.service.notification.SmsService;
 import lombok.RequiredArgsConstructor;

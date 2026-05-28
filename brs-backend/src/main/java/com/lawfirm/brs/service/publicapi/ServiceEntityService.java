@@ -4,7 +4,7 @@ import com.lawfirm.brs.dto.response.ServiceDTO;
 import com.lawfirm.brs.entity.ServiceEntity;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
 import com.lawfirm.brs.mapper.ServiceEntityMapper;
-import com.lawfirm.brs.repository.jpa.ServiceEntityRepository;
+import com.lawfirm.brs.repository.ServiceEntityRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;

@@ -1,4 +1,4 @@
-package com.lawfirm.brs.repository.jpa;
+package com.lawfirm.brs.repository;
 
 import com.lawfirm.brs.entity.Lead;
 import com.lawfirm.brs.constants.LeadStatus;

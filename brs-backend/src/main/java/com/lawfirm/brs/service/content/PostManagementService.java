@@ -6,7 +6,7 @@ import com.lawfirm.brs.dto.response.PageResponse;
 import com.lawfirm.brs.entity.*;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
 import com.lawfirm.brs.mapper.PostMapper;
-import com.lawfirm.brs.repository.jpa.*;
+import com.lawfirm.brs.repository.*;
 import com.lawfirm.brs.util.SlugUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

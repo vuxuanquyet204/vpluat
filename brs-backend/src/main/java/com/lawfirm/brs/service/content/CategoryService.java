@@ -6,7 +6,7 @@ import com.lawfirm.brs.entity.Category;
 import com.lawfirm.brs.exception.BusinessException;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
 import com.lawfirm.brs.mapper.CategoryMapper;
-import com.lawfirm.brs.repository.jpa.CategoryRepository;
+import com.lawfirm.brs.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

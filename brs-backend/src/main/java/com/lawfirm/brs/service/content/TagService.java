@@ -4,7 +4,7 @@ import com.lawfirm.brs.dto.request.TagRequest;
 import com.lawfirm.brs.entity.Tag;
 import com.lawfirm.brs.exception.BusinessException;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
-import com.lawfirm.brs.repository.jpa.TagRepository;
+import com.lawfirm.brs.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
