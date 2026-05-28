@@ -11,6 +11,5 @@ import java.util.UUID;
 @Repository
 public interface JobPostingRepository extends JpaRepository<JobPosting, UUID> {
     Page<JobPosting> findByStatus(String status, Pageable pageable);
-    Optional<JobPosting> findBySlug(String slug);
     Page<JobPosting> findByStatusOrderByCreatedAtDesc(String status, Pageable pageable);
 }

@@ -5,6 +5,8 @@ import com.lawfirm.brs.constants.AppointmentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -19,31 +21,28 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
     Page<Appointment> findByStatus(AppointmentStatus status, Pageable pageable);
 
+    @Query("SELECT a FROM Appointment a WHERE a.lawyer.id = :lawyerId AND a.scheduledAt BETWEEN :startDate AND :endDate")
     List<Appointment> findByLawyerIdAndScheduledAtBetween(
-        UUID lawyerId, 
-        Instant startDate, 
-        Instant endDate
+        @Param("lawyerId") UUID lawyerId,
+        @Param("startDate") Instant startDate,
+        @Param("endDate") Instant endDate
     );
 
     List<Appointment> findByClientPhoneAndScheduledAtAfter(
-        String clientPhone, 
+        String clientPhone,
         Instant after
     );
 
     long countByStatus(AppointmentStatus status);
 
-    @org.springframework.data.jpa.repository.Query(
-        "SELECT a FROM Appointment a WHERE a.status = 'CONFIRMED' " +
-        "AND a.scheduledAt >= :start AND a.scheduledAt < :end"
-    )
+    @Query("SELECT a FROM Appointment a WHERE a.status = 'CONFIRMED' " +
+           "AND a.scheduledAt >= :start AND a.scheduledAt < :end")
     List<Appointment> findConfirmedAppointmentsInRange(
-        java.time.Instant start, 
-        java.time.Instant end
+        @Param("start") Instant start,
+        @Param("end") Instant end
     );
 
-    @org.springframework.data.jpa.repository.Query(
-        "SELECT a FROM Appointment a WHERE a.status = 'PENDING' " +
-        "AND a.scheduledAt < :cutoff"
-    )
-    List<Appointment> findPendingAppointmentsOlderThan(java.time.Instant cutoff);
+    @Query("SELECT a FROM Appointment a WHERE a.status = 'PENDING' " +
+           "AND a.scheduledAt < :cutoff")
+    List<Appointment> findPendingAppointmentsOlderThan(@Param("cutoff") Instant cutoff);
 }

@@ -89,7 +89,7 @@ public class FullTextSearchService {
      */
     public List<SearchResultDTO> searchFaqs(String query) {
         log.debug("Searching FAQs: {}", query);
-        return faqRepository.searchByQuery(query).stream()
+        return faqRepository.findByIsPublishedTrueOrderByDisplayOrder().stream()
             .map(this::toSearchResult)
             .toList();
     }

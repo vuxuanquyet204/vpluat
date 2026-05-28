@@ -3,6 +3,7 @@ package com.lawfirm.brs.repository;
 import com.lawfirm.brs.entity.LawyerProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -23,5 +24,5 @@ public interface LawyerProfileRepository extends JpaRepository<LawyerProfile, UU
     List<LawyerProfile> findFeaturedLawyers();
 
     @Query("SELECT l FROM LawyerProfile l WHERE LOWER(l.nameVi) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(l.nameEn) LIKE LOWER(CONCAT('%', :query, '%'))")
-    List<LawyerProfile> searchByName(String query);
+    List<LawyerProfile> searchByName(@Param("query") String query);
 }

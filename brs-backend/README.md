@@ -49,68 +49,85 @@ brs-backend/
 └── scripts/            # Build & deployment scripts
 ```
 
-## Getting Started
+## Hướng Dẫn Cài Đặt (Khi Pull Về Mới)
 
-### Yêu Cầu
+### 1. Yêu Cầu Hệ Thống
 
 - JDK 21+
 - Maven 3.9+
-- Docker & Docker Compose (for local development)
-- PostgreSQL 16 (nếu không dùng Docker)
-- Redis 7.2
+- Docker & Docker Compose
 
-### Development Setup
-
-1. **Clone và cài đặt dependencies:**
+### 2. Copy và Cấu Hình Environment
 
 ```bash
-cd brs-backend
-./scripts/build.sh
+# Copy file .env.example thành .env
+cp .env.example .env
+
+# Chỉnh sửa .env với thông tin của bạn (database, cloudinary, etc.)
 ```
 
-2. **Tạo JWT keys:**
+set PGPASSWORD=password
+psql -U postgres -h localhost -p 5433 -c "CREATE DATABASE brs_db;"
+
+### 3. Tạo JWT Keys
 
 ```bash
+# Tạo thư mục keys nếu chưa có
 mkdir -p keys
+
+# Tạo cặp khóa RSA
 openssl genrsa -out keys/jwt-private.pem 2048
 openssl rsa -in keys/jwt-private.pem -pubout -out keys/jwt-public.pem
 ```
 
-3. **Khởi động infrastructure (PostgreSQL, Redis, RabbitMQ):**
+### 4. Khởi Động Infrastructure (Database, Redis, RabbitMQ)
 
 ```bash
 cd docker
 docker-compose up -d postgres redis rabbitmq
+cd ..
 ```
 
-4. **Khởi tạo database:**
+### 5. Build Ứng Dụng
 
 ```bash
-./scripts/init-db.sh
+mvn clean install
 ```
 
-5. **Chạy ứng dụng:**
+### 6. Chạy Ứng Dụng
 
 ```bash
-./scripts/run.sh dev
+mvn spring-boot:run
+```
+
+Hoặc chạy với Maven wrapper:
+
+```bash
+./mvnw spring-boot:run
 ```
 
 Ứng dụng sẽ chạy tại `http://localhost:8080`
 
-### Sử dụng Docker Compose
+---
 
-Khởi động toàn bộ stack:
+## Các Lệnh Thường Dùng
 
 ```bash
-cd docker
-docker-compose up -d
+# Chạy tests
+mvn test
+
+# Build JAR file
+mvn clean package -DskipTests
+
+# Chạy với profile cụ thể
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 ## API Documentation
 
 Swagger UI: `http://localhost:8080/swagger-ui.html`
 
-## Test Tài Khoản
+## Test Accounts (Dev)
 
 | Email | Password | Role |
 |-------|----------|------|
@@ -121,37 +138,43 @@ Swagger UI: `http://localhost:8080/swagger-ui.html`
 
 ## Environment Variables
 
+Xem file `.env.example` để biết đầy đủ các biến môi trường.
+
 | Variable | Description | Default |
 |----------|-------------|---------|
 | SPRING_PROFILES_ACTIVE | Profile (dev/prod) | dev |
 | DB_HOST | Database host | localhost |
-| DB_PORT | Database port | 5432 |
+| DB_PORT | Database port | 5433 |
 | DB_NAME | Database name | brs_dev |
-| DB_USER | Database user | brs_dev |
-| DB_PASSWORD | Database password | - |
+| DB_USER | Database user | postgres |
+| DB_PASSWORD | Database password | password |
 | REDIS_HOST | Redis host | localhost |
 | REDIS_PORT | Redis port | 6379 |
+| REDIS_PASSWORD | Redis password | (empty) |
+| RABBITMQ_HOST | RabbitMQ host | localhost |
+| RABBITMQ_PORT | RabbitMQ port | 5672 |
 | JWT_PRIVATE_KEY_PATH | Path to JWT private key | keys/jwt-private.pem |
 | JWT_PUBLIC_KEY_PATH | Path to JWT public key | keys/jwt-public.pem |
+| CLOUDINARY_CLOUD_NAME | Cloudinary cloud name | - |
+| CLOUDINARY_API_KEY | Cloudinary API key | - |
+| CLOUDINARY_API_SECRET | Cloudinary API secret | - |
+| OPENAI_API_KEY | OpenAI API key | - |
+
+## Sử Dụng Docker Compose (Toàn Bộ Stack)
+
+```bash
+cd docker
+docker-compose up -d
+```
 
 ## Building for Production
 
 ```bash
 # Build JAR
-./scripts/build.sh --profile prod
+mvn clean package -Pprod
 
 # Build Docker image
 docker build -t brs-backend:latest .
-```
-
-## Testing
-
-```bash
-# Run all tests
-mvn test
-
-# Run specific test class
-mvn test -Dtest=AuthServiceTest
 ```
 
 ## License

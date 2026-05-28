@@ -21,8 +21,8 @@ public class OutboxProcessor {
     private final OutboxEventRepository outboxRepository;
     private final NotificationEventHandler eventHandler;
 
-    @Scheduled(fixedDelay = 1000)
-    @Transactional
+    @Scheduled(fixedDelay = 10000)
+    @Transactional(readOnly = true)
     public void processOutbox() {
         List<OutboxEvent> events = outboxRepository.findTop50ByProcessedFalseOrderByCreatedAtAsc();
         

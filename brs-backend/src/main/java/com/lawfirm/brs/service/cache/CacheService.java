@@ -1,8 +1,10 @@
 package com.lawfirm.brs.service.cache;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.lawfirm.brs.entity.ServiceEntity;
 import com.lawfirm.brs.repository.ServiceEntityRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -12,21 +14,25 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class CacheService {
 
     private final StringRedisTemplate redis;
     private final ServiceEntityRepository serviceRepository;
-    
-    private final ReentrantLock localLock = new ReentrantLock();
+    private final ObjectMapper objectMapper;
 
     private static final String CACHE_PREFIX = "brs:";
+
+    public CacheService(StringRedisTemplate redis, ServiceEntityRepository serviceRepository) {
+        this.redis = redis;
+        this.serviceRepository = serviceRepository;
+        this.objectMapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
 
     public <T> T getOrLoad(String cacheName, String key,
                            Supplier<T> loader,
@@ -45,22 +51,13 @@ public class CacheService {
             return deserialize(cached);
         }
 
-        String lockKey = "lock:" + fullKey;
-        
-        localLock.lock();
-        try {
-            cached = redis.opsForValue().get(fullKey);
-            if (cached != null) {
-                return deserialize(cached);
-            }
-
-            T result = loader.get();
-            redis.opsForValue().set(fullKey, serialize(result), ttl);
-            redis.opsForValue().set(fullKey + ":stale", serialize(result), ttl.plus(staleTtl));
-            return result;
-        } finally {
-            localLock.unlock();
+        T result = loader.get();
+        String serialized = serialize(result);
+        if (serialized != null) {
+            redis.opsForValue().set(fullKey, serialized, ttl);
+            redis.opsForValue().set(fullKey + ":stale", serialized, ttl.plus(staleTtl));
         }
+        return result;
     }
 
     public void evict(String cacheName, String key) {
@@ -108,8 +105,9 @@ public class CacheService {
     }
 
     private String serialize(Object obj) {
+        if (obj == null) return null;
         try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(obj);
+            return objectMapper.writeValueAsString(obj);
         } catch (Exception e) {
             log.error("Serialization failed", e);
             return null;
@@ -118,8 +116,9 @@ public class CacheService {
 
     @SuppressWarnings("unchecked")
     private <T> T deserialize(String json) {
+        if (json == null) return null;
         try {
-            return (T) new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Object.class);
+            return (T) objectMapper.readValue(json, Object.class);
         } catch (Exception e) {
             log.error("Deserialization failed", e);
             return null;

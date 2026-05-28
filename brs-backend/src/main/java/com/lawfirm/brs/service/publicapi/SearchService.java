@@ -103,7 +103,7 @@ public class SearchService {
 
     private List<SearchResultDTO> searchFaqs(String query, String language, int limit) {
         List<SearchResultDTO> results = new ArrayList<>();
-        faqRepository.findByQuestionContainingIgnoreCase(query)
+        faqRepository.findByIsPublishedTrueOrderByDisplayOrder()
             .stream()
             .limit(limit)
             .forEach(faq -> results.add(SearchResultDTO.ofFaq(

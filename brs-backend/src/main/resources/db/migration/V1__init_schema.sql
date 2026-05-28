@@ -20,9 +20,14 @@ CREATE TABLE users (
     locked_until    TIMESTAMP,
     failed_attempts INT NOT NULL DEFAULT 0,
     last_login_at   TIMESTAMP,
+    -- Audit fields from BaseEntity
     created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP NOT NULL DEFAULT NOW(),
-    deleted_at      TIMESTAMP
+    created_by      UUID,
+    updated_by      UUID,
+    version         BIGINT DEFAULT 0,
+    deleted_at      TIMESTAMP,
+    CONSTRAINT chk_users_role CHECK (role IN ('SUPER_ADMIN', 'ADMIN', 'EDITOR', 'CSKH', 'LAWYER', 'USER'))
 );
 CREATE INDEX idx_users_locked ON users(locked_until) WHERE locked_until IS NOT NULL;
 CREATE INDEX idx_users_email ON users(email);
@@ -48,13 +53,6 @@ CREATE TABLE lawyer_profiles (
     updated_at          TIMESTAMP NOT NULL DEFAULT NOW()
 );
 CREATE INDEX idx_lawyer_profiles_slug ON lawyer_profiles(slug);
-
-CREATE TABLE service_lawyers (
-    service_id  UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
-    lawyer_id   UUID NOT NULL REFERENCES lawyer_profiles(id) ON DELETE CASCADE,
-    is_primary  BOOLEAN DEFAULT FALSE,
-    PRIMARY KEY (service_id, lawyer_id)
-);
 
 CREATE TABLE lawyer_availability (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -127,6 +125,14 @@ CREATE TABLE services (
 );
 CREATE INDEX idx_services_slug ON services(slug);
 CREATE INDEX idx_services_deleted ON services(deleted_at) WHERE deleted_at IS NULL;
+
+-- Join table for services and lawyers (moved after services table)
+CREATE TABLE service_lawyers (
+    service_id  UUID NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    lawyer_id   UUID NOT NULL REFERENCES lawyer_profiles(id) ON DELETE CASCADE,
+    is_primary  BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (service_id, lawyer_id)
+);
 
 CREATE TABLE faqs (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -421,7 +427,7 @@ CREATE INDEX idx_chatbot_sessions_session ON chatbot_sessions(session_id);
 
 CREATE TABLE chatbot_messages (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id      VARCHAR(100) NOT NULL REFERENCES chatbot_sessions(session_id) ON DELETE CASCADE,
+    session_id      UUID NOT NULL REFERENCES chatbot_sessions(id) ON DELETE CASCADE,
     role            VARCHAR(20) NOT NULL,
     content         VARCHAR(4000) NOT NULL,
     intent          VARCHAR(100),
@@ -430,7 +436,7 @@ CREATE TABLE chatbot_messages (
     created_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
 CREATE INDEX idx_chatbot_messages_session ON chatbot_messages(session_id);
-CREATE INDEX idx_chatbot_messages_retention ON chatbot_messages(retention_until) WHERE retention_until < NOW();
+CREATE INDEX idx_chatbot_messages_retention ON chatbot_messages(retention_until);
 
 -- ============================================================
 -- OUTBOX (Async Events)

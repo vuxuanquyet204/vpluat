@@ -24,7 +24,7 @@ public class SeoMetadataService {
         "và", "của", "là", "có", "được", "trong", "với", "cho", "để", "không",
         "the", "and", "or", "is", "are", "was", "were", "be", "been", "being",
         "have", "has", "had", "do", "does", "did", "will", "would", "could", "should",
-        "a", "an", "the", "this", "that", "these", "those", "in", "on", "at", "by",
+        "a", "an", "this", "that", "these", "those", "in", "on", "at", "by",
         "for", "with", "about", "into", "through", "during", "before", "after"
     );
 

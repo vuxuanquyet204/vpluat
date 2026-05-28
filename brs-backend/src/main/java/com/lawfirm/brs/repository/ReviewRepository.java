@@ -1,9 +1,12 @@
 package com.lawfirm.brs.repository;
 
 import com.lawfirm.brs.entity.Review;
+import com.lawfirm.brs.entity.LawyerProfile;
+import com.lawfirm.brs.entity.ServiceEntity;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,13 +22,15 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
     List<Review> findByIsFeaturedTrueAndIsPublishedTrue();
 
-    List<Review> findByLawyerIdAndIsPublishedTrue(UUID lawyerId);
+    @Query("SELECT r FROM Review r WHERE r.lawyer.id = :lawyerId AND r.isPublished = true")
+    List<Review> findByLawyerIdAndIsPublishedTrue(@Param("lawyerId") UUID lawyerId);
 
-    List<Review> findByServiceIdAndIsPublishedTrue(UUID serviceId);
+    @Query("SELECT r FROM Review r WHERE r.service.id = :serviceId AND r.isPublished = true")
+    List<Review> findByServiceIdAndIsPublishedTrue(@Param("serviceId") UUID serviceId);
 
     @Query("SELECT r FROM Review r WHERE r.isPublished = true ORDER BY r.createdAt DESC")
     List<Review> findRecentPublishedReviews(Pageable pageable);
 
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.lawyer.id = :lawyerId AND r.isPublished = true")
-    Double findAverageRatingByLawyerId(UUID lawyerId);
+    Double findAverageRatingByLawyerId(@Param("lawyerId") UUID lawyerId);
 }
