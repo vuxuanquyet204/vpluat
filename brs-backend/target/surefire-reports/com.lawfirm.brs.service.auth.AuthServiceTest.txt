@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.lawfirm.brs.service.auth.AuthServiceTest
--------------------------------------------------------------------------------
-Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.142 s -- in com.lawfirm.brs.service.auth.AuthServiceTest
