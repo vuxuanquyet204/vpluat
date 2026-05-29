@@ -112,6 +112,7 @@ nbdist/
 # Logs
 *.log
 logs/
+keys/
 
 # Package files
 *.jar

@@ -8,11 +8,11 @@ services:
     image: postgres:16-alpine
     container_name: brs-postgres
     environment:
-      POSTGRES_DB: brs_dev
+      POSTGRES_DB: brs_db
       POSTGRES_USER: brs_dev
       POSTGRES_PASSWORD: brs_dev_password
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
@@ -76,8 +76,8 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=brs_dev
+      - DB_PORT=5433
+      - DB_NAME=brs_db
       - DB_USER=brs_dev
       - DB_PASSWORD=brs_dev_password
       - REDIS_HOST=redis

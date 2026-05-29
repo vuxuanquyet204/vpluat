@@ -1,11 +1,13 @@
 package com.lawfirm.brs.controller.auth;
 
+import com.lawfirm.brs.dto.request.RegisterRequest;
 import com.lawfirm.brs.dto.response.ApiResponse;
 import com.lawfirm.brs.dto.response.UserDTO;
 import com.lawfirm.brs.entity.User;
 import com.lawfirm.brs.service.auth.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,6 +33,15 @@ public class AuthController {
     ) {
         var result = authService.login(credentials.get("email"), credentials.get("password"));
         return ResponseEntity.ok(ApiResponse.success("Login successful", result));
+    }
+
+    @PostMapping("/register")
+    @Operation(summary = "Register", description = "Register a new user account")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> register(
+            @Valid @RequestBody RegisterRequest request
+    ) {
+        var result = authService.register(request);
+        return ResponseEntity.ok(ApiResponse.success("Registration successful", result));
     }
 
     @PostMapping("/refresh")
@@ -106,5 +117,18 @@ public class AuthController {
             request.get("newPassword")
         );
         return ResponseEntity.ok(ApiResponse.success("Password reset successfully", null));
+    }
+
+    @PostMapping("/hash-password")
+    @Operation(summary = "Hash password", description = "Generate BCrypt hash for a password (dev only)")
+    public ResponseEntity<ApiResponse<Map<String, String>>> hashPassword(
+            @RequestBody Map<String, String> request
+    ) {
+        String password = request.get("password");
+        String hash = authService.generatePasswordHash(password);
+        return ResponseEntity.ok(ApiResponse.success("Password hashed", Map.of(
+            "password", password,
+            "hash", hash
+        )));
     }
 }

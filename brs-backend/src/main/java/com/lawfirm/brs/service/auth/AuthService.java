@@ -1,5 +1,7 @@
 package com.lawfirm.brs.service.auth;
 
+import com.lawfirm.brs.constants.Roles;
+import com.lawfirm.brs.dto.request.RegisterRequest;
 import com.lawfirm.brs.dto.response.UserDTO;
 import com.lawfirm.brs.entity.User;
 import com.lawfirm.brs.exception.BusinessException;
@@ -68,6 +70,40 @@ public class AuthService {
             "refreshToken", tokens.refreshToken(),
             "expiresIn", 900, // 15 minutes
             "user", toUserDTO(user)
+        );
+    }
+
+    /**
+     * Register a new user account
+     */
+    @Transactional
+    public Map<String, Object> register(RegisterRequest request) {
+        // Check if email already exists
+        if (userRepository.existsByEmail(request.email())) {
+            throw new BusinessException("EMAIL_EXISTS", "Email already registered");
+        }
+
+        // Create new user
+        User user = User.builder()
+            .email(request.email())
+            .passwordHash(passwordEncoder.encode(request.password()))
+            .fullName(request.fullName())
+            .phone(request.phone())
+            .role(Roles.USER)
+            .isActive(true)
+            .build();
+
+        User saved = userRepository.save(user);
+        log.info("New user registered: {}", saved.getEmail());
+
+        // Generate tokens
+        JwtTokenProvider.TokenPair tokens = jwtTokenProvider.generateTokenPair(saved);
+
+        return Map.of(
+            "accessToken", tokens.accessToken(),
+            "refreshToken", tokens.refreshToken(),
+            "expiresIn", 900,
+            "user", toUserDTO(saved)
         );
     }
 
@@ -166,6 +202,13 @@ public class AuthService {
     public void resetPassword(String token, String newPassword) {
         // TODO: Validate token and reset password
         log.info("Password reset with token");
+    }
+
+    /**
+     * Generate BCrypt password hash (for development)
+     */
+    public String generatePasswordHash(String password) {
+        return passwordEncoder.encode(password);
     }
 
     private UserDTO toUserDTO(User user) {

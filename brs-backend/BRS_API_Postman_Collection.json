@@ -1,0 +1,2289 @@
+{
+  "info": {
+    "name": "BRS Backend API",
+    "description": "Law Firm BRS Backend API Collection - All endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "    }",
+                  "    if (jsonData.data && jsonData.data.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login with email and password"
+          }
+        },
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "    }",
+                  "    if (jsonData.data && jsonData.data.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"newuser@example.com\",\n    \"password\": \"Password123\",\n    \"fullName\": \"New User\",\n    \"phone\": \"+84123456789\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user account"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Logout and invalidate refresh token"
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Get current authenticated user info"
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"fullName\": \"John Doe\",\n    \"phone\": \"+84123456789\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Update current user profile"
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"currentPassword\": \"oldPassword123\",\n    \"newPassword\": \"newPassword123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "change-password"]
+            },
+            "description": "Change user password"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"user@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "forgot-password"]
+            },
+            "description": "Request password reset email"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"reset-token-here\",\n    \"newPassword\": \"newPassword123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reset-password"]
+            },
+            "description": "Reset password with token"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Refresh access token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public APIs",
+      "item": [
+        {
+          "name": "Services",
+          "item": [
+            {
+              "name": "Get All Services",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/services",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "services"]
+                }
+              }
+            },
+            {
+              "name": "Get Featured Services",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/services/featured",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "services", "featured"]
+                }
+              }
+            },
+            {
+              "name": "Get Service by Slug",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/services/:slug",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "services", ":slug"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lawyers",
+          "item": [
+            {
+              "name": "Get All Lawyers",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/lawyers?page=0&size=10",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "lawyers"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "10"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Featured Lawyers",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/lawyers/featured",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "lawyers", "featured"]
+                }
+              }
+            },
+            {
+              "name": "Get Lawyer by Slug",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/lawyers/:slug",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "lawyers", ":slug"]
+                }
+              }
+            },
+            {
+              "name": "Search Lawyers",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/lawyers/search?query=keywords",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "lawyers", "search"],
+                  "query": [
+                    {"key": "query", "value": "keywords"}
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reviews",
+          "item": [
+            {
+              "name": "Get Published Reviews",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/reviews",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "reviews"]
+                }
+              }
+            },
+            {
+              "name": "Get Featured Reviews",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/reviews/featured",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "reviews", "featured"]
+                }
+              }
+            },
+            {
+              "name": "Get Recent Reviews",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/reviews/recent?limit=5",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "reviews", "recent"],
+                  "query": [
+                    {"key": "limit", "value": "5"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Reviews by Lawyer",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/reviews/lawyer/:lawyerId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "reviews", "lawyer", ":lawyerId"]
+                }
+              }
+            },
+            {
+              "name": "Get Reviews by Service",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/reviews/service/:serviceId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "reviews", "service", ":serviceId"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "FAQs",
+          "item": [
+            {
+              "name": "Get All FAQs",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/faqs",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "faqs"]
+                }
+              }
+            },
+            {
+              "name": "Get Featured FAQs",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/faqs/featured",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "faqs", "featured"]
+                }
+              }
+            },
+            {
+              "name": "Get FAQs by Service",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/faqs/service/:serviceId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "faqs", "service", ":serviceId"]
+                }
+              }
+            },
+            {
+              "name": "Get FAQ by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/faqs/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "faqs", ":id"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Posts",
+          "item": [
+            {
+              "name": "Get Published Posts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/posts?page=0&size=10",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "posts"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "10"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Featured Posts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/posts/featured",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "posts", "featured"]
+                }
+              }
+            },
+            {
+              "name": "Get Post by Slug",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/posts/:slug",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "posts", ":slug"]
+                }
+              }
+            },
+            {
+              "name": "Get Posts by Category",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/posts/category/:categoryId?page=0&size=10",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "posts", "category", ":categoryId"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "10"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Posts by Tag",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/posts/tag/:tagSlug?page=0&size=10",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "posts", "tag", ":tagSlug"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "10"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Related Posts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/posts/:postId/related?limit=5",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "posts", ":postId", "related"],
+                  "query": [
+                    {"key": "limit", "value": "5"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Increment Post Views",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/posts/:postId/view",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "posts", ":postId", "view"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search",
+          "item": [
+            {
+              "name": "Search All Content",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/search?query=keyword&type=all&language=vi",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "search"],
+                  "query": [
+                    {"key": "query", "value": "keyword"},
+                    {"key": "type", "value": "all"},
+                    {"key": "language", "value": "vi"}
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Documents",
+          "item": [
+            {
+              "name": "List Public Documents",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/documents",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "documents"]
+                }
+              }
+            },
+            {
+              "name": "Download Document",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/public/documents/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "public", "documents", ":id"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CRM",
+      "item": [
+        {
+          "name": "Leads",
+          "item": [
+            {
+              "name": "Create Lead",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"phone\": \"+84123456789\",\n    \"serviceId\": \"uuid-of-service\",\n    \"message\": \"I need legal consultation\",\n    \"source\": \"WEBSITE\",\n    \"channel\": \"WEB\",\n    \"utmSource\": \"google\",\n    \"utmMedium\": \"cpc\",\n    \"utmCampaign\": \"spring-promo\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/leads",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "leads"]
+                }
+              }
+            },
+            {
+              "name": "Get All Leads",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/leads?page=0&size=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "leads"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "20"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Lead by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/leads/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "leads", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Update Lead Status",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"status\": \"CONTACTED\",\n    \"assignedTo\": \"user-uuid\",\n    \"notes\": \"Called but no answer\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/leads/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "leads", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Add Note to Lead",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"note\": \"Customer interested in family law services\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/leads/:id/notes",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "leads", ":id", "notes"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Jobs",
+          "item": [
+            {
+              "name": "Get Published Jobs (Public)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/jobs?page=0&size=10",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "jobs"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "10"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Job by ID (Public)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/jobs/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "jobs", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Apply for Job (Public)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"fullName\": \"Jane Doe\",\n    \"email\": \"jane@example.com\",\n    \"phone\": \"+84123456789\",\n    \"cv\": \"https://example.com/cv.pdf\",\n    \"coverLetter\": \"I am interested in this position...\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/jobs/:id/apply",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "jobs", ":id", "apply"]
+                }
+              }
+            },
+            {
+              "name": "Create Job (Admin)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"title\": \"Senior Lawyer\",\n    \"titleEn\": \"Senior Attorney\",\n    \"department\": \"Corporate Law\",\n    \"location\": \"Ho Chi Minh City\",\n    \"jobType\": \"FULL_TIME\",\n    \"descriptionVi\": \"Mô tả công việc...\",\n    \"descriptionEn\": \"Job description...\",\n    \"requirementsVi\": \"Yêu cầu...\",\n    \"requirementsEn\": \"Requirements...\",\n    \"salaryRange\": \"5000-8000 USD\",\n    \"deadline\": \"2026-12-31\",\n    \"status\": \"DRAFT\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/jobs",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "jobs"]
+                }
+              }
+            },
+            {
+              "name": "Update Job (Admin)",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"title\": \"Updated Job Title\",\n    \"titleEn\": \"Updated Job Title EN\",\n    \"department\": \"Legal\",\n    \"location\": \"Hanoi\",\n    \"jobType\": \"FULL_TIME\",\n    \"descriptionVi\": \"Updated description...\",\n    \"descriptionEn\": \"Updated description...\",\n    \"requirementsVi\": \"Updated requirements...\",\n    \"requirementsEn\": \"Updated requirements...\",\n    \"salaryRange\": \"6000-9000 USD\",\n    \"deadline\": \"2026-06-30\",\n    \"status\": \"DRAFT\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/jobs/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "jobs", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Publish Job (Admin)",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/jobs/:id/publish",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "jobs", ":id", "publish"]
+                }
+              }
+            },
+            {
+              "name": "Close Job (Admin)",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/jobs/:id/close",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "jobs", ":id", "close"]
+                }
+              }
+            },
+            {
+              "name": "Delete Job (Admin)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/jobs/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "jobs", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Get All Jobs (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/jobs/all?page=0&size=10",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "jobs", "all"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "10"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get All Applications (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/jobs/applications?page=0&size=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "jobs", "applications"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "20"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Application by ID (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/jobs/applications/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "jobs", "applications", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Update Application Status (Admin)",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"status\": \"REVIEWING\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/jobs/applications/:id/status",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "jobs", "applications", ":id", "status"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Newsletter",
+          "item": [
+            {
+              "name": "Subscribe",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"subscriber@example.com\",\n    \"name\": \"John Doe\",\n    \"source\": \"WEBSITE\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/newsletter/subscribe",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "newsletter", "subscribe"]
+                }
+              }
+            },
+            {
+              "name": "Confirm Subscription",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/newsletter/confirm?token=confirmation-token",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "newsletter", "confirm"],
+                  "query": [
+                    {"key": "token", "value": "confirmation-token"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Unsubscribe",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/newsletter/unsubscribe?email=user@example.com",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "newsletter", "unsubscribe"],
+                  "query": [
+                    {"key": "email", "value": "user@example.com"}
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reviews (Admin)",
+          "item": [
+            {
+              "name": "Get All Reviews",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/reviews?page=0&size=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "reviews"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "20"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Review by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/reviews/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "reviews", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Publish Review",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/reviews/:id/publish",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "reviews", ":id", "publish"]
+                }
+              }
+            },
+            {
+              "name": "Feature/Unfeature Review",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/reviews/:id/feature",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "reviews", ":id", "feature"]
+                }
+              }
+            },
+            {
+              "name": "Delete Review",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/crm/reviews/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "crm", "reviews", ":id"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Dashboard",
+          "item": [
+            {
+              "name": "Get Dashboard Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/dashboard/stats",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "dashboard", "stats"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Users",
+          "item": [
+            {
+              "name": "Get All Users",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users?page=0&size=20&role=ADMIN",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "users"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "20"},
+                    {"key": "role", "value": "ADMIN"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get User by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "users", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Create User (Super Admin)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"newuser@example.com\",\n    \"password\": \"password123\",\n    \"fullName\": \"New User\",\n    \"phone\": \"+84123456789\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "users"]
+                }
+              }
+            },
+            {
+              "name": "Update User",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"fullName\": \"Updated Name\",\n    \"phone\": \"+84123456789\",\n    \"isActive\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "users", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Change User Role (Super Admin)",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"role\": \"ADMIN\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users/:id/role",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "users", ":id", "role"]
+                }
+              }
+            },
+            {
+              "name": "Toggle User Active",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users/:id/activate",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "users", ":id", "activate"]
+                }
+              }
+            },
+            {
+              "name": "Delete User (Super Admin)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "users", ":id"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lawyer Profiles",
+          "item": [
+            {
+              "name": "Get All Lawyers",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/lawyers",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "lawyers"]
+                }
+              }
+            },
+            {
+              "name": "Get Lawyer by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/lawyers/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "lawyers", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Get Featured Lawyers",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/lawyers/featured",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "lawyers", "featured"]
+                }
+              }
+            },
+            {
+              "name": "Create Lawyer",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"slug\": \"lawyer-name\",\n    \"nameVi\": \"Luật sư A\",\n    \"nameEn\": \"Lawyer A\",\n    \"bioVi\": \"Giới thiệu bằng tiếng Việt\",\n    \"bioEn\": \"Bio in English\",\n    \"positionVi\": \"Luật sư cao cấp\",\n    \"positionEn\": \"Senior Partner\",\n    \"experienceYears\": 10,\n    \"barNumber\": \"LS12345\",\n    \"languages\": [\"vi\", \"en\"],\n    \"avatarUrl\": \"https://example.com/avatar.jpg\",\n    \"isFeatured\": true,\n    \"workingHours\": \"9:00-18:00\",\n    \"userId\": \"user-uuid\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/lawyers",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "lawyers"]
+                }
+              }
+            },
+            {
+              "name": "Update Lawyer",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"slug\": \"lawyer-name\",\n    \"nameVi\": \"Luật sư A Updated\",\n    \"nameEn\": \"Lawyer A Updated\",\n    \"bioVi\": \"Updated bio in Vietnamese\",\n    \"bioEn\": \"Updated bio in English\",\n    \"positionVi\": \"Managing Partner\",\n    \"positionEn\": \"Managing Partner\",\n    \"experienceYears\": 12,\n    \"barNumber\": \"LS12345\",\n    \"languages\": [\"vi\", \"en\", \"jp\"],\n    \"avatarUrl\": \"https://example.com/avatar-new.jpg\",\n    \"isFeatured\": false,\n    \"workingHours\": \"10:00-19:00\",\n    \"userId\": \"user-uuid\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/lawyers/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "lawyers", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Toggle Lawyer Featured",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/lawyers/:id/feature",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "lawyers", ":id", "feature"]
+                }
+              }
+            },
+            {
+              "name": "Delete Lawyer",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/lawyers/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "lawyers", ":id"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tags",
+          "item": [
+            {
+              "name": "Get All Tags",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/tags",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "tags"]
+                }
+              }
+            },
+            {
+              "name": "Get Tag by Slug",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/tags/:slug",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "tags", ":slug"]
+                }
+              }
+            },
+            {
+              "name": "Create Tag",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"slug\": \"new-tag\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/tags",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "tags"]
+                }
+              }
+            },
+            {
+              "name": "Delete Tag",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/tags/:slug",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "tags", ":slug"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Categories",
+          "item": [
+            {
+              "name": "Get All Categories",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/categories",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "categories"]
+                }
+              }
+            },
+            {
+              "name": "Get Root Categories",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/categories/root",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "categories", "root"]
+                }
+              }
+            },
+            {
+              "name": "Get Category by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/categories/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "categories", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Create Category",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"slug\": \"new-category\",\n    \"parentId\": \"parent-uuid-or-null\",\n    \"metaTitleVi\": \"Tiêu đề SEO\",\n    \"metaTitleEn\": \"SEO Title\",\n    \"metaDescVi\": \"Mô tả SEO tiếng Việt\",\n    \"metaDescEn\": \"SEO Description English\",\n    \"displayOrder\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/categories",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "categories"]
+                }
+              }
+            },
+            {
+              "name": "Update Category",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"slug\": \"updated-category\",\n    \"parentId\": \"parent-uuid-or-null\",\n    \"metaTitleVi\": \"Updated Tiêu đề SEO\",\n    \"metaTitleEn\": \"Updated SEO Title\",\n    \"metaDescVi\": \"Updated Mô tả SEO tiếng Việt\",\n    \"metaDescEn\": \"Updated SEO Description English\",\n    \"displayOrder\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/categories/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "categories", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Delete Category",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/categories/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "categories", ":id"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Posts (Admin)",
+          "item": [
+            {
+              "name": "Get All Posts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/posts?page=0&size=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "posts"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "20"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Post by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/posts/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "posts", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Create Post",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"slug\": \"new-post\",\n    \"title\": \"Bài viết mới\",\n    \"excerpt\": \"Tóm tắt bài viết\",\n    \"content\": \"Nội dung bài viết...\",\n    \"thumbnailUrl\": \"https://example.com/thumb.jpg\",\n    \"categoryId\": \"category-uuid\",\n    \"status\": \"DRAFT\",\n    \"views\": 0,\n    \"readingTime\": 5,\n    \"ogImageUrl\": \"https://example.com/og.jpg\",\n    \"isFeatured\": false,\n    \"language\": \"vi\",\n    \"metaTitle\": \"Meta Title\",\n    \"metaDesc\": \"Meta Description\",\n    \"tags\": [\"tag1\", \"tag2\"],\n    \"lawyerIds\": [\"lawyer-uuid\"],\n    \"publishAt\": \"2026-06-01T10:00:00Z\",\n    \"scheduledAt\": null\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/posts",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "posts"]
+                }
+              }
+            },
+            {
+              "name": "Update Post",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"slug\": \"updated-post\",\n    \"title\": \"Bài viết đã cập nhật\",\n    \"excerpt\": \"Tóm tắt đã cập nhật\",\n    \"content\": \"Nội dung đã cập nhật...\",\n    \"thumbnailUrl\": \"https://example.com/thumb-new.jpg\",\n    \"categoryId\": \"category-uuid\",\n    \"status\": \"PUBLISHED\",\n    \"views\": 100,\n    \"readingTime\": 7,\n    \"ogImageUrl\": \"https://example.com/og-new.jpg\",\n    \"isFeatured\": true,\n    \"language\": \"vi\",\n    \"metaTitle\": \"Updated Meta Title\",\n    \"metaDesc\": \"Updated Meta Description\",\n    \"tags\": [\"tag1\", \"tag2\", \"tag3\"],\n    \"lawyerIds\": [\"lawyer-uuid\"],\n    \"publishAt\": \"2026-06-01T10:00:00Z\",\n    \"scheduledAt\": null\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/posts/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "posts", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Publish Post",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/posts/:id/publish",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "posts", ":id", "publish"]
+                }
+              }
+            },
+            {
+              "name": "Archive Post",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/posts/:id/archive",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "posts", ":id", "archive"]
+                }
+              }
+            },
+            {
+              "name": "Delete Post",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/posts/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "posts", ":id"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Case Studies",
+          "item": [
+            {
+              "name": "Get All Case Studies",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/case-studies?publishedOnly=false",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "case-studies"],
+                  "query": [
+                    {"key": "publishedOnly", "value": "false"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Case Study by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/case-studies/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "case-studies", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Create Case Study",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"slug\": \"case-study-1\",\n    \"titleVi\": \"Nghiên cứu tình huống 1\",\n    \"titleEn\": \"Case Study 1\",\n    \"excerptVi\": \"Tóm tắt tiếng Việt\",\n    \"excerptEn\": \"English excerpt\",\n    \"contentVi\": \"Nội dung tiếng Việt...\",\n    \"contentEn\": \"English content...\",\n    \"outcome\": \"Successful outcome\",\n    \"thumbnailUrl\": \"https://example.com/thumb.jpg\",\n    \"ogImageUrl\": \"https://example.com/og.jpg\",\n    \"isFeatured\": false,\n    \"isPublished\": false,\n    \"serviceIds\": [\"service-uuid\"]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/case-studies",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "case-studies"]
+                }
+              }
+            },
+            {
+              "name": "Update Case Study",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"slug\": \"updated-case-study\",\n    \"titleVi\": \"Nghiên cứu tình huống đã cập nhật\",\n    \"titleEn\": \"Updated Case Study\",\n    \"excerptVi\": \"Updated excerpt vi\",\n    \"excerptEn\": \"Updated excerpt en\",\n    \"contentVi\": \"Updated content vi...\",\n    \"contentEn\": \"Updated content en...\",\n    \"outcome\": \"Updated outcome\",\n    \"thumbnailUrl\": \"https://example.com/thumb-new.jpg\",\n    \"ogImageUrl\": \"https://example.com/og-new.jpg\",\n    \"isFeatured\": true,\n    \"isPublished\": true,\n    \"serviceIds\": [\"service-uuid\"]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/case-studies/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "case-studies", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Publish Case Study",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/case-studies/:id/publish",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "case-studies", ":id", "publish"]
+                }
+              }
+            },
+            {
+              "name": "Unpublish Case Study",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/case-studies/:id/unpublish",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "case-studies", ":id", "unpublish"]
+                }
+              }
+            },
+            {
+              "name": "Delete Case Study",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/case-studies/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "case-studies", ":id"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Documents (Admin)",
+          "item": [
+            {
+              "name": "Get All Documents",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/documents",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "documents"]
+                }
+              }
+            },
+            {
+              "name": "Get Document by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/documents/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "documents", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Toggle Document Visibility",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/documents/:id/visibility",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "documents", ":id", "visibility"]
+                }
+              }
+            },
+            {
+              "name": "Delete Document",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/documents/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "documents", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Get Document Download Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/documents/:id/download-count",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "documents", ":id", "download-count"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "File Upload",
+          "item": [
+            {
+              "name": "Upload File",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {"key": "file", "type": "file", "value": ""},
+                    {"key": "folder", "type": "text", "value": "uploads"}
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/upload",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "upload"]
+                }
+              }
+            },
+            {
+              "name": "Upload Image",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {"key": "file", "type": "file", "value": ""},
+                    {"key": "folder", "type": "text", "value": "images"}
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/upload/image",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "upload", "image"]
+                }
+              }
+            },
+            {
+              "name": "Upload Document",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {"key": "file", "type": "file", "value": ""},
+                    {"key": "folder", "type": "text", "value": "documents"}
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/upload/document",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "upload", "document"]
+                }
+              }
+            },
+            {
+              "name": "Upload Multiple Files",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {"key": "files", "type": "file", "value": ""},
+                    {"key": "folder", "type": "text", "value": "uploads"}
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/upload/multiple",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "upload", "multiple"]
+                }
+              }
+            },
+            {
+              "name": "Delete File",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"fileUrl\": \"https://example.com/uploads/file.jpg\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/upload",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "upload"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chatbot (Admin)",
+          "item": [
+            {
+              "name": "List Sessions",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/chatbot/sessions?page=0&size=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "chatbot", "sessions"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "20"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Session Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/chatbot/sessions/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "chatbot", "sessions", ":id"]
+                }
+              }
+            },
+            {
+              "name": "Get Conversation Logs",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/chatbot/logs?page=0&size=50",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "chatbot", "logs"],
+                  "query": [
+                    {"key": "page", "value": "0"},
+                    {"key": "size", "value": "50"}
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Chatbot Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/chatbot/stats",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "chatbot", "stats"]
+                }
+              }
+            },
+            {
+              "name": "Get Intent Distribution",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/chatbot/intents",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "chatbot", "intents"]
+                }
+              }
+            },
+            {
+              "name": "Get Chatbot Config",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/chatbot/config",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "chatbot", "config"]
+                }
+              }
+            },
+            {
+              "name": "Update Chatbot Config",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"config\": {\n        \"greeting\": \"Xin chào! Tôi có thể giúp gì cho bạn?\",\n        \"fallbackMessage\": \"Xin lỗi, tôi không hiểu ý bạn.\"\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/chatbot/config",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "chatbot", "config"]
+                }
+              }
+            },
+            {
+              "name": "Escalate Session",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"note\": \"Customer requested human agent\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/chatbot/sessions/:id/escalate",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "chatbot", "sessions", ":id", "escalate"]
+                }
+              }
+            },
+            {
+              "name": "Close Session",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/chatbot/sessions/:id/close",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "chatbot", "sessions", ":id", "close"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Booking",
+      "item": [
+        {
+          "name": "Get Available Slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/availability/:lawyerId?fromDate=2026-06-01&toDate=2026-06-07",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "availability", ":lawyerId"],
+              "query": [
+                {"key": "fromDate", "value": "2026-06-01"},
+                {"key": "toDate", "value": "2026-06-07"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Availability Slot",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"lawyerId\": \"lawyer-uuid\",\n    \"slotDate\": \"2026-06-01\",\n    \"startTime\": \"09:00\",\n    \"endTime\": \"17:00\",\n    \"slotDuration\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "availability"]
+            }
+          }
+        },
+        {
+          "name": "Delete Availability Slot",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/availability/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "availability", ":id"]
+            }
+          }
+        },
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"clientName\": \"John Doe\",\n    \"clientEmail\": \"john@example.com\",\n    \"clientPhone\": \"+84123456789\",\n    \"lawyerId\": \"lawyer-uuid\",\n    \"serviceId\": \"service-uuid\",\n    \"scheduledAt\": \"2026-06-01T10:00:00Z\",\n    \"durationMinutes\": 60,\n    \"meetingType\": \"VIDEO\",\n    \"timezone\": \"Asia/Ho_Chi_Minh\",\n    \"source\": \"WEBSITE\",\n    \"utmSource\": \"google\",\n    \"utmMedium\": \"cpc\",\n    \"utmCampaign\": \"booking-promo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Verify Booking OTP",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"otpCode\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/:id/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", ":id", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Resend Booking OTP",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/:id/resend-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", ":id", "resend-otp"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/:id/cancel?reason=I need to reschedule",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", ":id", "cancel"],
+              "query": [
+                {"key": "reason", "value": "I need to reschedule"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Booking by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", ":id"]
+            }
+          }
+        },
+        {
+          "name": "Get All Bookings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings"],
+              "query": [
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Booking Status",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"CONFIRMED\",\n    \"notes\": \"Customer confirmed via phone\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/:id/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", ":id", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chatbot",
+      "item": [
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"message\": \"Tôi muốn tư vấn về ly hôn\",\n    \"sessionId\": \"session-uuid-or-null\",\n    \"language\": \"vi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/chatbot/message",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chatbot", "message"]
+            }
+          }
+        },
+        {
+          "name": "Get Chat History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chatbot/history/:sessionId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chatbot", "history", ":sessionId"]
+            }
+          }
+        },
+        {
+          "name": "Request Human Handoff",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chatbot/handoff?sessionId=session-uuid",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chatbot", "handoff"],
+              "query": [
+                {"key": "sessionId", "value": "session-uuid"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "SMS Webhook",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"provider\": \"twilio\",\n    \"messageId\": \"msg-123\",\n    \"status\": \"DELIVERED\",\n    \"phone\": \"+84123456789\",\n    \"timestamp\": \"2026-06-01T10:00:00Z\",\n    \"errorCode\": null,\n    \"errorMessage\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/sms",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "sms"]
+            }
+          }
+        },
+        {
+          "name": "OTP Callback Webhook",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"phone\": \"+84123456789\",\n    \"status\": \"VERIFIED\",\n    \"code\": \"123456\",\n    \"attempts\": 1,\n    \"expiresAt\": \"2026-06-01T10:05:00Z\",\n    \"provider\": \"twilio\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/otp-callback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "otp-callback"]
+            }
+          }
+        },
+        {
+          "name": "Webhook Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "health"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

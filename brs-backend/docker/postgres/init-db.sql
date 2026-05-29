@@ -16,7 +16,7 @@ END
 $$;
 
 -- Grant privileges
-GRANT ALL PRIVILEGES ON DATABASE brs_dev TO brs_dev;
+GRANT ALL PRIVILEGES ON DATABASE brs_db TO brs_dev;
 GRANT ALL PRIVILEGES ON SCHEMA public TO brs_dev;
 
 -- Grant schema privileges

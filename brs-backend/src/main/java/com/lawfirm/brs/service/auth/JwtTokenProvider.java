@@ -136,6 +136,7 @@ public class JwtTokenProvider {
         try {
             return Jwts.parser()
                 .verifyWith(publicKey)
+                .clockSkewSeconds(30) // Allow 30 seconds clock skew
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

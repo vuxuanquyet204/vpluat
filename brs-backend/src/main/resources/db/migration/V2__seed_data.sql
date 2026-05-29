@@ -15,7 +15,7 @@ INSERT INTO users (id, email, password_hash, role, full_name, phone, is_active, 
 VALUES (
     'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
     'admin@lawfirm.vn',
-    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qJQXNgPq8.YJDW', -- password: Admin@123
+    '$2a$12$GPXD4qiPJ1e0p6wojtUF4eb5jn4vkJfxfjMO35EXu3ag0GK6j5R.G', -- password: Admin@123
     'SUPER_ADMIN',
     'Quản Trị Viên',
     '0912345678',
@@ -29,12 +29,11 @@ VALUES (
 -- ============================================================
 INSERT INTO users (id, email, password_hash, role, full_name, phone, is_active, created_at, updated_at)
 VALUES 
-    ('b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'editor@lawfirm.vn', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qJQXNgPq8.YJDW', 'EDITOR', 'Người Biên Tập', '0912345679', true, NOW(), NOW()),
-    ('c2eebc99-9c0b-4ef8-bb6d-6bb9bd380a13', 'cskh@lawfirm.vn', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qJQXNgPq8.YJDW', 'CSKH', 'Nhân Viên CSKH', '0912345680', true, NOW(), NOW()),
-    ('d3eebc99-9c0b-4ef8-bb6d-6bb9bd380a14', 'lawyer1@lawfirm.vn', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qJQXNgPq8.YJDW', 'LAWYER', 'Luật Sư Một', '0912345681', true, NOW(), NOW()),
-    ('e4eebc99-9c0b-4ef8-bb6d-6bb9bd380a15', 'lawyer2@lawfirm.vn', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qJQXNgPq8.YJDW', 'LAWYER', 'Luật Sư Hai', '0912345682', true, NOW(), NOW()),
-    ('f5eebc99-9c0b-4ef8-bb6d-6bb9bd380a16', 'user@lawfirm.vn', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qJQXNgPq8.YJDW', 'USER', 'Người Dùng Test', '0912345683', true, NOW(), NOW());
-
+    ('b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'editor@lawfirm.vn', '$2a$12$GPXD4qiPJ1e0p6wojtUF4eb5jn4vkJfxfjMO35EXu3ag0GK6j5R.G', 'EDITOR', 'Người Biên Tập', '0912345679', true, NOW(), NOW()),
+    ('c2eebc99-9c0b-4ef8-bb6d-6bb9bd380a13', 'cskh@lawfirm.vn', '$2a$12$GPXD4qiPJ1e0p6wojtUF4eb5jn4vkJfxfjMO35EXu3ag0GK6j5R.G', 'CSKH', 'Nhân Viên CSKH', '0912345680', true, NOW(), NOW()),
+    ('d3eebc99-9c0b-4ef8-bb6d-6bb9bd380a14', 'lawyer1@lawfirm.vn', '$2a$12$GPXD4qiPJ1e0p6wojtUF4eb5jn4vkJfxfjMO35EXu3ag0GK6j5R.G', 'LAWYER', 'Luật Sư Một', '0912345681', true, NOW(), NOW()),
+    ('e4eebc99-9c0b-4ef8-bb6d-6bb9bd380a15', 'lawyer2@lawfirm.vn', '$2a$12$GPXD4qiPJ1e0p6wojtUF4eb5jn4vkJfxfjMO35EXu3ag0GK6j5R.G', 'LAWYER', 'Luật Sư Hai', '0912345682', true, NOW(), NOW()),
+    ('f5eebc99-9c0b-4ef8-bb6d-6bb9bd380a16', 'user@lawfirm.vn', '$2a$12$GPXD4qiPJ1e0p6wojtUF4eb5jn4vkJfxfjMO35EXu3ag0GK6j5R.G', 'USER', 'Người Dùng Test', '0912345683', true, NOW(), NOW());
 -- ============================================================
 -- SERVICES (Dịch Vụ Pháp Lý)
 -- ============================================================
