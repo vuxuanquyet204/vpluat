@@ -1,0 +1,57 @@
+{
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Đã xảy ra lỗi",
+    "retry": "Thử lại",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "save": "Lưu",
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "create": "Tạo mới",
+    "search": "Tìm kiếm",
+    "no_results": "Không có kết quả",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "previous": "Trước"
+  },
+  "nav": {
+    "home": "Trang chủ",
+    "services": "Dịch vụ",
+    "lawyers": "Luật sư",
+    "blog": "Blog",
+    "faq": "Câu hỏi thường gặp",
+    "contact": "Liên hệ",
+    "about": "Giới thiệu"
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "forgot_password": "Quên mật khẩu?",
+    "login_success": "Đăng nhập thành công",
+    "login_failed": "Đăng nhập thất bại",
+    "invalid_credentials": "Email hoặc mật khẩu không đúng"
+  },
+  "booking": {
+    "title": "Đặt lịch tư vấn",
+    "select_service": "Chọn dịch vụ",
+    "select_lawyer": "Chọn luật sư",
+    "select_date": "Chọn ngày",
+    "select_time": "Chọn giờ",
+    "confirm": "Xác nhận đặt lịch",
+    "success": "Đặt lịch thành công",
+    "slot_reserved": "Đã giữ chỗ slot",
+    "slot_expired": "Slot đã hết hạn"
+  },
+  "contact": {
+    "title": "Liên hệ",
+    "name": "Họ và tên",
+    "phone": "Số điện thoại",
+    "message": "Nội dung",
+    "submit": "Gửi",
+    "submit_success": "Gửi thành công",
+    "submit_failed": "Gửi thất bại"
+  }
+}

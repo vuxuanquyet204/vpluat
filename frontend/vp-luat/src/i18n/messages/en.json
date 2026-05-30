@@ -1,0 +1,57 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "no_results": "No results",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous"
+  },
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "lawyers": "Lawyers",
+    "blog": "Blog",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "about": "About"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "forgot_password": "Forgot password?",
+    "login_success": "Login successful",
+    "login_failed": "Login failed",
+    "invalid_credentials": "Invalid email or password"
+  },
+  "booking": {
+    "title": "Book Consultation",
+    "select_service": "Select service",
+    "select_lawyer": "Select lawyer",
+    "select_date": "Select date",
+    "select_time": "Select time",
+    "confirm": "Confirm booking",
+    "success": "Booking successful",
+    "slot_reserved": "Slot reserved",
+    "slot_expired": "Slot expired"
+  },
+  "contact": {
+    "title": "Contact",
+    "name": "Full name",
+    "phone": "Phone number",
+    "message": "Message",
+    "submit": "Submit",
+    "submit_success": "Submitted successfully",
+    "submit_failed": "Submission failed"
+  }
+}
