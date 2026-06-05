@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { Cormorant_Garamond, Plus_Jakarta_Sans } from 'next/font/google';
 import { Providers } from '@/providers';
+import { Footer, FloatingWidgets } from '@/components/layout';
 import { cn } from '@/lib/utils';
-import '@/styles/globals.css';
+import '@/app/globals.css';
 
 const headingFont = Cormorant_Garamond({
   subsets: ['latin'],
@@ -39,6 +40,8 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <body className={cn(headingFont.variable, bodyFont.variable, 'font-body antialiased')}>
         <Providers>{children}</Providers>
+        <Footer />
+        <FloatingWidgets />
       </body>
     </html>
   );
