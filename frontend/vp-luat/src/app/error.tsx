@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
@@ -11,13 +11,7 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    // Report to Sentry (only if available)
-    // In production, add: import * as Sentry from '@sentry/nextjs';
-    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-      console.error('[Error]', error);
-    }
-  }, [error]);
+  const router = useRouter();
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center p-8">
@@ -38,7 +32,7 @@ export default function Error({
             <RefreshCw className="w-4 h-4 mr-2" />
             Thử lại
           </Button>
-          <Button onClick={() => (window.location.href = '/')}>
+          <Button onClick={() => router.push('/')}>
             <Home className="w-4 h-4 mr-2" />
             Về trang chủ
           </Button>

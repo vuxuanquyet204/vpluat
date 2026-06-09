@@ -1,2 +1,18 @@
-// Placeholder exports - add components as they are created
-export {};
+export * from './booking-footer';
+export * from './booking-hero';
+export * from './booking-icon';
+export * from './booking-mini-nav';
+export * from './booking-page';
+export * from './booking-progress';
+export * from './booking-shell';
+export * from './lawyer-card';
+export * from './lawyer-grid';
+export * from './lawyer-section';
+export * from './service-card';
+export * from './service-grid';
+export * from './slot-reservation-timer';
+export * from './step-confirmation';
+export * from './step-datetime';
+export * from './step-info';
+export * from './step-service';
+export * from './summary-card';

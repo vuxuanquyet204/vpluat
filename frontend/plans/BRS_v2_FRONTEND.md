@@ -5440,6 +5440,318 @@ Stages:
 | Booking error boundary | State preservation on error | MEDIUM |
 | **E2E setup** | **Playwright + critical booking flow tests** | LOW |
 
+### Phase 3 Detailed Plan — Execution Checklist
+
+**Mục tiêu ship**: Hoàn thành luồng đặt lịch 4 bước hoạt động ổn định trên mobile/desktop, chống double booking, giữ state khi refresh tab và có test bao phủ các tình huống race condition quan trọng.
+
+**Phạm vi Phase 3**:
+- Public booking page tại `app/booking/page.tsx`
+- Booking feature module tại `src/features/booking/`
+- Persist state bằng `sessionStorage`, không dùng `localStorage`
+- Đồng bộ slot với backend qua reservation ID + expiry time
+- Xử lý conflict, expiry, refresh, back/next, submit success/failure
+
+**Definition of Done**:
+- [ ] User hoàn tất được booking end-to-end trong 1 tab không mất state khi refresh
+- [ ] Slot được reserve trước khi nhập form và tự hết hạn sau 5 phút
+- [ ] Khi slot bị người khác giữ/đặt trước, UI báo rõ và buộc chọn lại slot hợp lệ
+- [ ] Submit không tạo duplicate booking nếu reservation không còn valid
+- [ ] Có unit tests cho store/schema/utils và Playwright cho critical booking flows
+
+#### Week 5: Wizard Foundation + Slot Reservation (Day 29-35)
+
+##### Task 3.1: Route + Feature Shell + Progress UI (Day 29)
+
+**Mục tiêu**: Tạo khung trang booking và phân tách feature module rõ ràng.
+
+**Files ưu tiên**:
+- `src/app/booking/page.tsx`
+- `src/features/booking/components/booking-provider.tsx`
+- `src/features/booking/components/booking-progress.tsx`
+- `src/features/booking/components/index.ts`
+- `src/features/booking/index.ts`
+
+**Implementation notes**:
+- Trang booking là client-heavy flow nhưng page shell vẫn nên giữ server-first nếu không cần state ở route level.
+- Dùng provider mỏng để gom query client logic, analytics hooks và error boundary.
+- Progress bar hiển thị 4 bước: dịch vụ → luật sư → lịch hẹn → thông tin/xác nhận.
+- Tất cả step component tách file riêng để giữ scope nhỏ và test dễ.
+
+**Exit Criteria**:
+- [ ] `/booking` render được shell + progress bar
+- [ ] Step switching có cấu trúc sẵn dù chưa nối API đầy đủ
+- [ ] Thư mục feature `booking` khớp cấu trúc trong BRS
+
+---
+
+##### Task 3.2: Booking Store + Session Persistence (Day 29-30)
+
+**Mục tiêu**: Thiết lập nguồn state trung tâm cho wizard và bảo toàn state khi refresh.
+
+**Files ưu tiên**:
+- `src/stores/booking.store.ts`
+- `src/features/booking/types/index.ts`
+- `src/features/booking/hooks/use-booking.ts`
+
+**State tối thiểu**:
+- `step`
+- `service`
+- `lawyer`
+- `date`
+- `timeSlot`
+- `reservedSlot`
+- `customerInfo`
+- `isHydrated`
+- actions: `setStep`, `reserveSlot`, `releaseSlot`, `submitBooking`, `checkSlotStatus`, `reset`
+
+**Quy tắc bắt buộc**:
+- Dùng `persist(... createJSONStorage(() => sessionStorage))`
+- Không persist transient error/loading flags
+- Sau hydrate phải verify lại reservation với server trước khi cho user tiếp tục submit
+- `reset()` phải xóa cả wizard state lẫn reservation state local
+
+**Edge cases cần tính trước**:
+- Refresh tại step 3/4 nhưng reservation đã hết hạn
+- Tab mở lâu, timer local lệch so với server
+- Back về bước trước sau khi đã reserve slot
+
+**Exit Criteria**:
+- [ ] Refresh trang vẫn giữ step + form data + selected slot nếu reservation còn valid
+- [ ] Reservation invalid thì state tự rollback về bước chọn lịch
+- [ ] Store API đủ rõ để step components không tự quản lý business state riêng
+
+---
+
+##### Task 3.3: Step 1-2 — Service, Lawyer, DateTime Selection (Day 30-31)
+
+**Mục tiêu**: Hoàn thiện hai lớp chọn đầu vào trước khi reserve slot.
+
+**Files ưu tiên**:
+- `src/features/booking/components/step-service.tsx`
+- `src/features/booking/components/step-lawyer.tsx`
+- `src/features/booking/components/step-datetime.tsx`
+- `src/features/booking/components/calendar.tsx`
+- `src/features/booking/components/time-slots.tsx`
+- `src/features/booking/hooks/use-slots.ts`
+
+**Implementation notes**:
+- Bước chọn phải khóa nút “Tiếp tục” nếu dữ liệu chưa đủ.
+- Khi đổi service hoặc lawyer sau đó, phải invalidate lựa chọn date/slot phụ thuộc.
+- Slot list hiển thị trạng thái `available`, `reserved`, `booked`, `expired` rõ ràng.
+- Ưu tiên query key rõ nghĩa kiểu `['booking-slots', lawyerId, date]`.
+
+**Exit Criteria**:
+- [ ] User chỉ đi tiếp khi chọn đủ dữ liệu bắt buộc
+- [ ] Đổi lựa chọn upstream sẽ reset đúng state downstream
+- [ ] Slot data được fetch lại đúng theo lawyer + date
+
+---
+
+##### Task 3.4: Slot Reservation API + Countdown Timer (Day 31-33)
+
+**Mục tiêu**: Chặn race condition bằng cơ chế reserve trước khi submit.
+
+**Files ưu tiên**:
+- `src/features/booking/api/booking-api.ts`
+- `src/features/booking/components/slot-reservation-timer.tsx`
+- `src/features/booking/utils/index.ts`
+- `tests/mocks/handlers/booking.ts`
+
+**Luồng chuẩn**:
+1. User chọn slot
+2. Frontend gọi `POST /availability/reserve`
+3. Backend trả về `reservationId` + `expiresAt`
+4. Store lưu `reservedSlot`
+5. Timer countdown hiển thị liên tục trong step nhập thông tin/xác nhận
+6. Hết hạn thì clear reservation + đưa user về bước chọn lịch
+
+**Behavior bắt buộc**:
+- Nếu reserve slot mới, phải release reservation cũ trước hoặc overwrite an toàn theo contract backend
+- Nếu API trả `409`, hiển thị toast và refetch slot list ngay
+- Nếu user rời flow hoặc reset, cố gắng gọi release reservation
+- Timer dùng `expiresAt` từ server, không tự giả định 5 phút từ client time
+
+**Exit Criteria**:
+- [ ] Timer hiển thị chính xác và tự xử lý khi hết hạn
+- [ ] Conflict 409 được xử lý mượt, không kẹt state local
+- [ ] Mock handlers mô phỏng được success, conflict, expired
+
+---
+
+##### Task 3.5: Step 3-4 — Customer Info + Confirmation (Day 33-35)
+
+**Mục tiêu**: Thu thập dữ liệu khách hàng, xác nhận lại thông tin và sẵn sàng submit.
+
+**Files ưu tiên**:
+- `src/features/booking/components/step-info.tsx`
+- `src/features/booking/components/step-confirm.tsx`
+- `src/features/booking/components/booking-summary.tsx`
+- `src/features/booking/schemas/booking.schema.ts`
+
+**Validation bắt buộc**:
+- Họ tên tối thiểu 2 ký tự
+- Số điện thoại Việt Nam hợp lệ
+- Email optional nhưng nếu nhập phải đúng format
+- Mô tả vấn đề đủ chi tiết
+- Checkbox đồng ý điều khoản là required
+
+**UX notes**:
+- Summary luôn hiện service, lawyer, ngày, giờ, loại tư vấn, thời gian còn lại của reservation
+- Nút submit bị disable khi reservation sắp/hết hạn hoặc form invalid
+- Copy lỗi cần rõ ràng, hướng hành động cụ thể
+
+**Exit Criteria**:
+- [ ] Form validate ngay tại client bằng Zod + React Hook Form
+- [ ] User xem được full summary trước submit
+- [ ] Không thể submit khi reservation không hợp lệ
+
+#### Week 6: API Robustness + Recovery + Test Coverage (Day 36-42)
+
+##### Task 3.6: Submit Booking + Conflict Recovery (Day 36-37)
+
+**Mục tiêu**: Hoàn thiện request tạo booking cuối cùng và xử lý các lỗi concurrency từ backend.
+
+**Files ưu tiên**:
+- `src/features/booking/api/booking-api.ts`
+- `src/stores/booking.store.ts`
+- `src/features/booking/types/index.ts`
+
+**Contract kỳ vọng**:
+- Submit gửi `reservationId` cùng payload booking
+- Backend chỉ accept nếu reservation còn valid và đúng version/ownership rule
+- Response success trả booking ID + trạng thái xác nhận
+
+**Failure cases cần xử lý**:
+- `409 SLOT_ALREADY_RESERVED` → quay lại chọn slot + toast rõ lý do
+- `410 RESERVATION_EXPIRED` → clear reservation + yêu cầu chọn lại giờ
+- `422 VALIDATION_ERROR` → map lỗi field về form
+- `5xx` → giữ nguyên form data, cho retry an toàn
+
+**Exit Criteria**:
+- [ ] Submit success dẫn tới confirmation state rõ ràng
+- [ ] Submit fail không làm mất form data không cần thiết
+- [ ] Mapping lỗi API → UI nhất quán, dễ hiểu
+
+---
+
+##### Task 3.7: Booking Error Boundary + Recovery Paths (Day 37-38)
+
+**Mục tiêu**: Giữ trải nghiệm bền vững khi component/API lỗi giữa luồng booking.
+
+**Files ưu tiên**:
+- `src/features/booking/components/booking-error-boundary.tsx`
+- `src/app/booking/error.tsx` hoặc integration với `src/app/error.tsx`
+- `src/features/booking/components/booking-provider.tsx`
+
+**Recovery strategy**:
+- Nếu render/runtime error ở wizard subtree, fallback UI phải cho retry
+- Nếu retry được, giữ lại persisted wizard state nếu vẫn valid
+- Nếu reservation đã invalid trong lúc recover, redirect mềm về bước chọn lịch
+
+**Exit Criteria**:
+- [ ] Booking subtree có boundary riêng, không phụ thuộc hoàn toàn root error boundary
+- [ ] Recovery path không làm user mất toàn bộ tiến trình vô cớ
+- [ ] Copy fallback phân biệt được lỗi tạm thời và lỗi cần chọn lại slot
+
+---
+
+##### Task 3.8: Polling + Server Revalidation for Slot Integrity (Day 38-39)
+
+**Mục tiêu**: Giảm sai lệch giữa state local và trạng thái slot thực tế trên server.
+
+**Files ưu tiên**:
+- `src/features/booking/hooks/use-slots.ts`
+- `src/stores/booking.store.ts`
+- `src/features/booking/components/slot-reservation-timer.tsx`
+
+**Implementation notes**:
+- Poll slot availability mỗi 30 giây ở màn chọn lịch
+- Khi đang giữ reservation, verify reservation status định kỳ bằng reservation endpoint
+- Focus/refocus tab nên trigger revalidation ngay
+- Không spam polling ở bước confirmation nếu reservation đã có cơ chế verify riêng
+
+**Exit Criteria**:
+- [ ] Refocus tab sau idle sẽ đồng bộ lại trạng thái slot
+- [ ] Reservation hết hạn/invalid được phát hiện trước khi user submit càng sớm càng tốt
+- [ ] Không tạo polling thừa gây load không cần thiết
+
+---
+
+##### Task 3.9: Analytics + Event Tracking for Booking Funnel (Day 39-40)
+
+**Mục tiêu**: Chuẩn bị funnel cho đo lường chuyển đổi từ landing/public pages sang booking.
+
+**Files ưu tiên**:
+- `src/lib/analytics.ts`
+- `src/features/booking/utils/index.ts`
+- các step components trong `src/features/booking/components/`
+
+**Events đề xuất**:
+- `booking_started`
+- `booking_step_completed`
+- `booking_slot_reserved`
+- `booking_slot_conflict`
+- `booking_submit_succeeded`
+- `booking_submit_failed`
+
+**Quy tắc**:
+- Event payload không chứa PII thô ngoài các metadata an toàn như service slug, lawyer id, consult type, step index
+- Chỉ bắn event sau khi action thực sự thành công hoặc fail có ý nghĩa business
+
+**Exit Criteria**:
+- [ ] Funnel đủ dữ liệu để đo rơi rụng theo từng bước
+- [ ] Không log thông tin nhạy cảm của khách hàng
+
+---
+
+##### Task 3.10: Unit + Integration + E2E Coverage (Day 40-42)
+
+**Mục tiêu**: Khóa chất lượng trước khi ship phase 3.
+
+**Files ưu tiên**:
+- `tests/unit/booking.store.test.ts`
+- `tests/unit/booking.schema.test.ts`
+- `tests/unit/booking-api.test.ts`
+- `tests/e2e/flows/booking.spec.ts`
+- `tests/mocks/handlers/booking.ts`
+
+**Test matrix tối thiểu**:
+- Unit: persist/rehydrate booking store
+- Unit: schema validation cho phone/email/required fields
+- Unit: timer utility / expiry calculation
+- Integration: reserve success, reserve conflict, release reservation, submit fail/success qua MSW
+- E2E: happy path, slot conflict, reservation expired after refresh
+
+**Exit Criteria**:
+- [ ] Critical booking flows có test tự động
+- [ ] Có ít nhất 1 test cho refresh + rehydrate + revalidation
+- [ ] Mock handlers phản ánh đúng API contract dự kiến với backend
+
+---
+
+### Phase 3 Dependencies
+
+**Cần sẵn từ Phase 1-2**:
+- Query provider + Axios client ổn định
+- Toast system hoạt động
+- Error boundary pattern đã được chuẩn hóa
+- Public layout và design tokens hoàn chỉnh để booking page dùng lại
+
+**Phụ thuộc backend cần chốt sớm**:
+- Contract `reserve / verify / release / submit`
+- Error codes cho conflict / expired / validation
+- TTL thực tế của reservation
+- Semantics ownership của reservation khi refresh tab hoặc mở tab mới
+
+### Phase 3 QA Checklist
+
+- [ ] Mobile booking flow usable ở viewport nhỏ
+- [ ] Nút back/next không làm mất dữ liệu không cần thiết
+- [ ] Refresh ở step cuối không gây submit trùng
+- [ ] Hết hạn reservation trong lúc nhập form có thông báo rõ
+- [ ] Chuyển đổi service/lawyer/date reset state phụ thuộc đúng logic
+- [ ] Confirmation page hiển thị booking ID và next steps rõ ràng
+
 ## Phase 4: Chatbot AI (Week 6-7)
 
 | Task | Description | Risk |

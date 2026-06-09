@@ -1,6 +1,8 @@
-// Landing Pages feature exports
-export * from './components';
-export * from './admin';
-export * from './hooks';
-export * from './types';
-export * from './lib';
+export type { LandingBlock, LandingPageConfig, LandingPageVariantConfig } from './types';
+export {
+  getLandingPageBySlug,
+  pickLandingPageVariant,
+  publicPageSlugs,
+  resolveLandingPageVariant,
+} from './lib';
+export { getLandingExperimentAssignment } from './lib/experiments';

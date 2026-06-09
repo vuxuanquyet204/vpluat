@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Calendar } from 'lucide-react';
 
 // Social icons as inline SVGs
@@ -65,57 +64,57 @@ export function LawyersSection() {
         </div>
 
         <div className="team__grid">
-          {LAWYERS.map((lawyer) => (
-            <div key={lawyer.name} className="lawyer-card">
-              <div className="lawyer-card__image">
-                <Image
-                  src={lawyer.image}
-                  alt={lawyer.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 25vw"
-                  style={{ objectFit: 'cover' }}
-                />
-                <div className="lawyer-card__avatar">
-                  {lawyer.name.split(' ').slice(-1)[0]}
-                </div>
-                <div className="lawyer-card__overlay">
-                  <div className="lawyer-card__socials">
-                    <a href="#" className="lawyer-card__social" aria-label="Facebook">
-                      <FacebookIcon size={16} />
-                    </a>
-                    <a href="#" className="lawyer-card__social" aria-label="LinkedIn">
-                      <LinkedinIcon size={16} />
-                    </a>
+          {LAWYERS.map((lawyer) => {
+            const lawyerInitials = lawyer.name
+              .split(' ')
+              .filter(Boolean)
+              .slice(-2)
+              .map((part) => part[0])
+              .join('');
+
+            return (
+              <div key={lawyer.name} className="lawyer-card">
+                <div className="lawyer-card__image lawyer-card__image--placeholder">
+                  <div className="lawyer-card__avatar lawyer-card__avatar--static">{lawyerInitials}</div>
+                  <div className="lawyer-card__overlay">
+                    <div className="lawyer-card__socials">
+                      <a href="#" className="lawyer-card__social" aria-label="Facebook">
+                        <FacebookIcon size={16} />
+                      </a>
+                      <a href="#" className="lawyer-card__social" aria-label="LinkedIn">
+                        <LinkedinIcon size={16} />
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="lawyer-card__body">
-                <h3 className="lawyer-card__name">{lawyer.name}</h3>
-                <p className="lawyer-card__position">{lawyer.position}</p>
-                <div className="lawyer-card__tags">
-                  {lawyer.tags.map((tag) => (
-                    <span key={tag} className="lawyer-card__tag">
-                      {tag}
+                <div className="lawyer-card__body">
+                  <h3 className="lawyer-card__name">{lawyer.name}</h3>
+                  <p className="lawyer-card__position">{lawyer.position}</p>
+                  <div className="lawyer-card__tags">
+                    {lawyer.tags.map((tag) => (
+                      <span key={tag} className="lawyer-card__tag">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="lawyer-card__experience">
+                    <span className="lawyer-card__exp-icon">
+                      <Calendar size={14} />
                     </span>
-                  ))}
+                    <span className="lawyer-card__exp-text">
+                      <strong>{lawyer.experience}</strong>
+                    </span>
+                  </div>
+                  <Link
+                    href={`/luat-su/${lawyer.name.toLowerCase().replace(/\s+/g, '-')}`}
+                    className="lawyer-card__btn"
+                  >
+                    Xem hồ sơ
+                  </Link>
                 </div>
-                <div className="lawyer-card__experience">
-                  <span className="lawyer-card__exp-icon">
-                    <Calendar size={14} />
-                  </span>
-                  <span className="lawyer-card__exp-text">
-                    <strong>{lawyer.experience}</strong>
-                  </span>
-                </div>
-                <Link
-                  href={`/luat-su/${lawyer.name.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="lawyer-card__btn"
-                >
-                  Xem hồ sơ
-                </Link>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

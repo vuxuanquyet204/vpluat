@@ -60,7 +60,7 @@ export function Navbar() {
             <button className="navbar__lang-btn active">VI</button>
             <button className="navbar__lang-btn">EN</button>
           </div>
-          <Link href="/lien-he" className="navbar__cta">
+          <Link href="/booking" className="navbar__cta">
             Đặt lịch tư vấn
           </Link>
           <button
@@ -87,7 +87,7 @@ export function Navbar() {
         ))}
         <div className="mobile-menu__divider" />
         <Link
-          href="/lien-he"
+          href="/booking"
           className="mobile-menu__cta"
           onClick={handleLinkClick}
         >

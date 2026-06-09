@@ -1,2 +1,1 @@
-// Placeholder exports - add components as they are created
-export {};
+export { PublicPageRenderer } from './public-page-renderer';

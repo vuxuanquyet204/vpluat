@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Calendar, Briefcase, Users, Phone } from 'lucide-react';
 
 const HERO_STATS = [
@@ -15,16 +14,7 @@ const HERO_STATS = [
 export function HeroSection() {
   return (
     <section className="hero">
-      <div className="hero__bg">
-        <Image
-          src="/images/hero-bg.jpg"
-          alt="VP Luật Hùng & Cộng sự"
-          fill
-          priority
-          sizes="100vw"
-          style={{ objectFit: 'cover' }}
-        />
-      </div>
+      <div className="hero__bg" aria-hidden="true" />
       <div className="hero__overlay" />
 
       <div className="container hero__content">
@@ -53,7 +43,7 @@ export function HeroSection() {
         </div>
 
         <div className="hero__ctas">
-          <Link href="/lien-he" className="btn btn--primary btn--lg">
+          <Link href="/booking" className="btn btn--primary btn--lg">
             Đặt lịch tư vấn ngay
           </Link>
           <Link href="/dich-vu" className="btn btn--outline btn--lg">
