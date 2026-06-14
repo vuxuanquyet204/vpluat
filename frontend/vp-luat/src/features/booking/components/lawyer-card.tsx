@@ -36,6 +36,7 @@ export function LawyerCard({
     <button
       type="button"
       onClick={() => onSelect(lawyer)}
+      aria-pressed={selected}
       className={cn(
         'relative cursor-pointer rounded-[var(--radius-lg)] border-2 bg-white px-4 py-5 text-center transition-all duration-200',
         selected

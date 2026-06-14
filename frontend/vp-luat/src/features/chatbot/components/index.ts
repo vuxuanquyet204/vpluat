@@ -1,2 +1,14 @@
-// Placeholder exports - add components as they are created
-export {};
+export { ChatbotWidget } from './chatbot-widget';
+export { ChatbotFab } from './chatbot-fab';
+export { ChatWindow } from './chat-window';
+export { ChatHeader } from './chat-header';
+export { ChatMessages } from './chat-messages';
+export { ChatMessageItem } from './chat-message-item';
+export { ChatQuickReplies } from './chat-quick-replies';
+export { ChatTypingIndicator } from './chat-typing-indicator';
+export { ChatInputArea } from './chat-input-area';
+export { ChatBubblePopup } from './chat-bubble-popup';
+export { ChatHandoffBanner } from './chat-handoff-banner';
+export { FloatingWidgets } from './floating-widgets';
+export { BackToTop } from './back-to-top';
+export { CallWidget } from './call-widget';

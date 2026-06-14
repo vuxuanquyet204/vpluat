@@ -18,6 +18,7 @@ export function ServiceCard({
     <button
       type="button"
       onClick={() => onSelect(service)}
+      aria-pressed={selected}
       className={cn(
         'relative cursor-pointer rounded-[var(--radius-lg)] border-2 bg-white px-[14px] py-5 text-center transition-all duration-200',
         selected

@@ -1,7 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { ReactElement } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SessionProvider } from 'next-auth/react';
 
 export function createTestQueryClient() {
   return new QueryClient({
@@ -18,15 +17,13 @@ interface RenderOptions {
 
 export function renderWithProviders(
   ui: ReactElement,
-  options: RenderOptions = {}
+  _options: RenderOptions = {}
 ) {
   const queryClient = createTestQueryClient();
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <SessionProvider session={options.session ?? null}>
-        {ui}
-      </SessionProvider>
+      {ui}
     </QueryClientProvider>
   );
 }

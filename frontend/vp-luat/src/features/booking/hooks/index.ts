@@ -1,8 +1,2 @@
-export { useBookingStore } from './use-booking-store';
-export {
-  useAvailabilityQuery,
-  useReleaseReservationMutation,
-  useReserveSlotMutation,
-  useSubmitBookingMutation,
-  useVerifyReservationQuery,
-} from './use-booking-api';
+export { useAvailabilityQuery, useReleaseReservationMutation, useReserveSlotMutation, useSubmitBookingMutation, useVerifyReservationQuery, useSlotPolling, useReservationPolling, useVisibilityRefetch } from './use-booking-api';
+export { useBookingStore, type BookingStoreState } from './use-booking-store';

@@ -32,7 +32,10 @@ export function BookingProgress({ step }: { step: BookingStep }) {
   const { activeIndex, fill } = getProgressMeta(step);
 
   return (
-    <div className="border-b border-[var(--gray-100)] bg-white px-6 pt-6">
+    <nav
+      className="border-b border-[var(--gray-100)] bg-white px-6 pt-6"
+      aria-label="Tiến trình đặt lịch"
+    >
       <div className="relative mx-auto flex max-w-[700px] items-start">
         <div className="absolute left-[calc(50%/3)] right-[calc(50%/3)] top-5 h-0.5 bg-[var(--gray-200)]">
           <div
@@ -58,8 +61,9 @@ export function BookingProgress({ step }: { step: BookingStep }) {
                     'border-[var(--primary)] bg-[var(--primary)] text-white shadow-[0_0_0_4px_rgba(30,58,95,0.12)]',
                   !isDone && !isActive && 'border-[var(--gray-200)] bg-white text-[var(--gray-400)]',
                 )}
+                aria-current={isActive ? 'step' : undefined}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-4 w-4" aria-hidden="true" />
               </div>
               <span
                 className={cn(
@@ -75,6 +79,6 @@ export function BookingProgress({ step }: { step: BookingStep }) {
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }

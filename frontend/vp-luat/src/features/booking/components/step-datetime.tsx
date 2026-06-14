@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, CalendarDays, ChevronLeft, ChevronRight } from '
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { BOOKING_CONSULTATION_TYPES } from '../lib';
+import { trackBookingDateSelected, trackBookingSlotConflict, trackBookingSlotReserved } from '../analytics';
 import { useAvailabilityQuery, useBookingStore, useReleaseReservationMutation, useReserveSlotMutation } from '../hooks';
 import { createDayMatrix, createMonthLabel, formatBookingDateLabel } from '../utils';
 import { BookingIcon } from './booking-icon';
@@ -72,6 +73,7 @@ export function StepDatetime({
     setReservation(null);
     setTimeSlot(null);
     setDate(nextDate.toISOString());
+    trackBookingDateSelected(nextDate.toISOString().slice(0, 10));
   };
 
   const handleSelectSlot = async (slotId: string) => {
@@ -81,6 +83,7 @@ export function StepDatetime({
 
     const slot = slots.find((item) => item.slotId === slotId);
     if (!slot || slot.status === 'booked') {
+      trackBookingSlotConflict(slotId);
       return;
     }
 
@@ -97,9 +100,11 @@ export function StepDatetime({
 
       setTimeSlot(slot);
       setReservation(nextReservation);
+      trackBookingSlotReserved(slotId, slot.startTime);
     } catch {
       setTimeSlot(null);
       setReservation(null);
+      trackBookingSlotConflict(slotId);
       toast.error('Khung giờ này vừa được người khác giữ. Vui lòng chọn khung giờ khác.');
       await availabilityQuery.refetch();
     }

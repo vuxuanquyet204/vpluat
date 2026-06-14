@@ -16,6 +16,18 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@/features/chatbot/state': path.resolve(__dirname, './src/features/chatbot/state'),
+      '@/features/chatbot/config/conversation-flow': path.resolve(__dirname, './src/features/chatbot/config/conversation-flow'),
+      'next-auth/react': path.resolve(__dirname, './tests/mocks/next-auth-react.tsx'),
+      'next-auth/providers/credentials': path.resolve(
+        __dirname,
+        './tests/mocks/next-auth-credentials.ts',
+      ),
+      'next-auth': path.resolve(__dirname, './tests/mocks/next-auth.ts'),
+      '@/features/auth/providers/auth-provider': path.resolve(
+        __dirname,
+        './tests/mocks/auth-provider.ts',
+      ),
     },
   },
 });

@@ -1,4 +1,7 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+'use client';
+
+import { useCallback, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchAvailability,
   releaseReservation,
@@ -42,4 +45,71 @@ export function useSubmitBookingMutation() {
   return useMutation({
     mutationFn: (payload: SubmitBookingPayload) => submitBooking(payload),
   });
+}
+
+const POLL_INTERVAL_MS = 30_000;
+
+export function useSlotPolling(lawyerId: string | null, date: string | null) {
+  const queryClient = useQueryClient();
+
+  const poll = useCallback(() => {
+    if (!lawyerId || !date) {
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['booking-slots', lawyerId, date] });
+  }, [queryClient, lawyerId, date]);
+
+  useEffect(() => {
+    if (!lawyerId || !date) {
+      return;
+    }
+
+    poll();
+    const intervalId = setInterval(poll, POLL_INTERVAL_MS);
+    return () => clearInterval(intervalId);
+  }, [lawyerId, date, poll]);
+}
+
+export function useReservationPolling(reservationId: string | null) {
+  const queryClient = useQueryClient();
+
+  const poll = useCallback(() => {
+    if (!reservationId) {
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['booking-reservation', reservationId] });
+  }, [queryClient, reservationId]);
+
+  useEffect(() => {
+    if (!reservationId) {
+      return;
+    }
+
+    poll();
+    const intervalId = setInterval(poll, POLL_INTERVAL_MS);
+    return () => clearInterval(intervalId);
+  }, [reservationId, poll]);
+}
+
+export function useVisibilityRefetch(lawyerId: string | null, date: string | null, reservationId: string | null) {
+  const queryClient = useQueryClient();
+
+  const refetchOnFocus = useCallback(() => {
+    if (document.visibilityState !== 'visible') {
+      return;
+    }
+
+    if (lawyerId && date) {
+      queryClient.invalidateQueries({ queryKey: ['booking-slots', lawyerId, date] });
+    }
+
+    if (reservationId) {
+      queryClient.invalidateQueries({ queryKey: ['booking-reservation', reservationId] });
+    }
+  }, [queryClient, lawyerId, date, reservationId]);
+
+  useEffect(() => {
+    document.addEventListener('visibilitychange', refetchOnFocus);
+    return () => document.removeEventListener('visibilitychange', refetchOnFocus);
+  }, [refetchOnFocus]);
 }

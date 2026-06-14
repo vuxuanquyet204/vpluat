@@ -2,6 +2,7 @@
 
 import { ArrowRight } from 'lucide-react';
 import { BOOKING_LAWYERS, BOOKING_SERVICES } from '../lib';
+import { trackBookingLawyerSelected, trackBookingServiceSelected } from '../analytics';
 import { useBookingStore } from '../hooks';
 import { ServiceGrid } from './service-grid';
 import { LawyerSection } from './lawyer-section';
@@ -13,6 +14,20 @@ export function StepService({ onNext }: { onNext: () => void }) {
   const setLawyer = useBookingStore((state) => state.setLawyer);
 
   const canProceed = Boolean(service && lawyer);
+
+  const handleSelectService = (svc: typeof service) => {
+    if (svc) {
+      setService(svc);
+      trackBookingServiceSelected(svc.slug, svc.id);
+    }
+  };
+
+  const handleSelectLawyer = (l: typeof lawyer) => {
+    if (l) {
+      setLawyer(l);
+      trackBookingLawyerSelected(l.id, l.name);
+    }
+  };
 
   return (
     <section className="animate-in fade-in slide-in-from-right-1 duration-300">
@@ -26,14 +41,14 @@ export function StepService({ onNext }: { onNext: () => void }) {
       <ServiceGrid
         services={BOOKING_SERVICES}
         selectedServiceId={service?.id ?? null}
-        onSelect={setService}
+        onSelect={handleSelectService}
       />
 
       <LawyerSection
         lawyers={BOOKING_LAWYERS}
         visible={Boolean(service)}
         selectedLawyerId={lawyer?.id ?? null}
-        onSelect={setLawyer}
+        onSelect={handleSelectLawyer}
       />
 
       <div className="mt-8 flex justify-end border-t border-[var(--gray-100)] pt-6">

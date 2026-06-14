@@ -11,7 +11,7 @@ import type {
   BookingTimeSlot,
 } from '../types';
 
-interface BookingStoreState {
+export interface BookingStoreState {
   step: BookingStep;
   service: BookingServiceOption | null;
   lawyer: BookingLawyerOption | null;
@@ -38,6 +38,8 @@ interface BookingStoreState {
   resetAll: () => void;
 }
 
+type BookingStore = () => BookingStoreState;
+
 const initialCustomerInfo: BookingCustomerInfo = {
   fullName: '',
   phone: '',
@@ -46,13 +48,13 @@ const initialCustomerInfo: BookingCustomerInfo = {
   agreedToTerms: false,
 };
 
-const initialState = {
-  step: 'service' as BookingStep,
+const initialState: Pick<BookingStoreState, 'step' | 'service' | 'lawyer' | 'date' | 'timeSlot' | 'consultationType' | 'reservation' | 'customerInfo' | 'confirmation' | 'isHydrated'> = {
+  step: 'service',
   service: null,
   lawyer: null,
   date: null,
   timeSlot: null,
-  consultationType: 'office' as BookingConsultationType,
+  consultationType: 'office',
   reservation: null,
   customerInfo: initialCustomerInfo,
   confirmation: null,
@@ -153,8 +155,13 @@ export const useBookingStore = create<BookingStoreState>()(
         customerInfo: state.customerInfo,
         confirmation: state.confirmation,
       }),
-      onRehydrateStorage: () => (state) => {
-        state?.setHydrated(true);
+      onRehydrateStorage: () => (_state, _error) => {
+        return (_persistedState: unknown) => {
+          const ps = _persistedState as Partial<BookingStoreState> & { setHydrated?: (v: boolean) => void } | undefined;
+          if (ps) {
+            ps.setHydrated?.(true);
+          }
+        };
       },
     },
   ),

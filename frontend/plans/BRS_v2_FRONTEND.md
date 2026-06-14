@@ -5765,27 +5765,29 @@ Stages:
 | Chatbot error boundary | Auto-retry + history preserved | MEDIUM |
 | **PostHog funnels** | **Chatbot events tracking (bắt đầu song song)** | LOW |
 
-## Phase 5a: Admin Core (Week 7-8)
+## Phase 5: Admin Panel (Week 8-9)
+
+> **Chi tiết đầy đủ**: `frontend/plans/phase-5-admin-panel.md`
+>
+> Design Reference: `frontend/demo/admin.html` — 100% UI parity
 
 | Task | Description | Risk |
 | :- | :- | :- |
-| Admin layout | Sidebar + Topbar + lazy loading framework | MEDIUM |
-| Dashboard | Stats cards + basic charts | MEDIUM |
-| Booking admin | List + Calendar view | MEDIUM |
-| CRM list | Table với filters + pagination | LOW |
-| Services, Lawyers admin | CRUD operations | LOW |
-| Reviews moderation | Approve/reject workflow | LOW |
-
-## Phase 5b: Admin Advanced (Week 8-9)
-
-| Task | Description | Risk |
-| :- | :- | :- |
-| CRM Kanban | Drag-drop lead management | HIGH |
-| Blog admin | CRUD + TipTap rich editor + image upload | HIGH |
-| Landing builder | Advanced section editing + preview | HIGH |
-| Chart dashboard | Recharts với lazy loading + error boundary | MEDIUM |
-| Newsletter admin | Campaign management + subscriber list | MEDIUM |
-| Admin performance | Dynamic imports, code splitting, bundle audit | MEDIUM |
+| Admin layout | Sidebar + Topbar + route group (240px sidebar, 64px topbar) | MEDIUM |
+| Shared components | DataTable, Badge, SearchBar, FilterTabs, Pagination, ActionButtons, EmptyState, ConfirmDialog, RowUser | LOW |
+| Dashboard | Stats cards (4) + Line chart + Donut chart + Booking table + Lead Kanban + Activity timeline | MEDIUM |
+| CRM | Lead table + Filters + Search + Lead Kanban (dnd-kit) + Lead detail modal | MEDIUM |
+| Bookings admin | Calendar view + Booking table + Detail modal | MEDIUM |
+| Blog admin | Post list + TipTap rich editor + Image upload + Draft/Publish | HIGH |
+| Services & Lawyers | Service CRUD + Lawyer CRUD + Profile management | LOW |
+| Reviews | Moderation approve/reject + Reply | LOW |
+| Chatbot logs | Conversation history + Session detail | LOW |
+| Newsletter | Subscriber list + Campaign management | MEDIUM |
+| Users & Permissions | User CRUD + Role assignment (Admin/Lawyer/Staff) | MEDIUM |
+| Settings | General + Booking + Notifications + SEO | LOW |
+| RBAC middleware | All admin routes protected, unauthorized redirect | HIGH |
+| Error boundary | Admin-specific error fallback | LOW |
+| Unit + E2E tests | Shared components + Dashboard + CRM flows | MEDIUM |
 
 ## Phase 6: Polish + Observability + Testing (Week 10-11)
 
@@ -5820,8 +5822,7 @@ Mileage:
 ├── Week 4:  Public pages ship
 ├── Week 6:  Booking ship
 ├── Week 7:  Chatbot ship
-├── Week 8:  Admin Core ship
-├── Week 9:  Admin Advanced ship
+├── Week 9:  Admin Panel ship (Dashboard + CRM + Blog + CRUD)
 └── Week 11: Full system ship
 ```
 

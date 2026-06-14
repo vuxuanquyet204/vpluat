@@ -5,7 +5,9 @@ export const bookingFormSchema = z.object({
   phone: z
     .string()
     .trim()
-    .regex(/^(0[1-9]\d{8,9})$/, 'Vui lòng nhập số điện thoại hợp lệ'),
+    .min(9, 'Vui lòng nhập số điện thoại hợp lệ')
+    .max(15, 'Vui lòng nhập số điện thoại hợp lệ')
+    .refine((v) => /^0\d{9,10}$/.test(v.replace(/\s+/g, '')), 'Vui lòng nhập số điện thoại hợp lệ'),
   email: z
     .string()
     .trim()

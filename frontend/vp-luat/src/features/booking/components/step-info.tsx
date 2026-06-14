@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { bookingFormSchema, type BookingFormValues } from '../schemas';
+import { trackBookingSubmitFailed, trackBookingSubmitStarted, trackBookingSubmitSucceeded } from '../analytics';
 import { useBookingStore, useSubmitBookingMutation } from '../hooks';
 import { SummaryCard } from './summary-card';
 
@@ -70,6 +71,8 @@ export function StepInfo({
       return;
     }
 
+    trackBookingSubmitStarted();
+
     try {
       const confirmation = await submitBookingMutation.mutateAsync({
         reservationId: reservation.reservationId,
@@ -93,8 +96,11 @@ export function StepInfo({
       });
       setConfirmation(confirmation);
       setReservation(null);
+      trackBookingSubmitSucceeded(confirmation.bookingId);
       onSubmitSuccess();
-    } catch {
+    } catch (err) {
+      const errorCode = err instanceof Error ? err.message : 'UNKNOWN';
+      trackBookingSubmitFailed(errorCode);
       toast.error('Không thể hoàn tất đặt lịch. Vui lòng thử lại sau ít phút.');
     }
   };
@@ -114,64 +120,79 @@ export function StepInfo({
           className="rounded-[var(--radius-xl)] border border-[var(--gray-100)] bg-white p-7 shadow-[var(--shadow-sm)]"
         >
           <div className="mb-[18px]">
-            <label className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">
+            <label htmlFor="booking-fullName" className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">
               Họ và tên <span className="text-[var(--error)]">*</span>
             </label>
             <input
+              id="booking-fullName"
               {...register('fullName')}
-              className="w-full rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] px-[14px] py-[11px] text-[0.9rem] text-[var(--primary)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(30,58,95,0.07)]"
+              aria-describedby={errors.fullName ? 'booking-fullName-error' : undefined}
+              aria-invalid={!!errors.fullName}
+              className="w-full rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] px-[14px] py-[11px] text-[0.9rem] text-[var(--primary)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(30,58,95,0.07)] aria-invalid:border-[var(--error)]"
               placeholder="Nhập họ và tên đầy đủ"
             />
             {errors.fullName ? (
-              <p className="mt-1 text-[0.75rem] text-[var(--error)]">{errors.fullName.message}</p>
+              <p id="booking-fullName-error" className="mt-1 text-[0.75rem] text-[var(--error)]" role="alert">{errors.fullName.message}</p>
             ) : null}
           </div>
 
           <div className="mb-[18px]">
-            <label className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">
+            <label htmlFor="booking-phone" className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">
               Số điện thoại <span className="text-[var(--error)]">*</span>
             </label>
             <div className="relative flex items-center">
               <span className="pointer-events-none absolute left-[14px] text-[0.875rem] text-[var(--gray-600)]">+84</span>
               <input
+                id="booking-phone"
                 {...register('phone')}
-                className="w-full rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] px-[14px] py-[11px] pl-[52px] text-[0.9rem] text-[var(--primary)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(30,58,95,0.07)]"
+                aria-describedby={errors.phone ? 'booking-phone-error' : undefined}
+                aria-invalid={!!errors.phone}
+                className="w-full rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] px-[14px] py-[11px] pl-[52px] text-[0.9rem] text-[var(--primary)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(30,58,95,0.07)] aria-invalid:border-[var(--error)]"
                 placeholder="0xxx xxx xxx"
               />
             </div>
             {errors.phone ? (
-              <p className="mt-1 text-[0.75rem] text-[var(--error)]">{errors.phone.message}</p>
+              <p id="booking-phone-error" className="mt-1 text-[0.75rem] text-[var(--error)]" role="alert">{errors.phone.message}</p>
             ) : null}
           </div>
 
           <div className="mb-[18px]">
-            <label className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">Email</label>
+            <label htmlFor="booking-email" className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">Email</label>
             <input
+              id="booking-email"
               {...register('email')}
-              className="w-full rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] px-[14px] py-[11px] text-[0.9rem] text-[var(--primary)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(30,58,95,0.07)]"
+              aria-describedby={errors.email ? 'booking-email-error' : undefined}
+              aria-invalid={!!errors.email}
+              className="w-full rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] px-[14px] py-[11px] text-[0.9rem] text-[var(--primary)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(30,58,95,0.07)] aria-invalid:border-[var(--error)]"
               placeholder="email@example.com"
             />
             {errors.email ? (
-              <p className="mt-1 text-[0.75rem] text-[var(--error)]">{errors.email.message}</p>
+              <p id="booking-email-error" className="mt-1 text-[0.75rem] text-[var(--error)]" role="alert">{errors.email.message}</p>
             ) : null}
           </div>
 
           <div className="mb-[18px]">
-            <label className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">
+            <label htmlFor="booking-issueSummary" className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">
               Mô tả vấn đề pháp lý cần tư vấn <span className="text-[var(--error)]">*</span>
             </label>
             <textarea
+              id="booking-issueSummary"
               {...register('issueSummary')}
-              className="min-h-[110px] w-full resize-y rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] px-[14px] py-[11px] text-[0.9rem] text-[var(--primary)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(30,58,95,0.07)]"
+              aria-describedby={errors.issueSummary ? 'booking-issueSummary-error' : undefined}
+              aria-invalid={!!errors.issueSummary}
+              className="min-h-[110px] w-full resize-y rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] px-[14px] py-[11px] text-[0.9rem] text-[var(--primary)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(30,58,95,0.07)] aria-invalid:border-[var(--error)]"
               placeholder="Mô tả ngắn gọn vấn đề bạn cần hỗ trợ..."
             />
             {errors.issueSummary ? (
-              <p className="mt-1 text-[0.75rem] text-[var(--error)]">{errors.issueSummary.message}</p>
+              <p id="booking-issueSummary-error" className="mt-1 text-[0.75rem] text-[var(--error)]" role="alert">{errors.issueSummary.message}</p>
             ) : null}
           </div>
 
           <button
             type="button"
+            role="checkbox"
+            aria-checked={agreedToTerms}
+            aria-describedby={errors.agreedToTerms ? 'booking-terms-error' : undefined}
             onClick={() => setValue('agreedToTerms', !agreedToTerms, { shouldValidate: true })}
             className="mb-4 flex items-start gap-2.5 text-left"
           >
@@ -193,7 +214,7 @@ export function StepInfo({
             </span>
           </button>
           {errors.agreedToTerms ? (
-            <p className="mb-4 text-[0.75rem] text-[var(--error)]">{errors.agreedToTerms.message}</p>
+            <p id="booking-terms-error" className="mb-4 text-[0.75rem] text-[var(--error)]" role="alert">{errors.agreedToTerms.message}</p>
           ) : null}
 
           <button
