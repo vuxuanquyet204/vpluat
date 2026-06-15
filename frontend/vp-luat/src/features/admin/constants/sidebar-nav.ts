@@ -67,7 +67,7 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
         labelKey: 'nav.services',
         label: 'Dịch vụ & Luật sư',
         icon: Gavel,
-        href: '/admin/services',
+        href: '/admin/services-management',
       },
       {
         id: 'reviews',

@@ -1,11 +1,17 @@
 import type { ChatMessage, QuickReply } from '../types';
 
 const now = () => new Date().toISOString();
-const uid = () => crypto.randomUUID();
+// Use stable, deterministic IDs for module-level constants. Generating a new
+// UUID at module-load time causes "duplicate key" warnings under Next.js HMR
+// when the module is re-evaluated across server/client boundaries — the
+// message objects are reference-equal semantically, but each fresh evaluation
+// produces a different id, which React then sees as a colliding key in lists.
+let msgCounter = 0;
+const stableUid = (prefix: string) => `${prefix}-${++msgCounter}`;
 
 function makeBot(content: string, quickReplies?: QuickReply[], disclaimer?: string): ChatMessage {
   return {
-    id: uid(),
+    id: stableUid('bot'),
     from: 'bot',
     content,
     timestamp: now(),
@@ -15,7 +21,7 @@ function makeBot(content: string, quickReplies?: QuickReply[], disclaimer?: stri
 }
 
 function makeUser(text: string): ChatMessage {
-  return { id: uid(), from: 'user', content: text, timestamp: now() };
+  return { id: stableUid('user'), from: 'user', content: text, timestamp: now() };
 }
 
 export interface ConversationStep {
@@ -104,7 +110,7 @@ export const LEAD_COMPLETE_BOT = makeBot(
 );
 
 export const LEAD_COMPLETE_HANDSOFF: ChatMessage = {
-  id: uid(),
+  id: stableUid('bot'),
   from: 'bot',
   content: '',
   timestamp: now(),
@@ -112,7 +118,7 @@ export const LEAD_COMPLETE_HANDSOFF: ChatMessage = {
 
 export function makeLeadHandoff(userName?: string, userPhone?: string): ChatMessage {
   return {
-    id: uid(),
+    id: stableUid('bot'),
     from: 'bot',
     content: '',
     timestamp: now(),

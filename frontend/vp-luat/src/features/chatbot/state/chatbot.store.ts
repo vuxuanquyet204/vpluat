@@ -98,16 +98,32 @@ export const useChatbotStore = create<ChatbotWidgetState>()(
       setSessionId: (sessionId) => set({ sessionId }),
 
       addMessage: (message) =>
-        set((state) => ({
-          messages: [
-            ...state.messages.slice(-(MAX_MESSAGES - 1)),
-            message,
-          ],
-          unreadCount:
-            state.isOpen || message.from === 'user'
-              ? state.unreadCount
-              : state.unreadCount + 1,
-        })),
+        set((state) => {
+          // Dedupe by id: if a message with the same id already exists, replace
+          // it in place. Prevents duplicate-key warnings when a constant message
+          // (e.g. GREETING_MESSAGE) is added more than once across re-renders,
+          // Strict-Mode double-invocation, or re-hydration from localStorage.
+          const existingIndex = state.messages.findIndex(
+            (m) => m.id === message.id,
+          );
+          let nextMessages: ChatMessage[];
+          if (existingIndex >= 0) {
+            nextMessages = state.messages.slice();
+            nextMessages[existingIndex] = message;
+          } else {
+            nextMessages = [
+              ...state.messages.slice(-(MAX_MESSAGES - 1)),
+              message,
+            ];
+          }
+          return {
+            messages: nextMessages,
+            unreadCount:
+              state.isOpen || message.from === 'user'
+                ? state.unreadCount
+                : state.unreadCount + 1,
+          };
+        }),
 
       appendStreamContent: (chunk) =>
         set((state) => ({
@@ -119,7 +135,12 @@ export const useChatbotStore = create<ChatbotWidgetState>()(
           if (!state.streamedContent) return state;
 
           const finalMessage: ChatMessage = {
-            id: crypto.randomUUID(),
+            // Use a stable counter-derived id so server-rendered and
+            // client-rendered trees agree (avoids duplicate-key warnings
+            // when SSR and client hydration race on freshly streamed
+            // messages). Combined with addMessage dedupe, this guarantees
+            // unique keys across the message list.
+            id: `stream-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             from: 'bot',
             content: state.streamedContent,
             timestamp: new Date().toISOString(),
@@ -160,7 +181,7 @@ export const useChatbotStore = create<ChatbotWidgetState>()(
         }),
     }),
     {
-      name: 'chatbot-v1',
+      name: 'chatbot-v2',
       storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
         messages: state.messages,

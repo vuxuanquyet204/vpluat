@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useRef } from 'react';
 import { useChatbotStore } from '../state';
 import { processUserInput } from '../config/conversation-flow';

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Navbar } from '@/components/layout';
 import {
   getLandingPageBySlug,
   pickLandingPageVariant,
@@ -107,17 +106,14 @@ export default async function PublicPage({ params, searchParams }: PublicPagePro
   }
 
   return (
-    <>
-      <Navbar />
-      <main className="public-page-shell" lang="vi">
-        <PublicPageRenderer page={page} variant={selectedVariant} />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(structuredData),
-          }}
-        />
-      </main>
-    </>
+    <main className="public-page-shell" lang="vi">
+      <PublicPageRenderer page={page} variant={selectedVariant} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData),
+        }}
+      />
+    </main>
   );
 }

@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import { Cormorant_Garamond, Plus_Jakarta_Sans } from 'next/font/google';
 import { Providers } from '@/providers';
-import { Footer, ChatbotWidget } from '@/components/layout';
-import { FloatingWidgets } from '@/components/layout/floating-widgets';
 import { cn } from '@/lib/utils';
 import '@/app/globals.css';
 
@@ -41,9 +39,6 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <body className={cn(headingFont.variable, bodyFont.variable, 'font-body antialiased')}>
         <Providers>{children}</Providers>
-        <Footer />
-        <FloatingWidgets />
-        <ChatbotWidget />
       </body>
     </html>
   );

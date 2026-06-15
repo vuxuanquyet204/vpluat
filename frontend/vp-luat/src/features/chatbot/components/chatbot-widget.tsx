@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { useChatbotWidget } from '../hooks';
 import { ChatbotFab } from './chatbot-fab';
 import { ChatWindow } from './chat-window';
@@ -9,6 +10,11 @@ import { ChatBubblePopup } from './chat-bubble-popup';
 export function ChatbotWidget() {
   const { isOpen, popupDismissed, toggleOpen, dismissPopup, setOpen } = useChatbotWidget();
   const hasInitialized = useRef(false);
+  const pathname = usePathname();
+
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/login')) {
+    return null;
+  }
 
   // Check sessionStorage on mount
   useEffect(() => {

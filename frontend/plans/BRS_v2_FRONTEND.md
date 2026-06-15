@@ -5791,17 +5791,21 @@ Stages:
 
 ## Phase 6: Polish + Observability + Testing (Week 10-11)
 
-| Task | Description | Risk |
+> **Chi tiết đầy đủ**: `frontend/plans/phase-6-finalization.md`
+>
+> Design Reference: 7 demo HTML files (index, services, lawyers, booking, contact, news, admin)
+
+| Stream | Description | Effort |
 | :- | :- | :- |
-| Sentry integration | Error tracking + Web Vitals + hydration errors | LOW |
-| PostHog setup | Funnels: Landing → Booking, Chatbot → Lead | LOW |
-| MSW mocks | API mocks for all features (dev + test) | LOW |
-| Storybook | All shared + feature components + Chromatic | MEDIUM |
-| Playwright E2E | All critical flows + visual regression | MEDIUM |
-| SEO | Metadata + sitemap + structured data + hreflang | LOW |
-| Performance audit | Lighthouse + Core Web Vitals + bundle size | MEDIUM |
-| Deployment | Vercel + CI/CD + staging env | LOW |
-| Smoke tests | Sanity check on staging | LOW |
+| A. 4 Public Pages | services, lawyers, news, contact (+ detail routes) | 2 days |
+| B. Public Pages Polish | home, booking, login — 100% UI parity | 1 day |
+| C. Admin Advanced | TipTap, Recharts, dnd-kit, TanStack Table | 1.5 days |
+| D. Auth & RBAC | middleware, forgot/reset, 403, error boundary | 0.5 day |
+| E. i18n + SEO | next-intl, sitemap, JSON-LD, metadata | 0.5 day |
+| F. Observability | Sentry, PostHog, Web Vitals | 0.5 day |
+| G. Testing | Storybook (20+ stories), Playwright (7+ flows) | 1 day |
+| H. Performance | bundle audit, dynamic import, image opt | 0.5 day |
+| I. Deployment | CI/CD, env vars, smoke test, prod deploy | 0.5 day |
 
 ## Timeline Summary
 
