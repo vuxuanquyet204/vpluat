@@ -123,7 +123,25 @@
 
 .section--dark {
   background: var(--primary);
+  background-image: url('https://images.unsplash.com/photo-1589391886645-d51941baf7fb?w=1920&q=80&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: var(--white);
+  position: relative;
+}
+
+.section--dark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(30,58,95,0.95) 0%, rgba(30,58,95,0.88) 50%, rgba(21,42,69,0.92) 100%);
+  z-index: 0;
+}
+
+.section--dark > .container {
+  position: relative;
+  z-index: 1;
 }
 
 .section__header {
@@ -155,7 +173,7 @@
 }
 
 .section__title--white {
-  color: var(--white);
+  color: var(--white) !important;
 }
 
 .section__subtitle {
@@ -167,7 +185,7 @@
 }
 
 .section__subtitle--white {
-  color: rgba(255,255,255,0.8);
+  color: rgba(255,255,255,0.95) !important;
 }
 
 /* ============================================================
@@ -817,8 +835,10 @@
 }
 
 .service-card__link {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  width: 100%;
   gap: 6px;
   font-size: 0.82rem;
   font-weight: 600;
@@ -2366,10 +2386,33 @@
   flex-direction: column;
   align-items: flex-end;
   pointer-events: none;
+  transform-origin: bottom right;
 }
 
 .chatbot-widget > * {
   pointer-events: auto;
+}
+
+/* Open + close transitions. The widget fades and slides on entrance and exit.
+   Closing is data-driven via `data-state` so the parent component can keep
+   the markup mounted while the close animation plays. */
+.chatbot-widget {
+  opacity: 0;
+  transform: translateY(16px) scale(0.96);
+  transition: opacity 220ms ease, transform 220ms cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+.chatbot-widget[data-state="open"],
+.chatbot-widget.chatbot-widget--open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.chatbot-widget[data-state="closing"],
+.chatbot-widget.chatbot-widget--closing {
+  opacity: 0;
+  transform: translateY(16px) scale(0.96);
+  transition: opacity 200ms ease, transform 200ms ease;
 }
 
 /* FAB */
@@ -2388,19 +2431,28 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 20px rgba(30, 58, 95, 0.45);
-  transition: background 0.2s ease, transform 0.2s ease;
-  z-index: 9999;
+  transition: background 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.25s ease;
+  z-index: 10000;
   pointer-events: auto;
 }
 
 .chatbot__fab:hover {
   background: var(--primary-light);
-  transform: scale(1.05);
+  transform: scale(1.06);
+  box-shadow: 0 6px 26px rgba(30, 58, 95, 0.55);
+}
+
+.chatbot__fab:active {
+  transform: scale(0.94);
 }
 
 .chatbot__fab[aria-expanded="true"] {
   background: var(--gray-500);
-  transform: scale(0.9);
+  transform: scale(0.9) rotate(90deg);
+}
+
+.chatbot__fab[aria-expanded="true"]:hover {
+  transform: scale(0.95) rotate(90deg);
 }
 
 .chatbot__fab-badge {
@@ -2438,8 +2490,15 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: chat-window-open 0.35s cubic-bezier(0.34, 1.2, 0.64, 1) both;
   margin-bottom: 12px;
+  /* Subtle internal mount animation. The container animation (chatbot-widget)
+     handles the open/close transitions; this is just a soft settle. */
+  animation: chat-window-settle 240ms ease-out both;
+}
+
+@keyframes chat-window-settle {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
 }
 
 @keyframes chat-window-open {
@@ -2997,6 +3056,28 @@
   gap: 10px;
   z-index: 9997;
   pointer-events: none;
+  transform-origin: bottom right;
+  /* Smoothly slide up when the chat window is open so the widgets sit
+     above the window instead of being hidden behind it. */
+  transition: transform 0.28s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.25s ease;
+}
+
+.floating-widgets > * {
+  pointer-events: auto;
+}
+
+body.has-open-chatbot .floating-widgets {
+  /* The chat window sits at bottom: 96px with max-height: 580px. Push the
+     floating widgets above the window so they remain visible. `transform`
+     keeps the original `bottom: 24px` so layout stays stable; the
+     translate value equals the window footprint plus a small buffer. We
+     also fade the widgets slightly to draw attention back to the chat. */
+  transform: translateY(calc(-1 * (96px + 580px + 12px)));
+  opacity: 0.7;
+}
+
+body.has-open-chatbot .floating-widgets:hover {
+  opacity: 1;
 }
 
 .floating-widgets > * {

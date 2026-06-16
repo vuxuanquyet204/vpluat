@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const LANGUAGES = [
@@ -48,7 +47,6 @@ export function LanguageSwitcher({ layout = 'desktop', className }: LanguageSwit
           {lang.label}
         </button>
       ))}
-      <ChevronDown size={14} className="navbar__lang-icon" aria-hidden />
     </div>
   );
 }

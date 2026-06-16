@@ -49,7 +49,9 @@ export function StepDatetime({
 
   const availabilityQuery = useAvailabilityQuery({
     lawyerId: lawyer?.id ?? null,
-    date,
+    // Backend expects a YYYY-MM-DD LocalDate; the store holds a full ISO
+    // string with time/timezone, so we slice the date portion here.
+    date: date ? date.slice(0, 10) : null,
   });
   const reserveSlotMutation = useReserveSlotMutation();
   const releaseReservationMutation = useReleaseReservationMutation();

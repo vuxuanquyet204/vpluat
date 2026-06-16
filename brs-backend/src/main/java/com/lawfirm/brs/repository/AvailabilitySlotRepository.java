@@ -26,7 +26,7 @@ public interface AvailabilitySlotRepository extends JpaRepository<AvailabilitySl
     List<AvailabilitySlot> findAvailableSlots(@Param("lawyerId") UUID lawyerId, @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT s FROM AvailabilitySlot s WHERE s.id = :id")
+    @Query("SELECT s FROM AvailabilitySlot s JOIN FETCH s.lawyer WHERE s.id = :id")
     Optional<AvailabilitySlot> findByIdWithLock(@Param("id") UUID id);
 
     boolean existsByLawyerIdAndSlotDateAndStartTime(UUID lawyerId, LocalDate slotDate, LocalTime startTime);

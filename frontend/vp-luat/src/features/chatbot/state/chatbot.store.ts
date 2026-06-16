@@ -84,8 +84,13 @@ export const useChatbotStore = create<ChatbotWidgetState>()(
       },
 
       toggleOpen: () => {
-        const { isOpen } = get();
-        set({ isOpen: !isOpen });
+        const { isOpen, isMinimized } = get();
+        // When reopening, clear the minimized flag so the full window shows
+        // up (otherwise ChatWindow returns null because isMinimized is true).
+        set({
+          isOpen: !isOpen,
+          isMinimized: !isOpen ? false : isMinimized,
+        });
         if (!isOpen) {
           set({ unreadCount: 0, popupDismissed: true });
         }

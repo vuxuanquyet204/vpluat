@@ -14,7 +14,13 @@ const HERO_STATS = [
 export function HeroSection() {
   return (
     <section className="hero">
-      <div className="hero__bg" aria-hidden="true" />
+      <div className="hero__bg" aria-hidden="true">
+        <img
+          src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1920&q=80&auto=format&fit=crop"
+          alt=""
+          loading="eager"
+        />
+      </div>
       <div className="hero__overlay" />
 
       <div className="container hero__content">

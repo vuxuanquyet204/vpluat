@@ -30,6 +30,7 @@ export interface BookingReservation {
   startTime: string;
   endTime: string;
   expiresAt: string;
+  status: 'active' | 'expired' | 'released' | 'converted';
 }
 
 export interface BookingCustomerInfo {
