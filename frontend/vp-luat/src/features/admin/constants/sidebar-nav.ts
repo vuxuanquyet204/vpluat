@@ -10,7 +10,12 @@ import {
   Mail,
   UserCog,
   Settings,
+  LayoutTemplate,
+  Bell,
+  History,
 } from 'lucide-react';
+
+export type SidebarBadgeSource = 'new-leads' | 'pending-bookings' | 'pending-reviews' | 'unread-notifications';
 
 export interface NavItem {
   id: string;
@@ -20,6 +25,7 @@ export interface NavItem {
   href: string;
   badge?: number;
   badgeVariant?: 'default' | 'red';
+  badgeSource?: SidebarBadgeSource;
   permission?: string[];
 }
 
@@ -52,7 +58,7 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
         label: 'Quản lý Lead / CRM',
         icon: Users,
         href: '/admin/crm',
-        badge: 12,
+        badgeSource: 'new-leads',
         badgeVariant: 'red',
       },
       {
@@ -90,6 +96,13 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
         icon: Mail,
         href: '/admin/newsletter',
       },
+      {
+        id: 'landing-pages',
+        labelKey: 'nav.landing_pages',
+        label: 'Landing Pages',
+        icon: LayoutTemplate,
+        href: '/admin/landing-pages',
+      },
     ],
   },
   {
@@ -101,6 +114,20 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
         label: 'Người dùng & Phân quyền',
         icon: UserCog,
         href: '/admin/users',
+      },
+      {
+        id: 'notifications',
+        labelKey: 'nav.notifications',
+        label: 'Thông báo',
+        icon: Bell,
+        href: '/admin/notifications',
+      },
+      {
+        id: 'audit',
+        labelKey: 'nav.audit',
+        label: 'Audit log',
+        icon: History,
+        href: '/admin/audit',
       },
       {
         id: 'settings',

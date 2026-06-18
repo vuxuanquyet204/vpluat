@@ -1,5 +1,6 @@
 'use client';
 
+import { ContactHero } from '../../components/contact-hero';
 import { ContactInfoList } from '../../components/contact-info-list';
 import { ContactQuickBtns } from '../../components/contact-quick-btns';
 import { ContactForm } from '../../components/contact-form';
@@ -17,23 +18,7 @@ export default function ContactPage() {
 
   return (
     <>
-      <section className="page-header contact-page-header">
-        <div className="container">
-          <div className="page-header__inner">
-            <div className="page-header__label">
-              <i className="fa-solid fa-headset" aria-hidden="true" />
-              Liên hệ với chúng tôi
-            </div>
-            <h1 className="page-header__title">
-              Hỗ trợ pháp lý <em>24/7</em>
-            </h1>
-            <p className="page-header__sub">
-              Đội ngũ luật sư sẵn sàng lắng nghe và hỗ trợ bạn giải quyết mọi vấn đề pháp lý.
-              Buổi tư vấn đầu tiên hoàn toàn miễn phí.
-            </p>
-          </div>
-        </div>
-      </section>
+      <ContactHero />
 
       <section className="contact-section">
         <div className="contact-grid">

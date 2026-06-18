@@ -1,216 +1,707 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Search, Edit, Trash2, Users } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import {
+  Plus,
+  Download,
+  Briefcase,
+  Users,
+  Grid3x3,
+  CalendarDays,
+  FileText,
+} from 'lucide-react';
 import {
   AdminPageHeader,
+  FilterTabs,
   SearchBar,
-  Badge,
-  ActionButtons,
   Pagination,
-  Modal,
+  ConfirmDialog,
 } from '@/features/admin/shared';
-import type { Service, Lawyer } from '@/features/admin/types';
+import {
+  useMockQuery,
+  useCreate,
+  useUpdate,
+  useDelete,
+  useDeleteMany,
+  useCan,
+  notifySuccess,
+  notifyError,
+  exportToCSV,
+} from '@/features/admin/lib';
+import { ServiceForm } from './components/service-form';
+import { LawyerForm } from './components/lawyer-form';
+import { ServicesTable } from './components/services-table';
+import { LawyersTable } from './components/lawyers-table';
+import { ServiceFilters, type ServiceFiltersValue } from './components/services-filters';
+import { AssignmentMatrix } from './components/assignment-matrix';
+import { LawyerScheduleEditor } from './components/lawyer-schedule-editor';
+import { useServices } from './hooks/use-services';
+import { useLawyers } from './hooks/use-lawyers';
+import { useAssignment } from './hooks/use-assignment';
+import type {
+  Service,
+  Lawyer,
+} from '@/features/admin/types';
+import type { ServiceFormValues, LawyerFormValues } from '@/features/admin/schema';
 
-const MOCK_SERVICES: Service[] = [
-  { id: '1', name: 'Thành lập công ty', description: 'Dịch vụ thành lập doanh nghiệp trọn gói', price: 5000000, duration: 7, category: 'Doanh nghiệp', isActive: true, lawyerIds: ['1', '2'], createdAt: '2025-01-01T00:00:00Z' },
-  { id: '2', name: 'Tư vấn pháp luật', description: 'Tư vấn các vấn đề pháp lý', price: 500000, duration: 1, category: 'Pháp luật', isActive: true, lawyerIds: ['1', '2', '3'], createdAt: '2025-01-01T00:00:00Z' },
-  { id: '3', name: 'Hợp đồng thuê nhà', description: 'Soạn thảo và kiểm tra hợp đồng thuê', price: 1500000, duration: 3, category: 'Nhà đất', isActive: true, lawyerIds: ['3'], createdAt: '2025-01-01T00:00:00Z' },
-  { id: '4', name: 'Sở hữu trí tuệ', description: 'Đăng ký nhãn hiệu, sáng chế, bản quyền', price: 8000000, duration: 30, category: 'Sở hữu trí tuệ', isActive: true, lawyerIds: ['2'], createdAt: '2025-01-01T00:00:00Z' },
-  { id: '5', name: 'Ly hôn', description: 'Tư vấn và hỗ trợ ly hôn thuận tình', price: 3000000, duration: 14, category: 'Gia đình', isActive: false, lawyerIds: ['1'], createdAt: '2025-01-01T00:00:00Z' },
-  { id: '6', name: 'Mua bán bất động sản', description: 'Tư vấn và hỗ trợ giao dịch BĐS', price: 10000000, duration: 21, category: 'Nhà đất', isActive: true, lawyerIds: ['2', '3'], createdAt: '2025-01-01T00:00:00Z' },
+type Tab = 'services' | 'lawyers' | 'assignment' | 'schedule';
+
+const TAB_LIST: Array<{ value: Tab; label: string; icon: typeof Briefcase }> = [
+  { value: 'services', label: 'Dịch vụ', icon: Briefcase },
+  { value: 'lawyers', label: 'Luật sư', icon: Users },
+  { value: 'assignment', label: 'Phân công', icon: Grid3x3 },
+  { value: 'schedule', label: 'Lịch làm việc', icon: CalendarDays },
 ];
 
-const MOCK_LAWYERS: Lawyer[] = [
-  { id: '1', name: 'LS. Hoàng Lan', title: 'Luật sư cao cấp', bio: '10+ năm kinh nghiệm trong lĩnh vực doanh nghiệp và sở hữu trí tuệ', avatar: 'https://i.pravatar.cc/100?img=1', specialties: ['Doanh nghiệp', 'Sở hữu trí tuệ'], email: 'lan@vpluat.vn', phone: '0901 111 111', experience: 12, isActive: true, serviceIds: ['1', '2', '5'], createdAt: '2025-01-01T00:00:00Z' },
-  { id: '2', name: 'LS. Đức Minh', title: 'Luật sư', bio: 'Chuyên gia trong lĩnh vực bất động sản và hợp đồng', avatar: 'https://i.pravatar.cc/100?img=2', specialties: ['Nhà đất', 'Hợp đồng'], email: 'minh@vpluat.vn', phone: '0902 222 222', experience: 8, isActive: true, serviceIds: ['1', '2', '4', '6'], createdAt: '2025-01-01T00:00:00Z' },
-  { id: '3', name: 'LS. Thu Hà', title: 'Luật sư', bio: 'Chuyên về luật gia đình và tư vấn pháp luật', avatar: 'https://i.pravatar.cc/100?img=3', specialties: ['Gia đình', 'Pháp luật'], email: 'ha@vpluat.vn', phone: '0903 333 333', experience: 6, isActive: true, serviceIds: ['2', '3', '6'], createdAt: '2025-01-01T00:00:00Z' },
-  { id: '4', name: 'LS. Minh Tuấn', title: 'Luật sư', bio: 'Chuyên gia về luật thương mại quốc tế', avatar: 'https://i.pravatar.cc/100?img=4', specialties: ['Thương mại', 'Quốc tế'], email: 'tuan@vpluat.vn', phone: '0904 444 444', experience: 5, isActive: false, serviceIds: ['2'], createdAt: '2025-01-01T00:00:00Z' },
-];
+const SERVICE_TABS = [
+  { value: 'all', label: 'Tất cả' },
+  { value: 'active', label: 'Hoạt động' },
+  { value: 'inactive', label: 'Tạm dừng' },
+] as const;
 
-function formatPrice(v?: number) {
-  if (v == null) return '—';
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(v);
-}
+const LAWYER_TABS = [
+  { value: 'all', label: 'Tất cả' },
+  { value: 'active', label: 'Hoạt động' },
+  { value: 'inactive', label: 'Tạm dừng' },
+] as const;
 
 export default function ServicesPage() {
-  const [tab, setTab] = useState<'services' | 'lawyers'>('services');
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const LIMIT = 10;
-
-  const isServices = tab === 'services';
-  const data = isServices ? MOCK_SERVICES : MOCK_LAWYERS;
-  const filtered = data.filter((item) => {
-    const name = isServices ? (item as Service).name : (item as Lawyer).name;
-    const category = isServices ? (item as Service).category : '';
-    return (
-      name.toLowerCase().includes(search.toLowerCase()) ||
-      category.toLowerCase().includes(search.toLowerCase())
-    );
-  });
-
-  const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
+  const [tab, setTab] = useState<Tab>('services');
 
   return (
     <div className="admin-view">
       <AdminPageHeader
         title="Dịch vụ & Luật sư"
-        subtitle="Quản lý dịch vụ pháp lý và đội ngũ luật sư"
-        actions={
-          <button
-            type="button"
-            className="action-btn action-btn--primary"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={() => setIsModalOpen(true)}
-          >
-            <Plus size={14} />
-            {isServices ? 'Thêm dịch vụ' : 'Thêm luật sư'}
-          </button>
-        }
+        subtitle="Quản lý dịch vụ pháp lý, đội ngũ luật sư, phân công và lịch làm việc"
       />
 
-      {/* Tab switcher */}
-      <div className="filter-bar" style={{ marginBottom: '16px' }}>
-        <button
-          type="button"
-          className={`filter-tab ${tab === 'services' ? 'filter-tab--active' : ''}`}
-          onClick={() => { setTab('services'); setPage(1); }}
-        >
-          Danh sách dịch vụ
-        </button>
-        <button
-          type="button"
-          className={`filter-tab ${tab === 'lawyers' ? 'filter-tab--active' : ''}`}
-          onClick={() => { setTab('lawyers'); setPage(1); }}
-        >
-          Đội ngũ luật sư
-        </button>
+      <div className="filter-bar" role="tablist" style={{ marginBottom: 16 }}>
+        {TAB_LIST.map((t) => {
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.value}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.value}
+              className={`filter-tab ${tab === t.value ? 'filter-tab--active' : ''}`}
+              onClick={() => setTab(t.value)}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Icon size={12} />
+                {t.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="admin-card">
-        <SearchBar
-          value={search}
-          onChange={(v) => { setSearch(v); setPage(1); }}
-          placeholder={isServices ? 'Tìm theo tên dịch vụ, danh mục...' : 'Tìm theo tên luật sư...'}
-        />
-
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                {isServices ? (
-                  <>
-                    <th>Dịch vụ</th>
-                    <th>Danh mục</th>
-                    <th>Giá</th>
-                    <th>Thời gian</th>
-                    <th>Trạng thái</th>
-                    <th>Thao tác</th>
-                  </>
-                ) : (
-                  <>
-                    <th>Luật sư</th>
-                    <th>Chuyên môn</th>
-                    <th>Kinh nghiệm</th>
-                    <th>Liên hệ</th>
-                    <th>Trạng thái</th>
-                    <th>Thao tác</th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-400)' }}>
-                    Không có dữ liệu
-                  </td>
-                </tr>
-              ) : isServices ? (
-                paginated.map((s) => (
-                  <tr key={s.id}>
-                    <td>
-                      <div>
-                        <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{(s as Service).name}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--gray-400)' }}>{(s as Service).description}</div>
-                      </div>
-                    </td>
-                    <td><Badge variant="blue">{(s as Service).category}</Badge></td>
-                    <td style={{ fontWeight: 600, color: 'var(--gray-700)' }}>{formatPrice((s as Service).price)}</td>
-                    <td style={{ color: 'var(--gray-600)' }}>{(s as Service).duration} ngày</td>
-                    <td>
-                      <Badge variant={(s as Service).isActive ? 'green' : 'red'}>
-                        {(s as Service).isActive ? 'Hoạt động' : 'Tạm dừng'}
-                      </Badge>
-                    </td>
-                    <td>
-                      <ActionButtons
-                        actions={[
-                          { label: 'Sửa', variant: 'default', onClick: () => {} },
-                          { label: 'Xóa', variant: 'danger', onClick: () => {} },
-                        ]}
-                      />
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                paginated.map((l) => (
-                  <tr key={l.id}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {(l as Lawyer).avatar ? (
-                          <img
-                            src={(l as Lawyer).avatar}
-                            alt={(l as Lawyer).name}
-                            style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-                          />
-                        ) : (
-                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary-faint, #EFF3F8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', flexShrink: 0 }}>
-                            {(l as Lawyer).name.slice(0, 2)}
-                          </div>
-                        )}
-                        <div>
-                          <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{(l as Lawyer).name}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--gray-400)' }}>{(l as Lawyer).title}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                        {(l as Lawyer).specialties.map((sp) => (
-                          <Badge key={sp} variant="blue" style={{ fontSize: '0.68rem' }}>{sp}</Badge>
-                        ))}
-                      </div>
-                    </td>
-                    <td style={{ color: 'var(--gray-600)' }}>{(l as Lawyer).experience} năm</td>
-                    <td>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--gray-600)' }}>{(l as Lawyer).email}</div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--gray-400)' }}>{(l as Lawyer).phone}</div>
-                    </td>
-                    <td>
-                      <Badge variant={(l as Lawyer).isActive ? 'green' : 'red'}>
-                        {(l as Lawyer).isActive ? 'Hoạt động' : 'Tạm dừng'}
-                      </Badge>
-                    </td>
-                    <td>
-                      <ActionButtons
-                        actions={[
-                          { label: 'Sửa', variant: 'default', onClick: () => {} },
-                          { label: 'Xóa', variant: 'danger', onClick: () => {} },
-                        ]}
-                      />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <Pagination page={page} limit={LIMIT} total={filtered.length} onPageChange={setPage} />
-      </div>
+      {tab === 'services' && <ServicesTab />}
+      {tab === 'lawyers' && <LawyersTab />}
+      {tab === 'assignment' && <AssignmentTab />}
+      {tab === 'schedule' && <ScheduleTab />}
     </div>
   );
 }
+
+// ─── Tab 1: Services ─────────────────────────────────────────────────────
+function ServicesTab() {
+  const { data: services, counts } = useServices();
+  const { data: lawyers = [] } = useLawyers();
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filters, setFilters] = useState<ServiceFiltersValue>({
+    category: 'all',
+    status: 'all',
+    dateFrom: '',
+    dateTo: '',
+  });
+  const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Service | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Service | null>(null);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const LIMIT = 20;
+
+  const canWrite = useCan('services.write');
+  const canDelete = useCan('services.write');
+
+  const createSvc = useCreate<Service>('services', 'service');
+  const updateSvc = useUpdate<Service>('services', 'service');
+  const removeSvc = useDelete('services', 'service');
+  const removeManySvc = useDeleteMany('services', 'service');
+
+  const tabsWithCounts = SERVICE_TABS.map((t) => ({
+    value: t.value,
+    label: t.label,
+    count:
+      t.value === 'all'
+        ? counts.total
+        : t.value === 'active'
+          ? counts.active
+          : counts.inactive,
+  }));
+
+  const filtered = useMemo(() => {
+    let r = services;
+    if (search) {
+      const q = search.toLowerCase();
+      r = r.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.description?.toLowerCase().includes(q) ||
+          s.category.toLowerCase().includes(q),
+      );
+    }
+    if (statusFilter !== 'all') {
+      const wantActive = statusFilter === 'active';
+      r = r.filter((s) => s.isActive === wantActive);
+    }
+    if (filters.category !== 'all') r = r.filter((s) => s.category === filters.category);
+    if (filters.status !== 'all') {
+      const wantActive = filters.status === 'active';
+      r = r.filter((s) => s.isActive === wantActive);
+    }
+    if (filters.dateFrom) {
+      const from = new Date(filters.dateFrom).getTime();
+      r = r.filter((s) => new Date(s.createdAt).getTime() >= from);
+    }
+    if (filters.dateTo) {
+      const to = new Date(filters.dateTo).getTime() + 24 * 60 * 60 * 1000;
+      r = r.filter((s) => new Date(s.createdAt).getTime() <= to);
+    }
+    return r;
+  }, [services, search, statusFilter, filters]);
+
+  const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
+
+  const handleSubmit = async (values: ServiceFormValues) => {
+    const payload: Omit<Service, 'id' | 'createdAt'> = {
+      name: values.name,
+      description: values.description ?? '',
+      category: values.category,
+      price: values.price,
+      duration: values.duration,
+      isActive: values.isActive,
+      lawyerIds: values.lawyerIds,
+    };
+    try {
+      if (editing) {
+        await updateSvc.mutateAsync({ id: editing.id, patch: payload });
+        notifySuccess('Đã cập nhật dịch vụ');
+      } else {
+        await createSvc.mutateAsync(payload);
+        notifySuccess('Đã tạo dịch vụ');
+      }
+      setFormOpen(false);
+      setEditing(null);
+    } catch (e) {
+      notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể lưu');
+    }
+  };
+
+  const handleToggleActive = useCallback(
+    async (s: Service) => {
+      try {
+        await updateSvc.mutateAsync({
+          id: s.id,
+          patch: { isActive: !s.isActive },
+        });
+        notifySuccess(s.isActive ? `Đã tạm dừng "${s.name}"` : `Đã kích hoạt "${s.name}"`);
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
+      }
+    },
+    [updateSvc],
+  );
+
+  const handleExport = () => {
+    exportToCSV(
+      filtered as unknown as Record<string, unknown>[],
+      `services-${new Date().toISOString().slice(0, 10)}`,
+      [
+        { key: 'name', header: 'Tên dịch vụ' },
+        { key: 'category', header: 'Danh mục' },
+        { key: 'price', header: 'Giá' },
+        { key: 'duration', header: 'Thời gian' },
+        { key: 'isActive', header: 'Trạng thái' },
+      ],
+    );
+    notifySuccess(`Đã export ${filtered.length} dịch vụ`);
+  };
+
+  return (
+    <>
+      <AdminPageHeader
+        title="Danh sách dịch vụ"
+        subtitle={`${counts.total} dịch vụ · ${counts.active} hoạt động · ${counts.inactive} tạm dừng`}
+        actions={
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              className="action-btn"
+              onClick={handleExport}
+              disabled={filtered.length === 0}
+              style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <Download size={14} /> Export CSV
+            </button>
+            {canWrite && (
+              <button
+                type="button"
+                className="action-btn action-btn--primary"
+                onClick={() => {
+                  setEditing(null);
+                  setFormOpen(true);
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                <Plus size={14} /> Tạo dịch vụ
+              </button>
+            )}
+          </div>
+        }
+      />
+
+      {selectedIds.length > 0 && canDelete && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 12px',
+            background: 'var(--gray-900)',
+            color: 'white',
+            borderRadius: 'var(--radius-md, 6px)',
+            marginBottom: 12,
+            fontSize: '0.8rem',
+          }}
+        >
+          <span>Đã chọn {selectedIds.length} dịch vụ</span>
+          <div style={{ flex: 1 }} />
+          <button
+            type="button"
+            className="action-btn"
+            style={{ background: '#DC2626', color: 'white', borderColor: '#DC2626' }}
+            onClick={() => setConfirmBulkDelete(true)}
+          >
+            Xóa
+          </button>
+          <button
+            type="button"
+            className="action-btn"
+            style={{ background: 'transparent', color: 'white', borderColor: 'rgba(255,255,255,0.3)' }}
+            onClick={() => setSelectedIds([])}
+          >
+            Hủy
+          </button>
+        </div>
+      )}
+
+      <FilterTabs
+        tabs={tabsWithCounts}
+        activeValue={statusFilter}
+        onChange={(v) => {
+          setStatusFilter(v as typeof statusFilter);
+          setPage(1);
+        }}
+      />
+
+      <div className="admin-card">
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 12,
+            flexWrap: 'wrap',
+            gap: 8,
+          }}
+        >
+          <SearchBar
+            value={search}
+            onChange={(v) => {
+              setSearch(v);
+              setPage(1);
+            }}
+            placeholder="Tìm theo tên dịch vụ, mô tả, danh mục..."
+          />
+          <span style={{ color: 'var(--gray-400)', fontSize: '0.8rem' }}>
+            Tổng: {filtered.length} / {services.length}
+          </span>
+        </div>
+
+        <ServiceFilters
+          value={filters}
+          onChange={(f) => {
+            setFilters(f);
+            setPage(1);
+          }}
+        />
+
+        <ServicesTable
+          data={paginated}
+          lawyers={lawyers}
+          selectedIds={selectedIds}
+          onSelectChange={setSelectedIds}
+          onEdit={(s) => {
+            setEditing(s);
+            setFormOpen(true);
+          }}
+          onDelete={(s) => setConfirmDelete(s)}
+          onToggleActive={handleToggleActive}
+          canWrite={canWrite}
+          canDelete={canDelete}
+        />
+
+        <Pagination
+          page={page}
+          limit={LIMIT}
+          total={filtered.length}
+          onPageChange={setPage}
+        />
+      </div>
+
+      <ServiceForm
+        isOpen={formOpen}
+        onClose={() => {
+          setFormOpen(false);
+          setEditing(null);
+        }}
+        onSubmit={handleSubmit}
+        initial={editing}
+        lawyers={lawyers}
+        isLoading={createSvc.isPending || updateSvc.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(confirmDelete)}
+        title="Xóa dịch vụ"
+        message={
+          confirmDelete
+            ? `Bạn có chắc muốn xóa "${confirmDelete.name}"? Hành động này không thể hoàn tác.`
+            : ''
+        }
+        confirmLabel="Xóa"
+        cancelLabel="Hủy"
+        variant="danger"
+        onConfirm={async () => {
+          if (!confirmDelete) return;
+          try {
+            await removeSvc.mutateAsync(confirmDelete.id);
+            notifySuccess('Đã xóa dịch vụ');
+          } catch (e) {
+            notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');
+          } finally {
+            setConfirmDelete(null);
+          }
+        }}
+        onClose={() => setConfirmDelete(null)}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmBulkDelete}
+        title="Xóa nhiều dịch vụ"
+        message={`Bạn có chắc muốn xóa ${selectedIds.length} dịch vụ đã chọn?`}
+        confirmLabel="Xóa tất cả"
+        cancelLabel="Hủy"
+        variant="danger"
+        onConfirm={async () => {
+          try {
+            await removeManySvc.mutateAsync(selectedIds);
+            notifySuccess(`Đã xóa ${selectedIds.length} dịch vụ`);
+            setSelectedIds([]);
+          } catch (e) {
+            notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');
+          } finally {
+            setConfirmBulkDelete(false);
+          }
+        }}
+        onClose={() => setConfirmBulkDelete(false)}
+      />
+    </>
+  );
+}
+
+// ─── Tab 2: Lawyers ──────────────────────────────────────────────────────
+function LawyersTab() {
+  const { data: lawyers, counts } = useLawyers();
+  const { data: services = [] } = useServices();
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Lawyer | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Lawyer | null>(null);
+  const LIMIT = 20;
+
+  const canWrite = useCan('lawyers.write');
+  const canDelete = useCan('lawyers.write');
+
+  const createLwy = useCreate<Lawyer>('lawyers', 'lawyer');
+  const updateLwy = useUpdate<Lawyer>('lawyers', 'lawyer');
+  const removeLwy = useDelete('lawyers', 'lawyer');
+
+  const tabsWithCounts = LAWYER_TABS.map((t) => ({
+    value: t.value,
+    label: t.label,
+    count:
+      t.value === 'all'
+        ? counts.total
+        : t.value === 'active'
+          ? counts.active
+          : counts.inactive,
+  }));
+
+  const filtered = useMemo(() => {
+    let r = lawyers;
+    if (search) {
+      const q = search.toLowerCase();
+      r = r.filter(
+        (l) =>
+          l.name.toLowerCase().includes(q) ||
+          l.email.toLowerCase().includes(q) ||
+          l.specialties.some((sp) => sp.toLowerCase().includes(q)),
+      );
+    }
+    if (statusFilter !== 'all') {
+      const wantActive = statusFilter === 'active';
+      r = r.filter((l) => l.isActive === wantActive);
+    }
+    return r;
+  }, [lawyers, search, statusFilter]);
+
+  const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
+
+  const handleSubmit = async (values: LawyerFormValues) => {
+    const payload: Omit<Lawyer, 'id' | 'createdAt'> = {
+      name: values.name,
+      title: values.title,
+      bio: values.bio ?? '',
+      avatar: values.avatar ?? '',
+      specialties: values.specialties,
+      email: values.email,
+      phone: values.phone,
+      experience: values.experience,
+      isActive: values.isActive,
+      serviceIds: values.serviceIds,
+    };
+    try {
+      if (editing) {
+        await updateLwy.mutateAsync({ id: editing.id, patch: payload });
+        notifySuccess('Đã cập nhật luật sư');
+      } else {
+        await createLwy.mutateAsync(payload);
+        notifySuccess('Đã tạo luật sư');
+      }
+      setFormOpen(false);
+      setEditing(null);
+    } catch (e) {
+      notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể lưu');
+    }
+  };
+
+  const handleToggleActive = useCallback(
+    async (l: Lawyer) => {
+      try {
+        await updateLwy.mutateAsync({
+          id: l.id,
+          patch: { isActive: !l.isActive },
+        });
+        notifySuccess(l.isActive ? `Đã tạm dừng ${l.name}` : `Đã kích hoạt ${l.name}`);
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
+      }
+    },
+    [updateLwy],
+  );
+
+  return (
+    <>
+      <AdminPageHeader
+        title="Đội ngũ luật sư"
+        subtitle={`${counts.total} luật sư · ${counts.active} hoạt động · ${counts.inactive} tạm dừng`}
+        actions={
+          canWrite && (
+            <button
+              type="button"
+              className="action-btn action-btn--primary"
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <Plus size={14} /> Thêm luật sư
+            </button>
+          )
+        }
+      />
+
+      <FilterTabs
+        tabs={tabsWithCounts}
+        activeValue={statusFilter}
+        onChange={(v) => {
+          setStatusFilter(v as typeof statusFilter);
+          setPage(1);
+        }}
+      />
+
+      <div className="admin-card">
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 12,
+            flexWrap: 'wrap',
+            gap: 8,
+          }}
+        >
+          <SearchBar
+            value={search}
+            onChange={(v) => {
+              setSearch(v);
+              setPage(1);
+            }}
+            placeholder="Tìm theo tên, email, chuyên môn..."
+          />
+          <span style={{ color: 'var(--gray-400)', fontSize: '0.8rem' }}>
+            Tổng: {filtered.length} / {lawyers.length}
+          </span>
+        </div>
+
+        <LawyersTable
+          data={paginated}
+          services={services}
+          selectedIds={selectedIds}
+          onSelectChange={setSelectedIds}
+          onEdit={(l) => {
+            setEditing(l);
+            setFormOpen(true);
+          }}
+          onDelete={(l) => setConfirmDelete(l)}
+          onToggleActive={handleToggleActive}
+          canWrite={canWrite}
+          canDelete={canDelete}
+        />
+
+        <Pagination
+          page={page}
+          limit={LIMIT}
+          total={filtered.length}
+          onPageChange={setPage}
+        />
+      </div>
+
+      <LawyerForm
+        isOpen={formOpen}
+        onClose={() => {
+          setFormOpen(false);
+          setEditing(null);
+        }}
+        onSubmit={handleSubmit}
+        initial={editing}
+        services={services}
+        isLoading={createLwy.isPending || updateLwy.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(confirmDelete)}
+        title="Xóa luật sư"
+        message={
+          confirmDelete
+            ? `Bạn có chắc muốn xóa "${confirmDelete.name}"? Hành động này không thể hoàn tác.`
+            : ''
+        }
+        confirmLabel="Xóa"
+        cancelLabel="Hủy"
+        variant="danger"
+        onConfirm={async () => {
+          if (!confirmDelete) return;
+          try {
+            await removeLwy.mutateAsync(confirmDelete.id);
+            notifySuccess('Đã xóa luật sư');
+          } catch (e) {
+            notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');
+          } finally {
+            setConfirmDelete(null);
+          }
+        }}
+        onClose={() => setConfirmDelete(null)}
+      />
+    </>
+  );
+}
+
+// ─── Tab 3: Assignment Matrix ───────────────────────────────────────────
+function AssignmentTab() {
+  const { services, lawyers, toggle, saveBatch } = useAssignment();
+  const { data: allServices = [] } = useMockQuery<Service>('services');
+  const { data: allLawyers = [] } = useMockQuery<Lawyer>('lawyers');
+
+  const serviceMap = useMemo(() => {
+    const m = new Map<string, Service>();
+    allServices.forEach((s) => m.set(s.id, s));
+    return m;
+  }, [allServices]);
+
+  const lawyerMap = useMemo(() => {
+    const m = new Map<string, Lawyer>();
+    allLawyers.forEach((l) => m.set(l.id, l));
+    return m;
+  }, [allLawyers]);
+
+  const isAssigned = useCallback(
+    (serviceId: string, lawyerId: string): boolean => {
+      return Boolean(serviceMap.get(serviceId)?.lawyerIds.includes(lawyerId));
+    },
+    [serviceMap],
+  );
+
+  return (
+    <>
+      <AdminPageHeader
+        title="Phân công dịch vụ × Luật sư"
+        subtitle="Ma trận phân công 2D. Tick ô tương ứng để gán / bỏ gán."
+      />
+      <AssignmentMatrix
+        services={services}
+        lawyers={lawyers}
+        isAssigned={isAssigned}
+        onToggle={toggle}
+        onSaveBatch={saveBatch}
+      />
+    </>
+  );
+}
+
+// ─── Tab 4: Schedule ────────────────────────────────────────────────────
+function ScheduleTab() {
+  const { data: lawyers = [] } = useLawyers();
+  const [selectedLawyerId, setSelectedLawyerId] = useState<string>('');
+
+  const selectedLawyer = useMemo(
+    () => lawyers.find((l) => l.id === selectedLawyerId) ?? null,
+    [lawyers, selectedLawyerId],
+  );
+
+  return (
+    <>
+      <AdminPageHeader
+        title="Lịch làm việc luật sư"
+        subtitle="Thiết lập khung giờ làm việc cho từng luật sư theo ngày trong tuần"
+      />
+      <LawyerScheduleEditor
+        lawyer={selectedLawyer}
+        lawyers={lawyers}
+        onSelectLawyer={setSelectedLawyerId}
+      />
+    </>
+  );
+}
+
+// re-export for convenience (avoid unused import warning if needed)
+void FileText;

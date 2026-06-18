@@ -34,6 +34,7 @@ export interface NewsCategoryFilter {
   label: string;
   count: number;
   slug: string;
+  icon?: string;
 }
 
 export interface PopularPost {

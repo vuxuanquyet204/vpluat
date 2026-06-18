@@ -74,15 +74,20 @@
 
 ## 2.1 Bảng so sánh demo ↔ code hiện tại
 
-| Demo File | Code hiện tại | Mức độ khớp | Hành động |
-| :- | :- | :- | :- |
-| `index.html` | `src/app/page.tsx` + `src/features/home/` | ~85% (đã polish phase 2) | B — Polish cuối |
-| `services.html` | ❌ Không có | 0% | A — Tạo mới |
-| `lawyers.html` | ❌ Không có | 0% | A — Tạo mới |
-| `booking.html` | `src/app/booking/page.tsx` | ~90% (đã polish phase 3) | B — Polish cuối |
-| `contact.html` | ❌ Không có | 0% | A — Tạo mới |
-| `news.html` | ❌ Không có | 0% | A — Tạo mới |
+| `/` (home) | `src/app/page.tsx` + `src/features/home/` | **~95%** (hero, 6 services, 3 stats, 6 why-items, lawyers, testimonials, news, FAQ, contact, footer — đã đối chiếu phase-6 §4.1; stats bar đã sửa khớp demo 2000+/98%/15+) | ✅ Done |
+| `services.html` | `src/app/(public)/services/page.tsx` | ~85% (route xong, cần audit UI fidelity) | A — Polish |
+| `lawyers.html` | `src/app/(public)/lawyers/page.tsx` | ~85% (route xong, cần audit UI fidelity) | A — Polish |
+| `booking.html` | `src/app/(public)/booking/page.tsx` | **~95%** (4-step wizard, hero, progress, service grid, lawyer section, datetime, info, confirmation, footer, slot timer) | ✅ Done |
+| `contact.html` | `src/app/(public)/contact/page.tsx` | ~85% (route xong, cần audit UI fidelity) | A — Polish |
+| `news.html` | `src/app/(public)/news/page.tsx` | ~85% (route xong, cần audit UI fidelity) | A — Polish |
+| `login.html` | `src/app/(auth)/login/page.tsx` | **~95%** (refactored 2-cột: image/branding left + form right; remember me, forgot link, Google/Facebook buttons) | ✅ Done |
 | `admin.html` | `src/app/(admin)/*` | ~95% (đã xong phase 5) | C — Thư viện nâng cấp |
+
+> **Stream B — 3 Public Pages Polish: HOÀN THÀNH (2026-06-16)**
+> - ✅ Home: 9 sections theo §4.1, stats bar số liệu khớp demo
+> - ✅ Booking: 4-step wizard + slot timer + hero/footer
+> - ✅ Login: 2-cột, social login, remember me, forgot link
+> - Tiếp theo: Polish UI 100% các trang services/lawyers/news/contact (Stream A)
 
 ## 2.2 Pages KHÔNG có route cần tạo
 

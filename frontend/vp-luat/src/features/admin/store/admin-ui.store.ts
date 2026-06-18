@@ -1,4 +1,19 @@
+'use client';
+
 import { create } from 'zustand';
+
+export interface AdminNotification {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info' | 'lead_new' | 'booking_upcoming' | 'booking_cancelled' | 'review_new' | 'campaign_sent' | 'system';
+  title: string;
+  message?: string;
+  link?: string;
+  icon?: string;
+  channels?: ('in_app' | 'email' | 'sms')[];
+  read?: boolean;
+  duration?: number;
+  createdAt?: string;
+}
 
 interface AdminUIState {
   // Sidebar
@@ -33,19 +48,17 @@ interface AdminUIState {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 
-  // Notifications
+  // In-app notifications (for bell dropdown)
   notifications: AdminNotification[];
   addNotification: (n: AdminNotification) => void;
   removeNotification: (id: string) => void;
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
   clearNotifications: () => void;
-}
 
-export interface AdminNotification {
-  id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-  title: string;
-  message?: string;
-  duration?: number;
+  // Impersonation (Phase 7)
+  impersonatingUserId: string | null;
+  setImpersonating: (userId: string | null) => void;
 }
 
 export const useAdminUIStore = create<AdminUIState>((set) => ({
@@ -85,11 +98,22 @@ export const useAdminUIStore = create<AdminUIState>((set) => ({
   notifications: [],
   addNotification: (n) =>
     set((s) => ({
-      notifications: [...s.notifications, n],
+      notifications: [n, ...s.notifications].slice(0, 50),
     })),
   removeNotification: (id) =>
     set((s) => ({
       notifications: s.notifications.filter((n) => n.id !== id),
     })),
+  markNotificationRead: (id) =>
+    set((s) => ({
+      notifications: s.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    })),
+  markAllNotificationsRead: () =>
+    set((s) => ({
+      notifications: s.notifications.map((n) => ({ ...n, read: true })),
+    })),
   clearNotifications: () => set({ notifications: [] }),
+
+  impersonatingUserId: null,
+  setImpersonating: (userId) => set({ impersonatingUserId: userId }),
 }));

@@ -35,12 +35,12 @@ const HUNG = {
 };
 
 export const NEWS_CATEGORIES: NewsCategoryFilter[] = [
-  { id: 'all', label: 'Tất cả', count: 12, slug: 'all' },
-  { id: 'tin-tuc', label: 'Tin tức', count: 4, slug: 'tin-tuc' },
-  { id: 'nghi-dinh', label: 'Nghị định', count: 3, slug: 'nghi-dinh' },
-  { id: 'blog', label: 'Blog', count: 2, slug: 'blog' },
-  { id: 'case-study', label: 'Case study', count: 2, slug: 'case-study' },
-  { id: 'huong-dan', label: 'Hướng dẫn', count: 1, slug: 'huong-dan' },
+  { id: 'all', label: 'Tất cả', count: 12, slug: 'all', icon: 'fa-solid fa-layer-group' },
+  { id: 'tin-tuc', label: 'Tin tức', count: 4, slug: 'tin-tuc', icon: 'fa-solid fa-newspaper' },
+  { id: 'nghi-dinh', label: 'Nghị định', count: 3, slug: 'nghi-dinh', icon: 'fa-solid fa-scale-balanced' },
+  { id: 'blog', label: 'Blog', count: 2, slug: 'blog', icon: 'fa-solid fa-pen-nib' },
+  { id: 'case-study', label: 'Case study', count: 2, slug: 'case-study', icon: 'fa-solid fa-briefcase' },
+  { id: 'huong-dan', label: 'Hướng dẫn', count: 1, slug: 'huong-dan', icon: 'fa-solid fa-circle-info' },
 ];
 
 export const NEWS_ARTICLES: NewsArticle[] = [

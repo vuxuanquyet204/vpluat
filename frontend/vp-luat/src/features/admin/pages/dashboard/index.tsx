@@ -1,509 +1,605 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
-  CalendarCheck,
-  Users,
+  CalendarDays,
+  UserPlus,
   TrendingUp,
-  Bot,
+  MessagesSquare,
   ArrowUpRight,
   ArrowDownRight,
-  Plus,
+  PenLine,
+  CalendarCheck,
+  MailOpen,
+  CalendarX2,
+  Star,
+  MessageCircle,
+  FileText,
+  BarChart3,
+  CheckCircle2,
+  Phone,
+  CircleDot,
   Eye,
-  Trash2,
+  RefreshCw,
+  Download,
+  Filter,
+  DollarSign,
+  Award,
+  AlertCircle,
+  X,
+  Pencil,
+  Loader2,
 } from 'lucide-react';
-import { Badge, RowUser, ActionButtons } from '@/features/admin/shared';
-import type { DashboardStats, ChartDataPoint, DonutSegment, Lead } from '@/features/admin/types';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  MeasuringStrategy,
+} from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  rectSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { Badge, RowUser, LineChart, DonutChart } from '@/features/admin/shared';
+import type { ChartDataPoint, DonutSegment } from '@/features/admin/types';
+import { useMockQuery, useUpdate, notifySuccess, notifyError } from '@/features/admin/lib';
+import {
+  useDashboardStats,
+  useTodayBookings,
+  useRecentAuditLogs,
+  useServiceDistribution,
+  useLeadsTimelineChart,
+  DASHBOARD_RANGES,
+  rangeStart,
+  type DashboardRange,
+  mapBookingStatus,
+  getInitials,
+  timeAgo,
+} from '@/features/admin/lib/use-dashboard-stats';
+import { SkeletonStats, SkeletonTable, SkeletonCard } from '@/features/admin/components';
+import { MockDB } from '@/features/admin/mock/db';
+import type { AuditLog, Lead, LeadStatus, Booking, BookingMethod } from '@/features/admin/types';
+import { useQueryClient } from '@tanstack/react-query';
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
+// ─── Date Range Filter ──────────────────────────────────────────────────────
+// Range values imported from use-dashboard-stats (single source of truth)
+
+// ─── Stat Card ─────────────────────────────────────────────────────────────
 
 interface StatCardProps {
   icon: React.ReactNode;
-  iconVariant: 'blue' | 'green' | 'yellow' | 'purple';
+  iconVariant: 'blue' | 'green' | 'yellow' | 'purple' | 'red' | 'cyan';
   value: string | number;
   label: string;
   change: number;
-  suffix?: string;
+  changeLabel?: string;
+  showArrow?: boolean;
+  onClick?: () => void;
 }
 
-function StatCard({ icon, iconVariant, value, label, change, suffix }: StatCardProps) {
+function StatCard({ icon, iconVariant, value, label, change, changeLabel, showArrow = true, onClick }: StatCardProps) {
   const isUp = change >= 0;
   return (
-    <div className="stat-card">
+    <div
+      className="stat-card"
+      onClick={onClick}
+      style={{ cursor: onClick ? 'pointer' : 'default' }}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+    >
       <div className="stat-card__header">
-        <div className={`stat-card__icon stat-card__icon--${iconVariant}`}>
-          {icon}
-        </div>
-        <span
-          className={`stat-card__trend ${isUp ? 'stat-card__trend--up' : 'stat-card__trend--down'}`}
-        >
-          {isUp ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-          {Math.abs(change)}%
+        <div className={`stat-card__icon stat-card__icon--${iconVariant}`}>{icon}</div>
+        <span className={`stat-card__trend ${isUp ? 'stat-card__trend--up' : 'stat-card__trend--down'}`}>
+          {showArrow ? (isUp ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />) : null}
+          {isUp ? '+' : ''}
+          {change}
         </span>
       </div>
-      <div className="stat-card__value">
-        {value}
-        {suffix && <span style={{ fontSize: '1rem', fontWeight: 500 }}>{suffix}</span>}
-      </div>
+      <div className="stat-card__value">{value}</div>
       <div className="stat-card__label">{label}</div>
-      <div className="stat-card__sub">So với tháng trước</div>
+      <div className="stat-card__sub">{changeLabel ?? 'So với tháng trước'}</div>
     </div>
   );
 }
 
-// ─── Line Chart (pure SVG) ───────────────────────────────────────────────────
+// ─── Booking Table ─────────────────────────────────────────────────────────
 
-interface LineChartProps {
-  data: ChartDataPoint[];
-  className?: string;
+type BookingMethodVN = 'Tại VP' | 'Online' | 'Điện thoại';
+const METHOD_LABEL: Record<BookingMethod, BookingMethodVN> = {
+  office: 'Tại VP',
+  online: 'Online',
+  phone: 'Điện thoại',
+};
+
+interface BookingTableProps {
+  bookings: Booking[];
+  onSelect: (b: Booking) => void;
+  onNote: (b: Booking) => void;
 }
 
-function LineChart({ data, className = '' }: LineChartProps) {
-  const width = 560;
-  const height = 200;
-  const padding = { top: 10, right: 10, bottom: 30, left: 40 };
-
-  if (!data.length) return null;
-
-  const visits = data.map((d) => d.visits);
-  const leads = data.map((d) => d.leads);
-  const allValues = [...visits, ...leads];
-  const maxVal = Math.max(...allValues) * 1.15;
-  const minVal = 0;
-
-  const chartW = width - padding.left - padding.right;
-  const chartH = height - padding.top - padding.bottom;
-
-  const xScale = (i: number) => padding.left + (i / (data.length - 1)) * chartW;
-  const yScale = (v: number) =>
-    padding.top + chartH - ((v - minVal) / (maxVal - minVal)) * chartH;
-
-  const visitPoints = visits.map((v, i) => `${xScale(i)},${yScale(v)}`).join(' ');
-  const leadPoints = leads.map((v, i) => `${xScale(i)},${yScale(v)}`).join(' ');
-
-  const labels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-
+function BookingTable({ bookings, onSelect, onNote }: BookingTableProps) {
   return (
-    <div className={`admin-card ${className}`} style={{ padding: '20px' }}>
-      <div className="admin-card__header">
-        <div className="admin-card__title">Lượt truy cập & Leads</div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2563EB' }} />
-            <span style={{ fontSize: '0.72rem', color: 'var(--gray-500)' }}>Truy cập</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#C9A84C' }} />
-            <span style={{ fontSize: '0.72rem', color: 'var(--gray-500)' }}>Leads</span>
-          </div>
-        </div>
-      </div>
-
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        style={{ width: '100%', height: 'auto', overflow: 'visible' }}
-        aria-label="Biểu đồ lượt truy cập và leads"
-      >
-        {/* Grid lines */}
-        {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
-          const y = yScale(tick * (maxVal - minVal) + minVal);
-          return (
-            <g key={tick}>
-              <line
-                x1={padding.left}
-                y1={y}
-                x2={width - padding.right}
-                y2={y}
-                stroke="#E4E8EF"
-                strokeDasharray="4,3"
-              />
-              <text
-                x={padding.left - 6}
-                y={y + 4}
-                textAnchor="end"
-                fontSize="10"
-                fill="#9CA3AF"
-              >
-                {Math.round(tick * maxVal)}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Visits area fill */}
-        <polygon
-          points={`${xScale(0)},${yScale(0)} ${visitPoints} ${xScale(data.length - 1)},${yScale(0)}`}
-          fill="#2563EB"
-          fillOpacity="0.08"
-        />
-
-        {/* Visits line */}
-        <polyline
-          points={visitPoints}
-          fill="none"
-          stroke="#2563EB"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-
-        {/* Leads line */}
-        <polyline
-          points={leadPoints}
-          fill="none"
-          stroke="#C9A84C"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-
-        {/* Dots */}
-        {visits.map((v, i) => (
-          <circle
-            key={i}
-            cx={xScale(i)}
-            cy={yScale(v)}
-            r="3"
-            fill="#2563EB"
-          />
-        ))}
-        {leads.map((v, i) => (
-          <circle
-            key={i}
-            cx={xScale(i)}
-            cy={yScale(v)}
-            r="3"
-            fill="#C9A84C"
-          />
-        ))}
-
-        {/* X axis labels */}
-        {labels.map((label, i) => (
-          <text
-            key={i}
-            x={xScale(i)}
-            y={height - 6}
-            textAnchor="middle"
-            fontSize="10"
-            fill="#9CA3AF"
-          >
-            {label}
-          </text>
-        ))}
-      </svg>
-    </div>
-  );
-}
-
-// ─── Donut Chart (pure SVG) ──────────────────────────────────────────────────
-
-interface DonutChartProps {
-  segments: DonutSegment[];
-  className?: string;
-}
-
-function DonutChart({ segments, className = '' }: DonutChartProps) {
-  const size = 160;
-  const cx = size / 2;
-  const cy = size / 2;
-  const r = 60;
-  const innerR = 36;
-
-  let currentAngle = -90;
-  const paths = segments.map((seg) => {
-    const angle = (seg.percentage / 100) * 360;
-    const startAngle = currentAngle;
-    const endAngle = currentAngle + angle;
-    currentAngle = endAngle;
-
-    const startRad = (startAngle * Math.PI) / 180;
-    const endRad = (endAngle * Math.PI) / 180;
-
-    const x1 = cx + r * Math.cos(startRad);
-    const y1 = cy + r * Math.sin(startRad);
-    const x2 = cx + r * Math.cos(endRad);
-    const y2 = cy + r * Math.sin(endRad);
-    const ix1 = cx + innerR * Math.cos(startRad);
-    const iy1 = cy + innerR * Math.sin(startRad);
-    const ix2 = cx + innerR * Math.cos(endRad);
-    const iy2 = cy + innerR * Math.sin(endRad);
-
-    const largeArc = angle > 180 ? 1 : 0;
-
-    const d = [
-      `M ${x1} ${y1}`,
-      `A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`,
-      `L ${ix2} ${iy2}`,
-      `A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix1} ${iy1}`,
-      'Z',
-    ].join(' ');
-
-    return { ...seg, d };
-  });
-
-  return (
-    <div className={`admin-card ${className}`} style={{ padding: '20px' }}>
-      <div className="admin-card__header">
-        <div className="admin-card__title">Nguồn Leads</div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-        <svg
-          width={size}
-          height={size}
-          viewBox={`0 0 ${size} ${size}`}
-          aria-label="Biểu đồ nguồn leads"
-        >
-          {paths.map((p) => (
-            <path key={p.label} d={p.d} fill={p.color} />
-          ))}
-        </svg>
-
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {segments.map((seg) => (
-            <div key={seg.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div
-                style={{
-                  width: '10px',
-                  height: '10px',
-                  borderRadius: '2px',
-                  background: seg.color,
-                  flexShrink: 0,
-                }}
-              />
-              <span style={{ fontSize: '0.78rem', color: 'var(--gray-600)', flex: 1 }}>
-                {seg.label}
-              </span>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary)' }}>
-                {seg.percentage}%
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Recent Leads Table ────────────────────────────────────────────────────────
-
-interface RecentLeadsTableProps {
-  leads: Lead[];
-  className?: string;
-}
-
-function RecentLeadsTable({ leads, className = '' }: RecentLeadsTableProps) {
-  return (
-    <div className={`admin-card table-card ${className}`}>
+    <div className="admin-card table-card">
       <div className="table-header">
         <div className="table-title">
-          Leads gần đây <span>({leads.length} mới hôm nay)</span>
+          Lịch hẹn hôm nay <span>({bookings.length} cuộc)</span>
         </div>
-        <button type="button" className="admin-card__action">
+        <Link href="/admin/bookings" className="admin-card__action">
           Xem tất cả →
-        </button>
+        </Link>
       </div>
 
-      <div className="table-wrap">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Khách hàng</th>
-              <th>Dịch vụ</th>
-              <th>Nguồn</th>
-              <th>Trạng thái</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leads.map((lead) => (
-              <tr key={lead.id}>
-                <td>
-                  <RowUser
-                    initials={lead.name}
-                    name={lead.name}
-                    sub={lead.phone}
-                  />
-                </td>
-                <td style={{ color: 'var(--gray-600)', fontSize: '0.82rem' }}>
-                  {lead.service}
-                </td>
-                <td>
-                  <SourceTag source={lead.source} />
-                </td>
-                <td>
-                  <StatusBadge status={lead.status} />
-                </td>
-                <td>
-                  <ActionButtons
-                    onView={() => {}}
-                    onEdit={() => {}}
-                  />
-                </td>
+      {bookings.length === 0 ? (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--gray-500)' }}>
+          <CalendarDays size={36} style={{ opacity: 0.2, marginBottom: 8 }} />
+          <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Không có lịch hẹn nào hôm nay</div>
+          <div style={{ fontSize: '0.72rem' }}>Các lịch hẹn mới sẽ tự động hiển thị ở đây</div>
+        </div>
+      ) : (
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Giờ</th>
+                <th scope="col">Khách hàng</th>
+                <th scope="col">Dịch vụ</th>
+                <th scope="col">Luật sư</th>
+                <th scope="col">Hình thức</th>
+                <th scope="col">Trạng thái</th>
+                <th scope="col">Thao tác</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {bookings.map((b) => (
+                <tr key={b.id}>
+                  <td>
+                    <strong style={{ color: 'var(--primary, #1E3A5F)' }}>{b.time}</strong>
+                  </td>
+                  <td>
+                    <RowUser
+                      initials={getInitials(b.customerName)}
+                      name={b.customerName}
+                      sub={b.customerEmail || b.customerPhone}
+                    />
+                  </td>
+                  <td style={{ color: 'var(--gray-600)', fontSize: '0.82rem' }}>{b.service}</td>
+                  <td style={{ color: 'var(--gray-700)', fontSize: '0.82rem' }}>{b.lawyer}</td>
+                  <td style={{ color: 'var(--gray-600)', fontSize: '0.82rem' }}>{METHOD_LABEL[b.method]}</td>
+                  <td>
+                    <BookingStatusBadge status={b.status} />
+                  </td>
+                  <td>
+                    <div className="action-btns">
+                      <button
+                        type="button"
+                        className="action-btn"
+                        onClick={() => onSelect(b)}
+                        aria-label={`Xem chi tiết ${b.customerName}`}
+                      >
+                        <Eye size={11} /> Xem
+                      </button>
+                      <button
+                        type="button"
+                        className="action-btn"
+                        onClick={() => onNote(b)}
+                        aria-label={`Ghi chú ${b.customerName}`}
+                      >
+                        <Pencil size={11} /> Ghi chú
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Lead Kanban ─────────────────────────────────────────────────────────────
+const BOOKING_STATUS_MAP: Record<string, { label: string; variant: 'green' | 'yellow' | 'red' | 'blue' }> = {
+  confirmed: { label: 'Đã xác nhận', variant: 'green' },
+  pending: { label: 'Chờ xác nhận', variant: 'yellow' },
+  cancelled: { label: 'Đã hủy', variant: 'red' },
+  completed: { label: 'Hoàn tất', variant: 'blue' },
+};
+
+function BookingStatusBadge({ status }: { status: string }) {
+  const s = BOOKING_STATUS_MAP[status] ?? BOOKING_STATUS_MAP.pending!;
+  const Icon =
+    status === 'confirmed'
+      ? CheckCircle2
+      : status === 'pending'
+        ? CircleDot
+        : status === 'cancelled'
+          ? CalendarX2
+          : status === 'completed'
+            ? CheckCircle2
+            : Phone;
+  return (
+    <Badge variant={s.variant}>
+      <Icon size={9} strokeWidth={3} />
+      {s.label}
+    </Badge>
+  );
+}
+
+// ─── Lead Kanban ───────────────────────────────────────────────────────────
 
 interface KanbanCard {
   id: string;
   name: string;
   service: string;
   time: string;
-  priority: 'low' | 'medium' | 'high';
+  lead: Lead;
 }
 
-interface LeadKanbanProps {
-  className?: string;
-}
-
-const KANBAN_COLS = [
+const KANBAN_COLUMNS: Array<{
+  id: LeadStatus;
+  label: string;
+  color: string;
+}> = [
   { id: 'new', label: 'Mới', color: '#2563EB' },
   { id: 'contacted', label: 'Đã liên hệ', color: '#D97706' },
-  { id: 'progress', label: 'Đang xử lý', color: '#7C3AED' },
-  { id: 'done', label: 'Hoàn tất', color: '#059669' },
+  { id: 'progress', label: 'Đang tư vấn', color: '#7C3AED' },
+  { id: 'converted', label: 'Đã chuyển đổi', color: '#059669' },
 ];
 
-const KANBAN_CARDS: KanbanCard[] = [
-  { id: '1', name: 'Nguyễn Văn A', service: 'Thành lập công ty', time: '10 phút trước', priority: 'high' },
-  { id: '2', name: 'Trần Thị B', service: 'Hợp đồng thuê', time: '25 phút trước', priority: 'medium' },
-  { id: '3', name: 'Lê Minh C', service: 'Tư vấn luật', time: '1 giờ trước', priority: 'low' },
-  { id: '4', name: 'Phạm Hoàng D', service: 'Sở hữu trí tuệ', time: '2 giờ trước', priority: 'high' },
-  { id: '5', name: 'Hoàng Lan E', service: 'Ly hôn', time: '3 giờ trước', priority: 'medium' },
-  { id: '6', name: 'Đặng Quốc F', service: 'Thành lập công ty', time: '5 giờ trước', priority: 'low' },
-];
+function SortableKanbanCard({ card, dotColor }: { card: KanbanCard; dotColor: string }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: card.id, strategy: rectSortingStrategy });
 
-const PRIORITY_COLORS = { low: '#059669', medium: '#D97706', high: '#DC2626' };
+  const style: React.CSSProperties = {
+    transform: transform
+      ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)`
+      : undefined,
+    transition,
+    opacity: isDragging ? 0.35 : 1,
+    background: 'var(--white)',
+    borderRadius: 'var(--radius-md, 8px)',
+    padding: '10px 12px',
+    border: '1px solid var(--gray-200, #E4E8EF)',
+    boxShadow: '0 1px 3px rgb(15 23 42 / 0.04)',
+    cursor: 'grab',
+  };
 
-function LeadKanban({ className = '' }: LeadKanbanProps) {
   return (
-    <div className={`admin-card ${className}`}>
-      <div className="admin-card__header">
-        <div className="admin-card__title">Pipeline Leads</div>
-        <button type="button" className="admin-card__action">
-          Xem chi tiết →
-        </button>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <div className="kanban__card-name">{card.name}</div>
+      <div className="kanban__card-service">{card.service}</div>
+      <div className="kanban__card-meta">
+        <div className="kanban__card-time">{card.time}</div>
+        <div className="kanban__card-dot" style={{ background: dotColor }} />
       </div>
+    </div>
+  );
+}
 
-      <div className="kanban">
-        {KANBAN_COLS.map((col) => {
-          const cards = KANBAN_CARDS.slice(
-            col.id === 'new' ? 0 : 2,
-            col.id === 'new' ? 2 : 5,
-          );
-          return (
-            <div key={col.id} className={`kanban__col kanban__col--${col.id}`}>
-              <div className="kanban__col-header">
-                <span className="kanban__col-title">{col.label}</span>
-                <span className="kanban__col-count">{cards.length}</span>
-              </div>
-              {cards.map((card) => (
-                <div key={card.id} className="kanban__card">
-                  <div className="kanban__card-name">{card.name}</div>
-                  <div className="kanban__card-service">{card.service}</div>
-                  <div className="kanban__card-meta">
-                    <span className="kanban__card-time">{card.time}</span>
-                    <span
-                      className="kanban__card-dot"
-                      style={{ background: PRIORITY_COLORS[card.priority] }}
-                    />
+function KanbanBoard({ range }: { range: DashboardRange }) {
+  const qc = useQueryClient();
+  const { data: allLeads, isLoading } = useMockQuery<Lead>('leads', undefined, {
+    by: 'createdAt',
+    dir: 'desc',
+  });
+  const updateLead = useUpdate<Lead>('leads');
+
+  const leads = useMemo(() => {
+    const start = rangeStart(range).getTime();
+    return (allLeads ?? []).filter((l) => new Date(l.createdAt).getTime() >= start);
+  }, [allLeads, range]);
+
+  const [columnItems, setColumnItems] = useState<Record<string, string[]>>({});
+  const [activeCardId, setActiveCardId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!leads) return;
+    const grouped: Record<string, string[]> = {
+      new: [],
+      contacted: [],
+      progress: [],
+      converted: [],
+      lost: [],
+    };
+    leads.forEach((l) => {
+      if (grouped[l.status]) grouped[l.status]!.push(l.id);
+    });
+    setColumnItems(grouped);
+  }, [leads]);
+
+  const cards = useMemo<Record<string, KanbanCard>>(() => {
+    const map: Record<string, KanbanCard> = {};
+    (leads ?? []).forEach((l) => {
+      map[l.id] = {
+        id: l.id,
+        name: l.name,
+        service: l.service,
+        time: timeAgo(l.createdAt),
+        lead: l,
+      };
+    });
+    return map;
+  }, [leads]);
+
+  const activeCard = activeCardId ? cards[activeCardId] : null;
+  const activeColumnColor =
+    KANBAN_COLUMNS.find((c) => columnItems[c.id]?.includes(activeCardId ?? ''))?.color ?? '#2563EB';
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveCardId(String(event.active.id));
+  }, []);
+
+  const handleDragOver = useCallback(
+    (event: DragStartEvent | DragEndEvent) => {
+      if (!('over' in event) || !event.over) return;
+      const overId = String(event.over.id);
+      if (!overId) return;
+      const fromColumnId = Object.keys(columnItems).find((k) => columnItems[k]?.includes(String(event.active.id)));
+      const overColumn = KANBAN_COLUMNS.find((c) => columnItems[c.id]?.includes(overId));
+      if (!overColumn || !fromColumnId || fromColumnId === overColumn.id) return;
+
+      setColumnItems((prev) => {
+        const fromColumn = prev[fromColumnId];
+        const toColumn = prev[overColumn.id];
+        if (!fromColumn || !toColumn) return prev;
+        const moved = fromColumn.find((id) => id === String(event.active.id));
+        if (!moved) return prev;
+        return {
+          ...prev,
+          [fromColumnId]: fromColumn.filter((id) => id !== moved),
+          [overColumn.id]: [...toColumn, moved],
+        };
+      });
+    },
+    [columnItems],
+  );
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const id = String(event.active.id);
+      const targetColumn = KANBAN_COLUMNS.find((c) => columnItems[c.id]?.includes(id));
+      setActiveCardId(null);
+      if (!targetColumn) return;
+      const before = cards[id]?.lead;
+      if (!before || before.status === targetColumn.id) return;
+      try {
+        await updateLead.mutateAsync({
+          id,
+          patch: { status: targetColumn.id },
+        });
+        notifySuccess(
+          `Đã chuyển "${before.name}" → ${targetColumn.label}`,
+          undefined,
+        );
+        qc.invalidateQueries({ queryKey: ['admin', 'leads'] });
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
+        qc.invalidateQueries({ queryKey: ['admin', 'leads'] });
+      }
+    },
+    [columnItems, cards, updateLead, qc],
+  );
+
+  if (isLoading) {
+    return (
+      <div className="admin-card">
+        <div className="admin-card__header">
+          <div className="admin-card__title">Lead Pipeline</div>
+        </div>
+        <SkeletonCard rows={3} />
+      </div>
+    );
+  }
+
+  const totalLeads = Object.values(columnItems).reduce((s, arr) => s + (arr?.length ?? 0), 0);
+
+  return (
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+    >
+      <div className="admin-card">
+        <div className="admin-card__header">
+          <div className="admin-card__title">
+            Lead Pipeline ({totalLeads} • {DASHBOARD_RANGES.find((r) => r.value === range)?.label ?? '7 ngày'})
+          </div>
+          <Link href="/admin/crm" className="admin-card__action">
+            Quản lý CRM →
+          </Link>
+        </div>
+        {totalLeads === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--gray-500)' }}>
+            <UserPlus size={36} style={{ opacity: 0.2, marginBottom: 8 }} />
+            <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Chưa có lead nào</div>
+            <div style={{ fontSize: '0.72rem' }}>Lead mới từ form/chatbot sẽ xuất hiện ở đây</div>
+          </div>
+        ) : (
+          <div className="kanban">
+            {KANBAN_COLUMNS.map((column) => (
+              <SortableContext
+                key={column.id}
+                items={columnItems[column.id] ?? []}
+                strategy={horizontalListSortingStrategy}
+              >
+                <div key={column.id} className={`kanban__col kanban__col--${column.id}`}>
+                  <div className="kanban__col-header">
+                    <span className="kanban__col-title">{column.label}</span>
+                    <span className="kanban__col-count">{columnItems[column.id]?.length ?? 0}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {(columnItems[column.id] ?? []).map((cardId) => {
+                      const card = cards[cardId];
+                      if (!card) return null;
+                      return (
+                        <SortableKanbanCard key={cardId} card={card} dotColor={column.color} />
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
-            </div>
-          );
-        })}
+              </SortableContext>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
-  );
-}
-
-// ─── Recent Activity ──────────────────────────────────────────────────────────
-
-const ACTIVITIES = [
-  {
-    id: '1',
-    icon: '📅',
-    iconBg: '#EFF6FF',
-    text: '<strong>Lê Thị Lan</strong> vừa đặt lịch hẹn <strong>"Tư vấn pháp luật"</strong>',
-    time: '5 phút trước',
-  },
-  {
-    id: '2',
-    icon: '💬',
-    iconBg: '#F5F3FF',
-    text: '<strong>Trần Đức Anh</strong> được chuyển từ chatbot sang tư vấn viên',
-    time: '12 phút trước',
-  },
-  {
-    id: '3',
-    icon: '📝',
-    iconBg: '#ECFDF5',
-    text: 'Bài viết <strong>"Hướng dẫn thành lập công ty 2025"</strong> được xuất bản',
-    time: '1 giờ trước',
-  },
-  {
-    id: '4',
-    icon: '⭐',
-    iconBg: '#FFFBEB',
-    text: '<strong>Nguyễn Thị Mai</strong> gửi đánh giá 5 sao cho dịch vụ tư vấn',
-    time: '2 giờ trước',
-  },
-  {
-    id: '5',
-    icon: '📧',
-    iconBg: '#FEF2F2',
-    text: '<strong>Phạm Minh Tuấn</strong> đăng ký nhận bản tin Newsletter',
-    time: '3 giờ trước',
-  },
-];
-
-function RecentActivity({ className = '' }: RecentActivityProps) {
-  return (
-    <div className={`admin-card ${className}`}>
-      <div className="admin-card__header">
-        <div className="admin-card__title">Hoạt động gần đây</div>
-      </div>
-      <div className="activity-list">
-        {ACTIVITIES.map((a) => (
-          <div key={a.id} className="activity-item">
-            <div
-              className="activity-item__icon"
-              style={{ background: a.iconBg }}
-              aria-hidden="true"
-            >
-              {a.icon}
-            </div>
-            <div className="activity-item__content">
-              <div
-                className="activity-item__text"
-                dangerouslySetInnerHTML={{ __html: a.text }}
-              />
-              <div className="activity-item__time">{a.time}</div>
+      <DragOverlay dropAnimation={null}>
+        {activeCard ? (
+          <div
+            style={{
+              background: 'var(--white)',
+              border: '1px solid var(--gray-200)',
+              borderRadius: 10,
+              padding: '10px 12px',
+              width: 220,
+              boxShadow: '0 20px 25px -5px rgb(15 23 42 / 0.18)',
+            }}
+          >
+            <div className="kanban__card-name">{activeCard.name}</div>
+            <div className="kanban__card-service">{activeCard.service}</div>
+            <div className="kanban__card-meta">
+              <div className="kanban__card-time">{activeCard.time}</div>
+              <div className="kanban__card-dot" style={{ background: activeColumnColor }} />
             </div>
           </div>
-        ))}
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+
+// ─── Recent Activity (từ audit_logs real) ──────────────────────────────────
+
+const ACTION_ICON: Record<string, { Icon: typeof CalendarCheck; bg: string; color: string }> = {
+  create: { Icon: UserPlus, bg: '#EFF6FF', color: '#2563EB' },
+  update: { Icon: PenLine, bg: '#FEF9EF', color: '#C9A84C' },
+  delete: { Icon: CalendarX2, bg: '#FEF2F2', color: '#DC2626' },
+  status_change: { Icon: CalendarCheck, bg: '#ECFDF5', color: '#059669' },
+  assign: { Icon: UserPlus, bg: '#EFF6FF', color: '#2563EB' },
+  publish: { Icon: FileText, bg: '#ECFDF5', color: '#059669' },
+  login: { Icon: UserPlus, bg: '#EFF6FF', color: '#2563EB' },
+  impersonate: { Icon: UserPlus, bg: '#FEF9EF', color: '#C9A84C' },
+};
+
+const ENTITY_LABEL: Record<string, string> = {
+  booking: 'lịch hẹn',
+  lead: 'lead',
+  review: 'đánh giá',
+  post: 'bài viết',
+  campaign: 'campaign',
+  user: 'người dùng',
+  subscriber: 'subscriber',
+  landing_page: 'landing page',
+  service: 'dịch vụ',
+  lawyer: 'luật sư',
+};
+
+function RecentActivity({ range }: { range: DashboardRange }) {
+  const { data, isLoading } = useRecentAuditLogs(range, 8);
+  return (
+    <div className="admin-card">
+      <div className="admin-card__header">
+        <div className="admin-card__title">
+          Hoạt động gần đây ({DASHBOARD_RANGES.find((r) => r.value === range)?.label ?? '7 ngày'})
+        </div>
+        <Link href="/admin/audit" className="admin-card__action">
+          Xem tất cả →
+        </Link>
       </div>
+      {isLoading ? (
+        <div style={{ padding: 12 }}>
+          <SkeletonCard rows={3} />
+        </div>
+      ) : (data ?? []).length === 0 ? (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--gray-500)' }}>
+          <MessageCircle size={32} style={{ opacity: 0.2, marginBottom: 8 }} />
+          <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Chưa có hoạt động nào</div>
+          <div style={{ fontSize: '0.72rem' }}>Các thao tác CRUD sẽ hiển thị ở đây</div>
+        </div>
+      ) : (
+        <div className="activity-list">
+          {data.map((a) => {
+            const cfg =
+              ACTION_ICON[a.action] ?? { Icon: PenLine, bg: '#F3F4F6', color: '#6B7280' };
+            const entityText = ENTITY_LABEL[a.entity] ?? a.entity;
+            const verbMap: Record<string, string> = {
+              create: 'tạo',
+              update: 'cập nhật',
+              delete: 'xóa',
+              status_change: 'đổi trạng thái',
+              assign: 'gán',
+              publish: 'xuất bản',
+              unpublish: 'gỡ',
+              login: 'đăng nhập',
+              logout: 'đăng xuất',
+              impersonate: 'impersonate',
+            };
+            const verb = verbMap[a.action] ?? a.action;
+            const label = a.entityLabel ?? a.entityId;
+            return (
+              <div key={a.id} className="activity-item">
+                <div
+                  className="activity-item__icon"
+                  style={{ background: cfg.bg, color: cfg.color }}
+                  aria-hidden="true"
+                >
+                  <cfg.Icon size={12} strokeWidth={2.5} />
+                </div>
+                <div className="activity-item__content">
+                  <div className="activity-item__text">
+                    <strong>{a.actorName}</strong> đã {verb} {entityText}{' '}
+                    <strong>{label}</strong>.
+                  </div>
+                  <div className="activity-item__time">{timeAgo(a.createdAt)}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Quick Actions ────────────────────────────────────────────────────────────
+// ─── Quick Actions ─────────────────────────────────────────────────────────
 
 const QUICK_ACTIONS = [
-  { icon: '📅', label: 'Tạo lịch hẹn', bg: '#EFF6FF', color: '#2563EB' },
-  { icon: '👤', label: 'Thêm Lead mới', bg: '#F5F3FF', color: '#7C3AED' },
-  { icon: '📝', label: 'Viết bài Blog', bg: '#ECFDF5', color: '#059669' },
-  { icon: '📊', label: 'Xuất báo cáo', bg: '#FFFBEB', color: '#D97706' },
+  { Icon: PenLine, label: 'Tạo bài viết mới', href: '/admin/blog?action=new', bg: '#EFF3F8', color: '#1E3A5F' },
+  { Icon: UserPlus, label: 'Thêm Lead', href: '/admin/crm?action=new', bg: '#FEF9EF', color: '#C9A84C' },
+  { Icon: CalendarDays, label: 'Xem lịch hẹn', href: '/admin/bookings', bg: '#ECFDF5', color: '#059669' },
+  { Icon: BarChart3, label: 'Báo cáo SEO', href: '/admin/landing-pages', bg: '#EFF6FF', color: '#2563EB' },
 ];
 
 function QuickActions() {
+  const router = useRouter();
   return (
     <div className="admin-card">
       <div className="admin-card__header">
@@ -515,6 +611,7 @@ function QuickActions() {
             key={qa.label}
             type="button"
             className="quick-action"
+            onClick={() => router.push(qa.href)}
             style={{ textAlign: 'left' }}
           >
             <div
@@ -522,7 +619,7 @@ function QuickActions() {
               style={{ background: qa.bg, color: qa.color }}
               aria-hidden="true"
             >
-              {qa.icon}
+              <qa.Icon size={16} strokeWidth={2} />
             </div>
             <span className="quick-action__label">{qa.label}</span>
           </button>
@@ -532,147 +629,645 @@ function QuickActions() {
   );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Booking Detail Drawer ─────────────────────────────────────────────────
 
-type RecentActivityProps = { className?: string };
-
-const SOURCE_MAP: Record<string, string> = {
-  facebook: 'Facebook',
-  google_ads: 'Google Ads',
-  organic: 'Tự nhiên',
-  chatbot: 'Chatbot',
-  referral: 'Giới thiệu',
-};
-
-const SOURCE_CLASS: Record<string, string> = {
-  facebook: 'facebook',
-  google_ads: 'google',
-  organic: 'organic',
-  chatbot: 'chatbot',
-  referral: 'referral',
-};
-
-function SourceTag({ source }: { source: string }) {
-  const label = SOURCE_MAP[source] ?? source;
-  const cls = SOURCE_CLASS[source] ?? '';
+function BookingDetailDrawer({
+  booking,
+  onClose,
+}: {
+  booking: Booking | null;
+  onClose: () => void;
+}) {
+  if (!booking) return null;
   return (
-    <span className={`source-tag source-tag--${cls}`}>
-      {label}
-    </span>
+    <>
+      <div
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 199 }}
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-label="Chi tiết booking"
+        style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: 440,
+          maxWidth: '95vw',
+          background: 'white',
+          zIndex: 200,
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '-8px 0 24px rgba(0,0,0,0.15)',
+          animation: 'drawerIn 0.2s ease',
+        }}
+      >
+        <div
+          style={{
+            padding: 16,
+            borderBottom: '1px solid var(--gray-200)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div>
+            <div style={{ fontSize: '1rem', fontWeight: 700 }}>Chi tiết lịch hẹn</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--gray-500)' }}>#{booking.id}</div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Đóng"
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4 }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+          <RowUser
+            initials={getInitials(booking.customerName)}
+            name={booking.customerName}
+            sub={booking.customerEmail}
+          />
+          <DetailRow label="Giờ hẹn" value={`${booking.date} • ${booking.time}`} />
+          <DetailRow label="Dịch vụ" value={booking.service} />
+          <DetailRow label="Luật sư" value={booking.lawyer} />
+          <DetailRow label="Hình thức" value={METHOD_LABEL[booking.method]} />
+          <DetailRow label="Trạng thái" value={<BookingStatusBadge status={booking.status} />} />
+          <DetailRow label="SĐT" value={booking.customerPhone} />
+          {booking.notes && <DetailRow label="Ghi chú" value={booking.notes} />}
+        </div>
+        <div
+          style={{
+            padding: 12,
+            borderTop: '1px solid var(--gray-200)',
+            display: 'flex',
+            gap: 8,
+          }}
+        >
+          <Link
+            href="/admin/bookings"
+            className="action-btn action-btn--primary"
+            style={{ flex: 1, textAlign: 'center', textDecoration: 'none' }}
+            onClick={onClose}
+          >
+            Mở trang Bookings
+          </Link>
+        </div>
+      </div>
+      <style jsx global>{`
+        @keyframes drawerIn {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+      `}</style>
+    </>
   );
 }
 
-const STATUS_MAP: Record<string, { label: string; variant: 'green' | 'yellow' | 'red' | 'blue' | 'purple' }> = {
-  new: { label: 'Mới', variant: 'blue' },
-  contacted: { label: 'Đã liên hệ', variant: 'yellow' },
-  progress: { label: 'Đang xử lý', variant: 'purple' },
-  converted: { label: 'Đã chuyển đổi', variant: 'green' },
-  lost: { label: 'Mất lead', variant: 'red' },
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_MAP[status] ?? { label: status, variant: 'blue' as const };
-  return <Badge variant={s.variant}>{s.label}</Badge>;
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        padding: '10px 0',
+        borderBottom: '1px solid var(--gray-100)',
+        fontSize: '0.82rem',
+      }}
+    >
+      <div
+        style={{
+          width: 110,
+          color: 'var(--gray-500)',
+          fontWeight: 600,
+          flexShrink: 0,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ flex: 1, color: 'var(--gray-800)' }}>{value}</div>
+    </div>
+  );
 }
 
-// ─── Dashboard Page ───────────────────────────────────────────────────────────
+// ─── Note Modal ────────────────────────────────────────────────────────────
 
-// Mock data
-const MOCK_STATS: DashboardStats = {
-  appointments_today: 24,
-  appointments_change: 12,
-  leads_week: 156,
-  leads_change: 8,
-  conversion_rate: 32,
-  conversion_change: 5,
-  chatbot_conversations: 892,
-  chatbot_change: -3,
-};
+function NoteModal({
+  booking,
+  onClose,
+  onSave,
+}: {
+  booking: Booking | null;
+  onClose: () => void;
+  onSave: (note: string) => void;
+}) {
+  const [note, setNote] = useState('');
+  useEffect(() => {
+    setNote(booking?.notes ?? '');
+  }, [booking?.id, booking?.notes]);
+  if (!booking) return null;
+  return (
+    <>
+      <div
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 199 }}
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-label="Ghi chú booking"
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 460,
+          maxWidth: '95vw',
+          background: 'white',
+          zIndex: 200,
+          borderRadius: 12,
+          boxShadow: '0 24px 48px rgba(0,0,0,0.2)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <div
+          style={{
+            padding: 14,
+            borderBottom: '1px solid var(--gray-200)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ fontWeight: 700 }}>Ghi chú — {booking.customerName}</div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Đóng"
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div style={{ padding: 14 }}>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={6}
+            placeholder="Nhập ghi chú cho booking này..."
+            style={{
+              width: '100%',
+              padding: 10,
+              border: '1px solid var(--gray-200)',
+              borderRadius: 6,
+              fontSize: '0.85rem',
+              resize: 'vertical',
+            }}
+          />
+        </div>
+        <div
+          style={{
+            padding: 12,
+            borderTop: '1px solid var(--gray-200)',
+            display: 'flex',
+            gap: 8,
+            justifyContent: 'flex-end',
+          }}
+        >
+          <button type="button" className="action-btn" onClick={onClose}>
+            Hủy
+          </button>
+          <button
+            type="button"
+            className="action-btn action-btn--primary"
+            onClick={() => {
+              onSave(note);
+            }}
+          >
+            Lưu ghi chú
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
 
-const MOCK_CHART_DATA: ChartDataPoint[] = [
-  { date: '2025-05-19', visits: 120, leads: 12 },
-  { date: '2025-05-20', visits: 185, leads: 22 },
-  { date: '2025-05-21', visits: 210, leads: 28 },
-  { date: '2025-05-22', visits: 165, leads: 18 },
-  { date: '2025-05-23', visits: 280, leads: 35 },
-  { date: '2025-05-24', visits: 310, leads: 42 },
-  { date: '2025-05-25', visits: 245, leads: 30 },
-];
+// ─── Refresh Hook ──────────────────────────────────────────────────────────
 
-const MOCK_DONUT_DATA: DonutSegment[] = [
-  { label: 'Facebook', value: 45, percentage: 38, color: '#2563EB' },
-  { label: 'Google Ads', value: 28, percentage: 24, color: '#D97706' },
-  { label: 'Chatbot', value: 22, percentage: 19, color: '#7C3AED' },
-  { label: 'Tự nhiên', value: 15, percentage: 13, color: '#059669' },
-  { label: 'Khác', value: 8, percentage: 6, color: '#9CA3AF' },
-];
+function useRefreshDashboard() {
+  const qc = useQueryClient();
+  return useCallback(() => {
+    qc.invalidateQueries({ queryKey: ['admin'] });
+    notifySuccess('Đã làm mới dashboard');
+  }, [qc]);
+}
 
-const MOCK_LEADS: Lead[] = [
-  { id: '1', name: 'Nguyễn Văn A', phone: '0901 234 567', email: 'nva@email.com', service: 'Thành lập công ty', source: 'facebook', status: 'new', assignedTo: 'Lan', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '2', name: 'Trần Thị B', phone: '0902 345 678', email: 'ttb@email.com', service: 'Hợp đồng thuê', source: 'google_ads', status: 'contacted', assignedTo: 'Minh', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '3', name: 'Lê Minh C', phone: '0903 456 789', email: 'lmc@email.com', service: 'Tư vấn luật', source: 'chatbot', status: 'progress', assignedTo: 'Hùng', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '4', name: 'Phạm Hoàng D', phone: '0904 567 890', email: 'phd@email.com', service: 'Sở hữu trí tuệ', source: 'organic', status: 'new', assignedTo: 'Lan', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '5', name: 'Hoàng Lan E', phone: '0905 678 901', email: 'hle@email.com', service: 'Ly hôn', source: 'facebook', status: 'converted', assignedTo: 'Minh', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-];
+// ─── Dashboard Page ────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const [stats] = useState<DashboardStats>(MOCK_STATS);
-  const [chartData] = useState<ChartDataPoint[]>(MOCK_CHART_DATA);
-  const [donutData] = useState<DonutSegment[]>(MOCK_DONUT_DATA);
-  const [leads] = useState<Lead[]>(MOCK_LEADS);
+  const router = useRouter();
+  const [dateRange, setDateRange] = useState<DashboardRange>('week');
+  const stats = useDashboardStats(dateRange);
+  const { data: todayBookings, isLoading: bookingsLoading } = useTodayBookings();
+  const donutData = useServiceDistribution(dateRange);
+  const chartData = useLeadsTimelineChart(dateRange);
+  const refresh = useRefreshDashboard();
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [noteBooking, setNoteBooking] = useState<Booking | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const update = useUpdate<Booking>('bookings');
+  const handleSaveNote = async (text: string) => {
+    if (!noteBooking) return;
+    try {
+      await update.mutateAsync({
+        id: noteBooking.id,
+        patch: { notes: text },
+      });
+      notifySuccess('Đã lưu ghi chú', `${noteBooking.customerName} • ${text.slice(0, 30)}`);
+      setNoteBooking(null);
+    } catch (e) {
+      notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể lưu');
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await new Promise((r) => setTimeout(r, 400));
+    refresh();
+    setRefreshing(false);
+  };
+
+  const handleExport = () => {
+    const rangeLabel =
+      DASHBOARD_RANGES.find((r) => r.value === dateRange)?.label ?? dateRange;
+    const lines: string[] = [];
+    lines.push(`Báo cáo Dashboard — Văn Phòng Luật`);
+    lines.push(`Khoảng thời gian: ${rangeLabel}`);
+    lines.push(`Xuất lúc: ${new Date().toISOString()}`);
+    lines.push('');
+    lines.push('== Tổng quan ==');
+    lines.push('Chỉ số,Giá trị,Thay đổi so với kỳ trước');
+    lines.push(`Lịch hẹn hôm nay,${stats.appointments_today},${stats.appointments_change}`);
+    lines.push(`Lead mới,${stats.leads_week},${stats.leads_change}`);
+    lines.push(`Tỷ lệ chuyển đổi (%),${stats.conversion_rate},${stats.conversion_change}`);
+    lines.push(`Chatbot hôm nay,${stats.chatbot_conversations},${stats.chatbot_change}`);
+    lines.push(`Chờ xác nhận,${stats.pending_count},—`);
+    lines.push(`Đã hủy hôm nay,${stats.cancelled_count},—`);
+    lines.push(`Hoàn thành hôm nay,${stats.completed_today},—`);
+    lines.push(`Doanh thu (VNĐ),${stats.revenue},${stats.revenue_change}`);
+    lines.push(`Đánh giá trung bình,${stats.reviews_avg_rating},—`);
+    lines.push(`Đánh giá chờ duyệt,${stats.reviews_pending},—`);
+    lines.push('');
+    lines.push('== Phân bổ dịch vụ ==');
+    lines.push('Dịch vụ,Lead,Phần trăm (%)');
+    donutData.forEach((d) => {
+      lines.push(`${d.label},${d.value},${d.percentage}`);
+    });
+    lines.push('');
+    lines.push('== Xu hướng leads ==');
+    lines.push('Ngày,Leads,Visits');
+    chartData.forEach((c) => {
+      lines.push(`${c.date},${c.leads},${c.visits}`);
+    });
+
+    // BOM để Excel nhận diện UTF-8 đúng tiếng Việt
+    const csv = '\uFEFF' + lines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `dashboard-${dateRange}-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    notifySuccess('Đã xuất báo cáo', `dashboard-${dateRange}-${stamp}.csv`);
+  };
 
   return (
     <div className="admin-view">
+      {/* Page header */}
+      <div className="admin-page-header">
+        <div className="admin-page-header__left">
+          <h1 className="admin-page-header__title">Bảng điều khiển</h1>
+          <p className="admin-page-header__sub">
+            Tổng quan hoạt động của Văn Phòng Luật — cập nhật real-time
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Filter size={12} style={{ color: 'var(--gray-500)' }} />
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value as DashboardRange)}
+              aria-label="Chọn khoảng thời gian"
+              style={{
+                padding: '5px 8px',
+                border: '1px solid var(--gray-200)',
+                borderRadius: 6,
+                fontSize: '0.78rem',
+                background: 'white',
+                fontWeight: 500,
+              }}
+            >
+              {DASHBOARD_RANGES.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="action-btn"
+            disabled={refreshing}
+            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+            aria-label="Làm mới dữ liệu"
+          >
+            {refreshing ? (
+              <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <RefreshCw size={12} />
+            )}
+            Làm mới
+          </button>
+          <button
+            type="button"
+            onClick={handleExport}
+            className="action-btn"
+            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+            aria-label="Xuất báo cáo CSV"
+          >
+            <Download size={12} /> Xuất báo cáo
+          </button>
+        </div>
+      </div>
+
       {/* Stats Grid */}
       <div className="stats-grid">
         <StatCard
-          icon={<CalendarCheck size={20} />}
+          icon={<CalendarDays size={18} strokeWidth={2.2} />}
           iconVariant="blue"
           value={stats.appointments_today}
           label="Lịch hẹn hôm nay"
           change={stats.appointments_change}
+          changeLabel="so với hôm qua"
+          onClick={() => router.push('/admin/bookings')}
         />
         <StatCard
-          icon={<Users size={20} />}
+          icon={<UserPlus size={18} strokeWidth={2.2} />}
           iconVariant="green"
           value={stats.leads_week}
-          label="Leads tuần này"
+          label={`Lead mới (${DASHBOARD_RANGES.find((r) => r.value === dateRange)?.label ?? '7 ngày'})`}
           change={stats.leads_change}
+          changeLabel="so với kỳ trước"
+          onClick={() => router.push('/admin/crm')}
         />
         <StatCard
-          icon={<TrendingUp size={20} />}
+          icon={<TrendingUp size={18} strokeWidth={2.2} />}
           iconVariant="yellow"
-          value={stats.conversion_rate}
-          suffix="%"
+          value={`${stats.conversion_rate}%`}
           label="Tỷ lệ chuyển đổi"
           change={stats.conversion_change}
+          changeLabel={`so với kỳ trước`}
+          onClick={() => router.push('/admin/crm/pipeline')}
         />
         <StatCard
-          icon={<Bot size={20} />}
+          icon={<MessagesSquare size={18} strokeWidth={2.2} />}
           iconVariant="purple"
           value={stats.chatbot_conversations}
-          label="Cuộc trò chuyện chatbot"
+          label="Chatbot hôm nay"
           change={stats.chatbot_change}
+          changeLabel="so với hôm qua"
+          onClick={() => router.push('/admin/chatbot')}
         />
+      </div>
+
+      {/* Extended Stats Row */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 8,
+          marginBottom: 12,
+        }}
+      >
+        <MiniStat
+          icon={<AlertCircle size={14} />}
+          label="Chờ xác nhận"
+          value={stats.pending_count}
+          color="var(--warning, #B45309)"
+          bg="var(--warning-faint, #FEF3C7)"
+        />
+        <MiniStat
+          icon={<CalendarX2 size={14} />}
+          label="Đã hủy hôm nay"
+          value={stats.cancelled_count}
+          color="var(--danger, #DC2626)"
+          bg="var(--danger-faint, #FEE2E2)"
+        />
+        <MiniStat
+          icon={<CheckCircle2 size={14} />}
+          label="Hoàn tất hôm nay"
+          value={stats.completed_today}
+          color="var(--success, #10B981)"
+          bg="var(--success-faint, #D1FAE5)"
+        />
+        <MiniStat
+          icon={<Award size={14} />}
+          label={`Rating TB (${stats.reviews_pending} chờ duyệt)`}
+          value={stats.reviews_avg_rating > 0 ? `${stats.reviews_avg_rating}★` : '—'}
+          color="var(--primary, #1E3A5F)"
+          bg="var(--primary-faint, #EFF3F8)"
+        />
+      </div>
+
+      {/* Revenue Highlight */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%)',
+          color: 'white',
+          borderRadius: 10,
+          padding: 16,
+          marginBottom: 12,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+        }}
+      >
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 10,
+            background: 'rgba(255,255,255,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <DollarSign size={20} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 600, textTransform: 'uppercase' }}>
+            Doanh thu ({DASHBOARD_RANGES.find((r) => r.value === dateRange)?.label ?? '7 ngày'})
+          </div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>
+            {new Intl.NumberFormat('vi-VN').format(stats.revenue)} ₫
+          </div>
+        </div>
+        <Link
+          href="/admin/audit"
+          style={{
+            color: 'white',
+            fontSize: '0.78rem',
+            fontWeight: 600,
+            textDecoration: 'none',
+            padding: '6px 12px',
+            background: 'rgba(255,255,255,0.15)',
+            borderRadius: 6,
+          }}
+        >
+          Xem báo cáo chi tiết →
+        </Link>
       </div>
 
       {/* Charts Row */}
       <div className="charts-row">
-        <LineChart data={chartData} />
-        <DonutChart segments={donutData} />
+        <div className="admin-card">
+          <div className="admin-card__header">
+            <div className="admin-card__title">
+              Lượt truy cập & Lead — {DASHBOARD_RANGES.find((r) => r.value === dateRange)?.label ?? '7 ngày'}
+            </div>
+            <Link href="/admin/landing-pages" className="admin-card__action">
+              Xem chi tiết →
+            </Link>
+          </div>
+          <LineChart data={chartData as unknown as ChartDataPoint[]} />
+        </div>
+        <div className="admin-card">
+          <div className="admin-card__header">
+            <div className="admin-card__title">Phân bổ Lead theo dịch vụ</div>
+            <Link href="/admin/crm" className="admin-card__action">
+              Xem CRM →
+            </Link>
+          </div>
+          {donutData.length === 0 ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--gray-500)' }}>
+              <BarChart3 size={36} style={{ opacity: 0.2, marginBottom: 8 }} />
+              <div style={{ fontSize: '0.85rem' }}>Chưa có dữ liệu</div>
+            </div>
+          ) : (
+            <DonutChart segments={donutData as DonutSegment[]} />
+          )}
+        </div>
       </div>
 
-      {/* Recent Leads + Quick Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginBottom: '24px' }}>
-        <RecentLeadsTable leads={leads} />
-        <QuickActions />
-      </div>
+      {/* Booking Table */}
+      {bookingsLoading ? (
+        <div style={{ marginBottom: 12 }}>
+          <SkeletonTable rows={5} columns={7} />
+        </div>
+      ) : (
+        <BookingTable
+          bookings={todayBookings}
+          onSelect={(b) => setSelectedBooking(b)}
+          onNote={(b) => setNoteBooking(b)}
+        />
+      )}
 
       {/* Kanban + Activity */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '16px' }}>
-        <LeadKanban />
-        <RecentActivity />
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1.4fr 1fr',
+          gap: 16,
+          marginBottom: 24,
+        }}
+      >
+        <KanbanBoard range={dateRange} />
+        <RecentActivity range={dateRange} />
+      </div>
+
+      {/* Quick Actions */}
+      <QuickActions />
+
+      <BookingDetailDrawer
+        booking={selectedBooking}
+        onClose={() => setSelectedBooking(null)}
+      />
+      <NoteModal
+        booking={noteBooking}
+        onClose={() => setNoteBooking(null)}
+        onSave={handleSaveNote}
+      />
+
+      <style jsx global>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─── Mini stat card ────────────────────────────────────────────────────────
+
+function MiniStat({
+  icon,
+  label,
+  value,
+  color,
+  bg,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  color: string;
+  bg: string;
+}) {
+  return (
+    <div
+      style={{
+        background: 'white',
+        border: '1px solid var(--gray-200)',
+        borderRadius: 8,
+        padding: 12,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+      }}
+    >
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 8,
+          background: bg,
+          color,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+      </div>
+      <div>
+        <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--gray-800)' }}>{value}</div>
+        <div style={{ fontSize: '0.7rem', color: 'var(--gray-500)' }}>{label}</div>
       </div>
     </div>
   );
 }
+
+void MailOpen;
+void Star;
+void SkeletonStats;
+void mapBookingStatus;
+void MockDB;

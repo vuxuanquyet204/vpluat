@@ -4,11 +4,18 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminUIStore } from '@/features/admin/store';
 import { ADMIN_NAV_SECTIONS } from '@/features/admin/constants';
-import { Scale } from 'lucide-react';
+import { useSidebarBadges } from '@/features/admin/lib/use-sidebar-badges';
+import { Scale, LogOut } from 'lucide-react';
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const { isSidebarOpen, closeSidebar } = useAdminUIStore();
+  const badges = useSidebarBadges();
+
+  const getBadge = (item: { badge?: number; badgeSource?: keyof typeof badges }) => {
+    if (item.badgeSource) return badges[item.badgeSource] ?? 0;
+    return item.badge ?? 0;
+  };
 
   return (
     <>
@@ -55,12 +62,12 @@ export function AdminSidebar() {
                   >
                     <item.icon size={16} strokeWidth={1.8} aria-hidden="true" />
                     <span className="admin-sidebar__item-label">{item.label}</span>
-                    {item.badge !== undefined && (
+                    {getBadge(item) > 0 && (
                       <span
                         className={`admin-sidebar__badge ${item.badgeVariant === 'red' ? 'admin-sidebar__badge--red' : ''}`}
-                        aria-label={`${item.badge} thông báo`}
+                        aria-label={`${getBadge(item)} thông báo`}
                       >
-                        {item.badge}
+                        {getBadge(item) > 99 ? '99+' : getBadge(item)}
                       </span>
                     )}
                   </Link>
@@ -83,21 +90,7 @@ export function AdminSidebar() {
             </div>
           </div>
           <Link href="/api/auth/signout" className="admin-sidebar__logout">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
+            <LogOut size={14} aria-hidden="true" />
             Đăng xuất
           </Link>
         </div>

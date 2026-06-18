@@ -73,24 +73,24 @@ export function HeroSection() {
           <div className="stats-bar__inner">
             <div className="stats-bar__item">
               <div className="stats-bar__number">
-                15<span className="counter-suffix">+</span>
-              </div>
-              <div className="stats-bar__label">Năm kinh nghiệm</div>
-              <div className="stats-bar__sublabel">Hoạt động từ 2009</div>
-            </div>
-            <div className="stats-bar__item">
-              <div className="stats-bar__number">
                 2.000<span className="counter-suffix">+</span>
               </div>
               <div className="stats-bar__label">Vụ việc thành công</div>
-              <div className="stats-bar__sublabel">Tỷ lệ thắng 95%</div>
+              <div className="stats-bar__sublabel">Từ 2010 đến nay</div>
             </div>
             <div className="stats-bar__item">
               <div className="stats-bar__number">
-                50<span className="counter-suffix">+</span>
+                98<span className="counter-suffix">%</span>
               </div>
-              <div className="stats-bar__label">Luật sư chuyên nghiệp</div>
-              <div className="stats-bar__sublabel">Thạc sĩ, Tiến sĩ luật</div>
+              <div className="stats-bar__label">Tỷ lệ thành công</div>
+              <div className="stats-bar__sublabel">Khách hàng hài lòng</div>
+            </div>
+            <div className="stats-bar__item">
+              <div className="stats-bar__number">
+                15<span className="counter-suffix">+</span>
+              </div>
+              <div className="stats-bar__label">Năm kinh nghiệm</div>
+              <div className="stats-bar__sublabel">Trên thị trường pháp lý</div>
             </div>
           </div>
         </div>

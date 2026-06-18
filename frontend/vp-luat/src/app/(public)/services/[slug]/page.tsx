@@ -3,9 +3,9 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, ArrowLeft, Phone, Mail, MapPin } from 'lucide-react'
 import { SERVICES, SERVICES_FAQS, PROCESS_STEPS, SERVICES_STATS } from '@/features/services/lib/data/services-data';
-import { LAWYERS_BY_ID } from '@/features/lawers/lib/data/lawyers-data';
-import { LawyersHero } from '@/features/lawers/components/lawyers-hero';
-import { LawyerCard } from '@/features/lawers/components/lawyer-card';
+import { LAWYERS_BY_ID } from '@/features/lawyers/lib/data/lawyers-data';
+import { LawyersHero } from '@/features/lawyers/components/lawyers-hero';
+import { LawyerCard } from '@/features/lawyers/components/lawyer-card';
 import { PageHero } from '@/features/services/components/page-hero';
 import { ServicesFaq } from '@/features/services/components/services-faq';
 import { ServicesCta } from '@/features/services/components/services-cta';
@@ -43,8 +43,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
           { label: service.title ?? service.name },
         ]}
         title={service.title ?? service.name}
-        description={service.shortDescription}
-        icon={service.icon}
+        subtitle={service.shortDescription}
         stats={[
           { value: String(SERVICES_STATS.totalServices), label: 'Dịch vụ' },
           { value: String(SERVICES_STATS.totalLawyers), label: 'Luật sư' },

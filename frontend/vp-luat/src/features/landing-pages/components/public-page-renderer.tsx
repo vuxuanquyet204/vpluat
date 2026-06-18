@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Star } from 'lucide-react';
 import type { LandingBlock, LandingPageConfig, LandingPageVariantConfig } from '@/features/landing-pages';
 
 interface PublicPageRendererProps {
@@ -130,7 +131,13 @@ function renderBlock(block: LandingBlock, index: number) {
             <div className="public-testimonials-grid">
               {block.items.map((item) => (
                 <article key={item.author + item.role} className="public-testimonial-card">
-                  {item.rating ? <div className="public-testimonial-card__rating">{'★'.repeat(item.rating)}</div> : null}
+                  {item.rating ? (
+                    <div className="public-testimonial-card__rating" aria-label={`${item.rating} sao`}>
+                      {Array.from({ length: item.rating }).map((_, starIdx) => (
+                        <Star key={starIdx} size={14} fill="currentColor" strokeWidth={0} aria-hidden="true" />
+                      ))}
+                    </div>
+                  ) : null}
                   <p className="public-testimonial-card__quote">“{item.quote}”</p>
                   <div className="public-testimonial-card__author">{item.author}</div>
                   <div className="public-testimonial-card__role">{item.role}</div>

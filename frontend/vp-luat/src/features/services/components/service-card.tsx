@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import type { Service } from '../types';
-import { LAWYERS_BY_ID } from '../../lawers/lib/data/lawyers-data';
+import { LAWYERS_BY_ID } from '../../lawyers/lib/data/lawyers-data';
 
 interface ServiceCardProps {
   service: Service;
@@ -42,7 +42,10 @@ export function ServiceCard({ service }: ServiceCardProps) {
 
       <ul className="service-card__list">
         {service.features.slice(0, 4).map((f) => (
-          <li key={f} className="service-card__list-item">{f}</li>
+          <li key={f} className="service-card__list-item">
+            <Check size={12} strokeWidth={3} className="service-card__list-icon" aria-hidden="true" />
+            <span>{f}</span>
+          </li>
         ))}
       </ul>
 

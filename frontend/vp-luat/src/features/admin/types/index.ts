@@ -52,6 +52,29 @@ export interface LeadKanbanCard {
   status: LeadStatus;
 }
 
+// ─── Lead timeline / notes (Phase 7) ───────────────────────────────────────
+
+export interface LeadTimelineEntry {
+  id: string;
+  leadId: string;
+  type: 'note' | 'call' | 'email' | 'status_change' | 'booking_created' | 'assignment_change';
+  content: string;
+  authorId: string;
+  authorName: string;
+  metadata?: Record<string, string | number | boolean>;
+  createdAt: string;
+}
+
+export interface LeadNote {
+  id: string;
+  leadId: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Bookings ─────────────────────────────────────────────────────────────
 
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
@@ -59,6 +82,7 @@ export type BookingMethod = 'office' | 'online' | 'phone';
 
 export interface Booking {
   id: string;
+  leadId?: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -67,14 +91,36 @@ export interface Booking {
   method: BookingMethod;
   date: string;
   time: string;
+  durationMinutes?: number;
   status: BookingStatus;
   notes?: string;
+  reminders?: Array<{ type: '24h' | '2h' | '30m'; scheduledAt: string; sent: boolean; channel: 'email' | 'sms' }>;
+  cancelledReason?: string;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface LawyerSchedule {
+  id: string;
+  lawyerId: string;
+  dayOfWeek: number; // 0-6, 0=Sunday
+  isOff: boolean;
+  slots: Array<{ start: string; end: string }>;
+  effectiveFrom?: string;
+  effectiveTo?: string;
 }
 
 // ─── Blog ────────────────────────────────────────────────────────────────
 
 export type PostStatus = 'draft' | 'published' | 'scheduled';
+
+export interface PostSeo {
+  metaTitle?: string;
+  metaDescription?: string;
+  ogImage?: string;
+  noindex?: boolean;
+  canonical?: string;
+}
 
 export interface BlogPost {
   id: string;
@@ -89,9 +135,48 @@ export interface BlogPost {
   thumbnail?: string;
   publishedAt?: string;
   scheduledAt?: string;
+  seo?: PostSeo;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface PostRevision {
+  id: string;
+  postId: string;
+  title: string;
+  content: string;
+  excerpt?: string;
+  author: string;
+  reason?: string;
+  createdAt: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  postCount: number;
+  createdAt: string;
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+  postCount: number;
+  createdAt?: string;
+}
+
+// Aliases theo plan Phase 7 §17.3
+export type BlogCategory = Category;
+export type BlogTag = Tag;
+export type BlogRevision = PostRevision;
+export type BlogSEO = Required<Pick<PostSeo, 'metaTitle' | 'metaDescription' | 'noindex'>> & {
+  ogImage?: string;
+  canonicalUrl?: string;
+};
 
 // ─── Services & Lawyers ─────────────────────────────────────────────────────
 
@@ -125,20 +210,59 @@ export interface Lawyer {
 // ─── Reviews ─────────────────────────────────────────────────────────────
 
 export type ReviewStatus = 'pending' | 'approved' | 'rejected';
+export type ReportReason = 'spam' | 'inappropriate' | 'fake' | 'offensive' | 'other';
+export type ReportStatus = 'pending' | 'resolved' | 'dismissed';
 
 export interface Review {
   id: string;
   authorName: string;
   authorEmail: string;
-  rating: number;
+  rating: number; // 1-5
   content: string;
   service: string;
+  lawyer?: string;
   status: ReviewStatus;
   reply?: string;
+  repliedByName?: string;
+  repliedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ReviewReport {
+  id: string;
+  reviewId: string;
+  reason: ReportReason;
+  description?: string;
+  reportedByName: string;
+  status: ReportStatus;
+  resolvedAt?: string;
+  resolvedByName?: string;
   createdAt: string;
 }
 
 // ─── Chatbot ─────────────────────────────────────────────────────────────
+
+export type ChatbotSessionStatus = 'active' | 'ended' | 'abandoned' | 'handoff';
+export type ChatbotSender = 'user' | 'bot' | 'system' | 'agent';
+
+export interface ChatbotMessage {
+  id: string;
+  from: ChatbotSender;
+  content: string;
+  timestamp: string;
+  intentId?: string;
+  confidence?: number;
+}
+
+export interface ChatbotHandoff {
+  to: string;
+  toUserId?: string;
+  at: string;
+  reason?: string;
+  resolved?: boolean;
+  notes?: string;
+}
 
 export interface ChatbotSession {
   id: string;
@@ -146,36 +270,247 @@ export interface ChatbotSession {
   messages: ChatbotMessage[];
   userName?: string;
   userPhone?: string;
+  userEmail?: string;
   intent?: string;
+  intentId?: string;
   startedAt: string;
   endedAt?: string;
+  status: ChatbotSessionStatus;
+  messageCount: number;
+  handoff?: ChatbotHandoff | null;
+  source?: 'web' | 'facebook' | 'zalo' | 'other';
+  userAgent?: string;
+  convertedToLeadId?: string;
+  convertedToBookingId?: string;
 }
 
-export interface ChatbotMessage {
-  from: 'user' | 'bot' | 'system';
-  content: string;
-  timestamp: string;
+export interface ChatbotIntent {
+  id: string;
+  name: string;
+  description?: string;
+  sampleUtterances: string[];
+  responseTemplate: string;
+  handoffEnabled: boolean;
+  handoffTo?: string;
+  handoffToUserId?: string;
+  handoffKeywords?: string[];
+  isActive: boolean;
+  matchCount: number;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // ─── Newsletter ─────────────────────────────────────────────────────────
 
+export type SubscriberStatus = 'active' | 'unsubscribed';
+export type CampaignStatus = 'draft' | 'scheduled' | 'sent' | 'sending' | 'failed';
+export type CampaignSegment = 'all' | 'fdi' | 'realestate' | 'custom';
+
 export interface Subscriber {
   id: string;
   email: string;
+  name?: string;
   subscribedAt: string;
-  status: 'active' | 'unsubscribed';
+  status: SubscriberStatus;
+  unsubscribedAt?: string;
+  source?: string;
+  tags?: string[];
 }
 
 export interface Campaign {
   id: string;
+  name: string;
   subject: string;
+  body: string;
+  status: CampaignStatus;
+  segment: CampaignSegment;
+  customEmails?: string[];
+  scheduledAt?: string;
   sentAt?: string;
-  status: 'draft' | 'sent' | 'scheduled';
   recipientCount: number;
-  openRate?: number;
+  openRate: number;
+  clickRate: number;
+  bounceRate: number;
+  unsubRate: number;
+  createdAt: string;
+  updatedAt?: string;
+  createdByName?: string;
+}
+
+export interface NewsletterTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+  description?: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // ─── Users ─────────────────────────────────────────────────────────────
+
+export type LandingBlockType =
+  | 'hero'
+  | 'text'
+  | 'image'
+  | 'cta'
+  | 'lead-form'
+  | 'testimonials'
+  | 'pricing'
+  | 'reviews'
+  | 'faq'
+  | 'news'
+  | 'lawyers'
+  | 'map'
+  | 'contact';
+
+export type LandingPageStatus = 'draft' | 'published' | 'archived';
+export type LandingVariantLabel = 'A' | 'B';
+export type LandingAudience = 'fdi' | 'enterprise' | 'individual' | 'startup' | 'all';
+
+export interface HeroBlockProps {
+  headline: string;
+  subheadline?: string;
+  ctaText?: string;
+  ctaLink?: string;
+  backgroundImage?: string;
+  align?: 'left' | 'center' | 'right';
+  eyebrow?: string;
+}
+
+export interface TextBlockProps {
+  content: string;
+  maxWidth?: number;
+  align?: 'left' | 'center' | 'right';
+}
+
+export interface ImageBlockProps {
+  src: string;
+  alt: string;
+  caption?: string;
+  width?: number;
+  rounded?: boolean;
+}
+
+export interface CtaBlockProps {
+  text: string;
+  link: string;
+  variant?: 'primary' | 'secondary' | 'outline';
+  icon?: string;
+}
+
+export interface LeadFormBlockProps {
+  fields: string[];
+  submitText: string;
+  successMessage?: string;
+  redirectTo?: string;
+}
+
+export interface TestimonialsBlockProps {
+  limit: number;
+  layout?: 'grid' | 'carousel';
+  minRating?: number;
+}
+
+export interface PricingBlockProps {
+  serviceIds: string[];
+  showButton?: boolean;
+  title?: string;
+}
+
+export interface ReviewsBlockProps {
+  limit: number;
+  layout?: 'grid' | 'list';
+  showRating?: boolean;
+  serviceId?: string;
+}
+
+export interface FaqBlockProps {
+  title?: string;
+  items: Array<{ question: string; answer: string }>;
+}
+
+export interface NewsBlockProps {
+  category?: string;
+  limit: number;
+  layout?: 'grid' | 'list';
+}
+
+export interface LawyersBlockProps {
+  specialties?: string[];
+  limit: number;
+  showSchedule?: boolean;
+}
+
+export interface MapBlockProps {
+  embedUrl: string;
+  height?: number;
+  title?: string;
+}
+
+export interface ContactBlockProps {
+  address: string;
+  phone: string;
+  email: string;
+  workingHours?: string;
+  showMap?: boolean;
+}
+
+export type LandingBlockProps =
+  | HeroBlockProps
+  | TextBlockProps
+  | ImageBlockProps
+  | CtaBlockProps
+  | LeadFormBlockProps
+  | TestimonialsBlockProps
+  | PricingBlockProps
+  | ReviewsBlockProps
+  | FaqBlockProps
+  | NewsBlockProps
+  | LawyersBlockProps
+  | MapBlockProps
+  | ContactBlockProps;
+
+export interface LandingBlock<T extends LandingBlockProps = LandingBlockProps> {
+  id: string;
+  type: LandingBlockType;
+  order: number;
+  props: T;
+}
+
+export interface LandingSeo {
+  metaTitle: string;
+  metaDescription: string;
+  noindex: boolean;
+  ogImage?: string;
+}
+
+export interface LandingPageAnalytics {
+  views?: number;
+  conversions?: number;
+  ctr?: number;
+  bounceRate?: number;
+  dailyViews?: Array<{ date: string; views: number; conversions: number }>;
+}
+
+export interface LandingPage {
+  id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  targetAudience: LandingAudience;
+  status: LandingPageStatus;
+  isVariant: boolean;
+  parentPageId?: string;
+  variantLabel?: LandingVariantLabel;
+  blocks: LandingBlock[];
+  seo: LandingSeo;
+  analytics?: LandingPageAnalytics;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export type UserRole = 'super_admin' | 'admin' | 'lawyer' | 'staff';
 
@@ -188,6 +523,78 @@ export interface AdminUser {
   isActive: boolean;
   lastLoginAt?: string;
   createdAt: string;
+  phone?: string;
+  impersonatedBy?: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+  isSystem: boolean;
+  memberCount: number;
+  createdAt: string;
+}
+
+export type Permission =
+  | 'crm.read' | 'crm.write' | 'crm.delete'
+  | 'booking.read' | 'booking.write' | 'booking.delete'
+  | 'blog.read' | 'blog.write' | 'blog.publish' | 'blog.delete'
+  | 'services.read' | 'services.write'
+  | 'lawyers.read' | 'lawyers.write'
+  | 'reviews.read' | 'reviews.moderate' | 'reviews.reply'
+  | 'chatbot.read' | 'chatbot.train'
+  | 'newsletter.read' | 'newsletter.send'
+  | 'landing.read' | 'landing.write' | 'landing.publish'
+  | 'users.read' | 'users.write' | 'users.impersonate'
+  | 'settings.read' | 'settings.write'
+  | 'audit.read';
+
+export const ALL_PERMISSIONS: Array<{ key: Permission; label: string; group: string }> = [
+  { key: 'crm.read', label: 'Xem', group: 'CRM' },
+  { key: 'crm.write', label: 'Sửa', group: 'CRM' },
+  { key: 'crm.delete', label: 'Xóa', group: 'CRM' },
+  { key: 'booking.read', label: 'Xem', group: 'Booking' },
+  { key: 'booking.write', label: 'Sửa', group: 'Booking' },
+  { key: 'booking.delete', label: 'Xóa', group: 'Booking' },
+  { key: 'blog.read', label: 'Xem', group: 'Blog' },
+  { key: 'blog.write', label: 'Sửa', group: 'Blog' },
+  { key: 'blog.publish', label: 'Publish', group: 'Blog' },
+  { key: 'blog.delete', label: 'Xóa', group: 'Blog' },
+  { key: 'services.read', label: 'Xem', group: 'Dịch vụ' },
+  { key: 'services.write', label: 'Sửa', group: 'Dịch vụ' },
+  { key: 'lawyers.read', label: 'Xem', group: 'Luật sư' },
+  { key: 'lawyers.write', label: 'Sửa', group: 'Luật sư' },
+  { key: 'reviews.read', label: 'Xem', group: 'Đánh giá' },
+  { key: 'reviews.moderate', label: 'Duyệt', group: 'Đánh giá' },
+  { key: 'reviews.reply', label: 'Phản hồi', group: 'Đánh giá' },
+  { key: 'chatbot.read', label: 'Xem', group: 'Chatbot' },
+  { key: 'chatbot.train', label: 'Train', group: 'Chatbot' },
+  { key: 'newsletter.read', label: 'Xem', group: 'Newsletter' },
+  { key: 'newsletter.send', label: 'Gửi', group: 'Newsletter' },
+  { key: 'landing.read', label: 'Xem', group: 'Landing Page' },
+  { key: 'landing.write', label: 'Sửa', group: 'Landing Page' },
+  { key: 'landing.publish', label: 'Publish', group: 'Landing Page' },
+  { key: 'users.read', label: 'Xem', group: 'Người dùng' },
+  { key: 'users.write', label: 'Sửa', group: 'Người dùng' },
+  { key: 'users.impersonate', label: 'Đăng nhập thay', group: 'Người dùng' },
+  { key: 'settings.read', label: 'Xem', group: 'Cài đặt' },
+  { key: 'settings.write', label: 'Sửa', group: 'Cài đặt' },
+  { key: 'audit.read', label: 'Xem audit log', group: 'Audit' },
+];
+
+export interface AuditLog {
+  id: string;
+  actorId: string;
+  actorName: string;
+  action: 'create' | 'update' | 'delete' | 'status_change' | 'assign' | 'login' | 'logout' | 'impersonate' | 'publish' | 'unpublish';
+  entity: string;
+  entityId: string;
+  entityLabel?: string;
+  diff?: Record<string, { before?: unknown; after?: unknown }>;
+  createdAt: string;
+  ipAddress?: string;
 }
 
 // ─── Settings ──────────────────────────────────────────────────────────

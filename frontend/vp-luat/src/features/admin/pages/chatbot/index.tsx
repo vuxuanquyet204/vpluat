@@ -1,169 +1,485 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, MessageSquare, Phone, User } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import {
+  Plus,
+  Download,
+  MessageCircle,
+  Tag,
+  Eye,
+} from 'lucide-react';
 import {
   AdminPageHeader,
   SearchBar,
+  FilterTabs,
   Pagination,
+  ConfirmDialog,
+  Modal,
+  EmptyStateWithCta,
 } from '@/features/admin/shared';
-import type { ChatbotSession } from '@/features/admin/types';
+import {
+  useCan,
+  notifySuccess,
+  notifyError,
+  exportToCSV,
+} from '@/features/admin/lib';
+import { ChatbotSessionsTable } from './components/chatbot-sessions-table';
+import { ChatbotSessionDetail } from './components/chatbot-session-detail';
+import { ChatbotIntentList } from './components/chatbot-intent-list';
+import { ChatbotIntentForm } from './components/chatbot-intent-form';
+import { ChatbotAnalytics } from './components/chatbot-analytics';
+import {
+  useChatbotSessions,
+  useDeleteSession,
+  useChatbotIntents,
+  useCreateIntent,
+  useUpdateIntent,
+  useDeleteIntent,
+  useToggleIntent,
+} from './hooks/use-chatbot';
+import type { ChatbotSession, ChatbotIntent, ChatbotSessionStatus } from '@/features/admin/types';
+import type { IntentFormValues } from '@/features/admin/schema';
 
-const MOCK_SESSIONS: ChatbotSession[] = [
-  { id: '1', sessionId: 'sess_001', userName: 'Nguyễn Văn A', userPhone: '0901 234 567', intent: 'thành lập công ty', startedAt: '2025-05-26T09:00:00Z', endedAt: '2025-05-26T09:05:00Z', messages: [{ from: 'user', content: 'Tôi muốn thành lập công ty', timestamp: '2025-05-26T09:00:00Z' }, { from: 'bot', content: 'Xin chào A, tôi sẽ giúp bạn về thành lập công ty.', timestamp: '2025-05-26T09:00:10Z' }] },
-  { id: '2', sessionId: 'sess_002', userName: 'Trần Thị B', userPhone: '0902 345 678', intent: 'tư vấn luật', startedAt: '2025-05-26T08:30:00Z', endedAt: '2025-05-26T08:40:00Z', messages: [{ from: 'user', content: 'Cần tư vấn pháp luật', timestamp: '2025-05-26T08:30:00Z' }, { from: 'bot', content: 'Xin chào B, bạn cần tư vấn về vấn đề gì ạ?', timestamp: '2025-05-26T08:30:10Z' }] },
-  { id: '3', sessionId: 'sess_003', userName: undefined, userPhone: undefined, intent: 'hợp đồng thuê', startedAt: '2025-05-25T14:00:00Z', endedAt: '2025-05-25T14:10:00Z', messages: [{ from: 'user', content: 'Hợp đồng thuê nhà thế nào?', timestamp: '2025-05-25T14:00:00Z' }] },
-  { id: '4', sessionId: 'sess_004', userName: 'Lê Minh C', userPhone: '0903 456 789', intent: 'ly hôn', startedAt: '2025-05-25T10:00:00Z', endedAt: '2025-05-25T10:15:00Z', messages: [{ from: 'user', content: 'Ly hôn cần làm gì?', timestamp: '2025-05-25T10:00:00Z' }, { from: 'bot', content: 'Xin chào C, ly hôn là thủ tục phức tạp...', timestamp: '2025-05-25T10:00:15Z' }, { from: 'user', content: 'Cảm ơn bạn', timestamp: '2025-05-25T10:10:00Z' }] },
+type Tab = 'sessions' | 'intents';
+
+const TABS: Array<{ value: Tab; label: string; icon: typeof MessageCircle }> = [
+  { value: 'sessions', label: 'Sessions', icon: MessageCircle },
+  { value: 'intents', label: 'Intent Training', icon: Tag },
 ];
 
-function formatTime(iso: string) {
-  return new Intl.DateTimeFormat('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(iso));
-}
-
-function formatDuration(start: string, end?: string) {
-  if (!end) return 'Đang diễn ra';
-  const ms = new Date(end).getTime() - new Date(start).getTime();
-  const mins = Math.round(ms / 60000);
-  return `${mins} phút`;
-}
-
 export default function ChatbotPage() {
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [selectedSession, setSelectedSession] = useState<ChatbotSession | null>(null);
-  const LIMIT = 10;
-
-  const filtered = MOCK_SESSIONS.filter(
-    (s) =>
-      (s.userName ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      (s.userPhone ?? '').includes(search) ||
-      (s.intent ?? '').toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
+  const [tab, setTab] = useState<Tab>('sessions');
+  const canRead = useCan('chatbot.read');
+  const canWrite = useCan('chatbot.train');
+  const canTrain = useCan('chatbot.train');
+  const canDelete = useCan('chatbot.read');
 
   return (
     <div className="admin-view">
       <AdminPageHeader
-        title="Chatbot Logs"
-        subtitle="Xem lịch sử cuộc trò chuyện chatbot"
+        title="Chatbot"
+        subtitle="Quản lý sessions và huấn luyện intent chatbot"
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: selectedSession ? '1fr 1fr' : '1fr', gap: '16px' }}>
-        {/* Session list */}
-        <div className="admin-card">
+      <div className="filter-bar" role="tablist" style={{ marginBottom: 16 }}>
+        {TABS.map((t) => {
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.value}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.value}
+              className={`filter-tab ${tab === t.value ? 'filter-tab--active' : ''}`}
+              onClick={() => setTab(t.value)}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Icon size={12} />
+                {t.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {!canRead ? (
+        <div
+          className="admin-card"
+          style={{ padding: 32, textAlign: 'center', color: 'var(--gray-500)' }}
+        >
+          Bạn không có quyền xem module này.
+        </div>
+      ) : tab === 'sessions' ? (
+        <SessionsTab canDelete={canDelete} />
+      ) : (
+        <IntentsTab canWrite={canWrite} canDelete={canDelete} canTrain={canTrain} />
+      )}
+    </div>
+  );
+}
+
+// ─── Tab 1: Sessions ──────────────────────────────────────────────────
+function SessionsTab({ canDelete }: { canDelete: boolean }) {
+  const { data: sessions, counts } = useChatbotSessions();
+  const removeSession = useDeleteSession();
+
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | ChatbotSessionStatus>('all');
+  const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [viewSession, setViewSession] = useState<ChatbotSession | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<ChatbotSession | null>(null);
+  const LIMIT = 15;
+
+  const tabsWithCounts = [
+    { value: 'all', label: 'Tất cả', count: counts.total },
+    { value: 'active', label: 'Đang chat', count: counts.active },
+    { value: 'handoff', label: 'Đã handoff', count: counts.handoff },
+    { value: 'ended', label: 'Kết thúc', count: counts.ended },
+    { value: 'abandoned', label: 'Bỏ dở', count: counts.abandoned },
+  ];
+
+  const filtered = useMemo(() => {
+    let r = sessions;
+    if (search) {
+      const q = search.toLowerCase();
+      r = r.filter(
+        (s) =>
+          (s.userName ?? '').toLowerCase().includes(q) ||
+          (s.userPhone ?? '').includes(q) ||
+          (s.intent ?? '').toLowerCase().includes(q) ||
+          s.sessionId.toLowerCase().includes(q),
+      );
+    }
+    if (statusFilter !== 'all') r = r.filter((s) => s.status === statusFilter);
+    return r;
+  }, [sessions, search, statusFilter]);
+
+  const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
+
+  const handleExport = () => {
+    exportToCSV(
+      filtered as unknown as Record<string, unknown>[],
+      `chatbot-sessions-${new Date().toISOString().slice(0, 10)}`,
+      [
+        { key: 'sessionId', header: 'Session ID' },
+        { key: 'userName', header: 'Khách' },
+        { key: 'userPhone', header: 'SĐT' },
+        { key: 'intent', header: 'Intent' },
+        { key: 'status', header: 'Trạng thái' },
+        { key: 'messageCount', header: 'Tin nhắn' },
+        { key: 'startedAt', header: 'Bắt đầu' },
+      ],
+    );
+    notifySuccess(`Đã export ${filtered.length} sessions`);
+  };
+
+  return (
+    <>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 12,
+          flexWrap: 'wrap',
+          gap: 8,
+        }}
+      >
+        <FilterTabs
+          tabs={tabsWithCounts}
+          activeValue={statusFilter}
+          onChange={(v) => {
+            setStatusFilter(v as typeof statusFilter);
+            setPage(1);
+          }}
+        />
+        <button
+          type="button"
+          className="action-btn"
+          onClick={handleExport}
+          disabled={filtered.length === 0}
+          style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+        >
+          <Download size={12} /> Export
+        </button>
+      </div>
+
+      <div className="admin-card">
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 12,
+            flexWrap: 'wrap',
+            gap: 8,
+          }}
+        >
           <SearchBar
             value={search}
-            onChange={(v) => { setSearch(v); setPage(1); }}
-            placeholder="Tìm theo tên, số điện thoại, intent..."
+            onChange={(v) => {
+              setSearch(v);
+              setPage(1);
+            }}
+            placeholder="Tìm theo tên, SĐT, intent, sessionId..."
           />
-
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Người dùng</th>
-                  <th>Intent</th>
-                  <th>Thời gian</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginated.map((s) => (
-                  <tr
-                    key={s.id}
-                    style={{ cursor: 'pointer', background: selectedSession?.id === s.id ? 'var(--gray-50)' : undefined }}
-                    onClick={() => setSelectedSession(s)}
-                  >
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary-faint, #EFF3F8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <User size={14} style={{ color: 'var(--primary)' }} />
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 600, color: 'var(--gray-700)', fontSize: '0.82rem' }}>
-                            {s.userName ?? 'Khách vãng lai'}
-                          </div>
-                          {s.userPhone && (
-                            <div style={{ fontSize: '0.72rem', color: 'var(--gray-400)' }}>{s.userPhone}</div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ color: 'var(--gray-600)', fontSize: '0.82rem' }}>{s.intent}</td>
-                    <td style={{ color: 'var(--gray-400)', fontSize: '0.78rem' }}>
-                      <div>{formatTime(s.startedAt)}</div>
-                      <div>{formatDuration(s.startedAt, s.endedAt ?? undefined)}</div>
-                    </td>
-                    <td>
-                      <button type="button" className="action-btn" onClick={(e) => { e.stopPropagation(); setSelectedSession(s); }}>
-                        <MessageSquare size={12} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <Pagination page={page} limit={LIMIT} total={filtered.length} onPageChange={setPage} />
+          <span style={{ color: 'var(--gray-400)', fontSize: '0.8rem' }}>
+            Tổng: {filtered.length} / {sessions.length}
+          </span>
         </div>
 
-        {/* Chat detail */}
-        {selectedSession && (
-          <div className="admin-card" style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <div>
-                <div style={{ fontWeight: 700, color: 'var(--primary)' }}>
-                  {selectedSession.userName ?? 'Khách vãng lai'}
-                </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--gray-400)' }}>
-                  {selectedSession.userPhone ?? 'Không có SĐT'} · {selectedSession.intent}
-                </div>
-              </div>
-              <button type="button" className="action-btn" onClick={() => setSelectedSession(null)}>
-                Đóng
-              </button>
-            </div>
+        <ChatbotSessionsTable
+          data={paginated}
+          selectedIds={selectedIds}
+          onSelectChange={setSelectedIds}
+          onView={setViewSession}
+          onDelete={(s) => setConfirmDelete(s)}
+          canDelete={canDelete}
+        />
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
-              {selectedSession.messages.map((msg, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: msg.from === 'user' ? 'flex-end' : 'flex-start',
+        <Pagination
+          page={page}
+          limit={LIMIT}
+          total={filtered.length}
+          onPageChange={setPage}
+        />
+      </div>
+
+      <ChatbotSessionDetail
+        session={viewSession}
+        onClose={() => setViewSession(null)}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(confirmDelete)}
+        title="Xóa session"
+        message={
+          confirmDelete
+            ? `Bạn có chắc muốn xóa session #${confirmDelete.sessionId}?`
+            : ''
+        }
+        confirmLabel="Xóa"
+        cancelLabel="Hủy"
+        variant="danger"
+        onConfirm={async () => {
+          if (!confirmDelete) return;
+          try {
+            await removeSession.mutateAsync(confirmDelete.id);
+            notifySuccess('Đã xóa session');
+          } catch (e) {
+            notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');
+          } finally {
+            setConfirmDelete(null);
+          }
+        }}
+        onClose={() => setConfirmDelete(null)}
+      />
+    </>
+  );
+}
+
+// ─── Tab 2: Intents ───────────────────────────────────────────────────
+function IntentsTab({
+  canWrite,
+  canDelete,
+  canTrain,
+}: {
+  canWrite: boolean;
+  canDelete: boolean;
+  canTrain: boolean;
+}) {
+  const { data: sessions = [] } = useChatbotSessions();
+  const { data: intents = [], counts } = useChatbotIntents();
+  const createIntent = useCreateIntent();
+  const updateIntent = useUpdateIntent();
+  const removeIntent = useDeleteIntent();
+  const toggleIntent = useToggleIntent();
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<ChatbotIntent | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<ChatbotIntent | null>(null);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+
+  const handleSubmit = async (values: IntentFormValues) => {
+    const payload: Omit<ChatbotIntent, 'id' | 'createdAt' | 'matchCount'> = {
+      name: values.name,
+      description: values.description,
+      sampleUtterances: values.sampleUtterances.filter((u) => u.trim().length > 0),
+      responseTemplate: values.responseTemplate,
+      handoffEnabled: values.handoffEnabled,
+      handoffTo: values.handoffTo || undefined,
+      handoffKeywords: values.handoffKeywords,
+      isActive: values.isActive,
+      updatedAt: new Date().toISOString(),
+    };
+    try {
+      if (editing) {
+        await updateIntent.mutateAsync({ id: editing.id, patch: payload });
+        notifySuccess('Đã cập nhật intent');
+      } else {
+        await createIntent.mutateAsync({
+          ...payload,
+          matchCount: 0,
+        } as unknown as Omit<ChatbotIntent, 'id' | 'createdAt'>);
+        notifySuccess('Đã tạo intent');
+      }
+      setFormOpen(false);
+      setEditing(null);
+    } catch (e) {
+      notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể lưu');
+    }
+  };
+
+  const handleToggle = useCallback(
+    async (i: ChatbotIntent) => {
+      try {
+        await toggleIntent(i.id, !i.isActive);
+        notifySuccess(i.isActive ? 'Đã tạm tắt intent' : 'Đã bật intent');
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Cập nhật thất bại');
+      }
+    },
+    [toggleIntent],
+  );
+
+  const handleDuplicate = async (i: ChatbotIntent) => {
+    try {
+      await createIntent.mutateAsync({
+        name: `${i.name} (bản sao)`,
+        description: i.description,
+        sampleUtterances: i.sampleUtterances,
+        responseTemplate: i.responseTemplate,
+        handoffEnabled: i.handoffEnabled,
+        handoffTo: i.handoffTo,
+        handoffKeywords: i.handoffKeywords ?? [],
+        isActive: false,
+        matchCount: 0,
+        updatedAt: new Date().toISOString(),
+      } as unknown as Omit<ChatbotIntent, 'id' | 'createdAt'>);
+      notifySuccess('Đã nhân bản intent');
+    } catch (e) {
+      notifyError('Lỗi', e instanceof Error ? e.message : 'Nhân bản thất bại');
+    }
+  };
+
+  return (
+    <>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 12,
+          flexWrap: 'wrap',
+          gap: 8,
+        }}
+      >
+        <div
+          style={{
+            fontSize: '0.85rem',
+            color: 'var(--gray-600)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <Tag size={12} /> {counts.active}/{counts.total} đang hoạt động ·{' '}
+          {counts.handoff} có handoff
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {canWrite && (
+            <button
+              type="button"
+              className="action-btn"
+              onClick={() => setAnalyticsOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <Eye size={12} /> Analytics
+            </button>
+          )}
+          {canTrain && (
+            <button
+              type="button"
+              className="action-btn action-btn--primary"
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <Plus size={12} /> Thêm intent
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="admin-card">
+        {intents.length === 0 ? (
+          <EmptyStateWithCta
+            title="Chưa có intent nào"
+            description="Tạo intent để chatbot nhận diện câu hỏi của khách."
+            action={
+              canTrain ? (
+                <button
+                  type="button"
+                  className="action-btn action-btn--primary"
+                  onClick={() => {
+                    setEditing(null);
+                    setFormOpen(true);
                   }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                 >
-                  <div
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '12px',
-                      maxWidth: '80%',
-                      fontSize: '0.85rem',
-                      lineHeight: 1.5,
-                      background: msg.from === 'user' ? 'var(--primary)' : 'var(--gray-100)',
-                      color: msg.from === 'user' ? 'white' : 'var(--gray-700)',
-                    }}
-                  >
-                    {msg.content}
-                  </div>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--gray-400)', marginTop: '2px' }}>
-                    {formatTime(msg.timestamp)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+                  <Plus size={12} /> Tạo intent đầu tiên
+                </button>
+              ) : null
+            }
+          />
+        ) : (
+          <ChatbotIntentList
+            data={intents}
+            onEdit={(i) => {
+              setEditing(i);
+              setFormOpen(true);
+            }}
+            onDelete={(i) => setConfirmDelete(i)}
+            onToggle={handleToggle}
+            onDuplicate={handleDuplicate}
+            canWrite={canWrite}
+            canDelete={canDelete}
+          />
         )}
       </div>
-    </div>
+
+      <ChatbotIntentForm
+        isOpen={formOpen}
+        onClose={() => {
+          setFormOpen(false);
+          setEditing(null);
+        }}
+        onSubmit={handleSubmit}
+        initial={editing}
+        isLoading={createIntent.isPending || updateIntent.isPending}
+      />
+
+      <Modal
+        isOpen={analyticsOpen}
+        onClose={() => setAnalyticsOpen(false)}
+        title="Chatbot Analytics"
+        size="lg"
+        footer={
+          <button type="button" className="action-btn" onClick={() => setAnalyticsOpen(false)}>
+            Đóng
+          </button>
+        }
+      >
+        <ChatbotAnalytics sessions={sessions} intents={intents} />
+      </Modal>
+
+      <ConfirmDialog
+        isOpen={Boolean(confirmDelete)}
+        title="Xóa intent"
+        message={
+          confirmDelete
+            ? `Bạn có chắc muốn xóa intent "${confirmDelete.name}"?`
+            : ''
+        }
+        confirmLabel="Xóa"
+        cancelLabel="Hủy"
+        variant="danger"
+        onConfirm={async () => {
+          if (!confirmDelete) return;
+          try {
+            await removeIntent.mutateAsync(confirmDelete.id);
+            notifySuccess('Đã xóa intent');
+          } catch (e) {
+            notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');
+          } finally {
+            setConfirmDelete(null);
+          }
+        }}
+        onClose={() => setConfirmDelete(null)}
+      />
+    </>
   );
 }

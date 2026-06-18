@@ -1,4 +1,4 @@
-import { LawyersPage } from '@/features/lawers';
+import { LawyersPage } from '@/features/lawyers';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {

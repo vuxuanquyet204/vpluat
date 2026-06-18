@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Phone, Mail, Award } from 'lucide-react';
-import { LAWYERS } from '@/features/lawers/lib/data/lawyers-data';
+import { LAWYERS } from '@/features/lawyers/lib/data/lawyers-data';
+import { PageHero } from '@/components/layout/page-hero';
 
 export function generateStaticParams() {
   return LAWYERS.map((l) => ({ id: l.id }));
@@ -26,18 +27,21 @@ export default async function LawyerDetailPage({ params }: { params: Promise<{ i
 
   return (
     <main className="lawyer-detail">
-      <section className="page-header page-header--lawyer">
-        <div className="container">
-          <nav className="breadcrumb" aria-label="Breadcrumb">
-            <Link href="/">Trang chủ</Link>
-            <span>/</span>
-            <Link href="/lawyers">Luật sư</Link>
-            <span>/</span>
-            <span>{lawyer.name}</span>
-          </nav>
-          <h1 className="page-header__title">Hồ sơ luật sư</h1>
-        </div>
-      </section>
+      <PageHero
+        title={lawyer.name}
+        subtitle={`${lawyer.position} · ${lawyer.specialties.join(', ')}`}
+        breadcrumb={[
+          { label: 'Trang chủ', href: '/' },
+          { label: 'Luật sư', href: '/lawyers' },
+          { label: lawyer.name },
+        ]}
+        stats={[
+          { value: String(lawyer.experience ?? 0) + '+', label: 'Năm kinh nghiệm' },
+          { value: String(lawyer.successfulCases ?? 0) + '+', label: 'Vụ thắng' },
+          { value: String(lawyer.rating ?? 0) + '/5', label: 'Đánh giá' },
+          { value: String(lawyer.reviewCount ?? 0), label: 'Lượt review' },
+        ]}
+      />
 
       <section className="section">
         <div className="container lawyer-detail__layout">
