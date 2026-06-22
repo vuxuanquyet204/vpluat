@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar, Clock, MapPin, User, Phone, Mail, FileText, Check, X, UserPlus, SendHorizontal } from 'lucide-react';
 import { Drawer, ConfirmDialog, FormFieldTextarea } from '@/features/admin/components';
 import { StatusBadge, type StatusVariant } from '@/features/admin/shared';
@@ -46,6 +46,7 @@ interface BookingDetailDrawerProps {
 export function BookingDetailDrawer({ booking, onClose, onDeleted, onCreateLead }: BookingDetailDrawerProps) {
   const canEdit = useCan('booking.write');
   const canDelete = useCan('booking.delete');
+  const qc = useQueryClient();
 
   const update = useUpdateBooking();
   const changeStatus = useChangeBookingStatus();
@@ -78,6 +79,11 @@ export function BookingDetailDrawer({ booking, onClose, onDeleted, onCreateLead 
     const updated = reminderConfig.reminders.map((r) =>
       r.type === type ? { ...r, enabled } : r,
     );
+    // Update cache immediately for responsive UI
+    qc.setQueryData(['booking-reminders', booking.id], {
+      appointmentId: booking.id,
+      reminders: updated,
+    });
     updateReminders.mutate({ id: booking.id, reminders: updated });
   };
 

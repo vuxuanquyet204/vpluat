@@ -165,10 +165,11 @@ export function useUpdateReminders() {
   return useMutation({
     mutationFn: async (vars: { id: string; reminders: Array<{ type: string; enabled: boolean; channel: string }> }) => {
       const result = await bookingApi.updateReminders(vars.id, vars.reminders as Parameters<typeof bookingApi.updateReminders>[1]);
-      return result;
+      return { id: vars.id, result };
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['booking'] });
+    onSuccess: ({ id }) => {
+      qc.invalidateQueries({ queryKey: ['booking-reminders', id] });
+      qc.invalidateQueries({ queryKey: ['bookings'] });
       notifySuccess('Đã cập nhật reminder');
     },
     onError: (e) => notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật reminder'),
@@ -182,7 +183,7 @@ export function useSendConfirmationEmail() {
       return bookingApi.sendConfirmationEmail(id);
     },
     onSuccess: (_, id) => {
-      qc.invalidateQueries({ queryKey: ['booking', id] });
+      qc.invalidateQueries({ queryKey: ['bookings'] });
       notifySuccess('Đã gửi email xác nhận');
     },
     onError: (e) => notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể gửi email'),
