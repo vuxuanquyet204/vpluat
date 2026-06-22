@@ -11,9 +11,9 @@ interface ReminderConfigProps {
 }
 
 const PRESET_REMINDERS = [
-  { type: 'h24' as const, label: '24 giờ trước', description: 'Email nhắc lịch hẹn', icon: Mail, defaultChannel: 'email' as const },
-  { type: 'h2' as const, label: '2 giờ trước', description: 'Email nhắc lịch hẹn', icon: Mail, defaultChannel: 'email' as const },
-  { type: 'm30' as const, label: '30 phút trước', description: 'Email xác nhận cuối', icon: Bell, defaultChannel: 'email' as const },
+  { type: '24h' as const, key: 'h24' as const, label: '24 giờ trước', description: 'Email nhắc lịch hẹn', icon: Mail },
+  { type: '2h' as const, key: 'h2' as const, label: '2 giờ trước', description: 'Email nhắc lịch hẹn', icon: Mail },
+  { type: '30m' as const, key: 'm30' as const, label: '30 phút trước', description: 'Email xác nhận cuối', icon: Bell },
 ];
 
 export function ReminderConfig({ reminders = [], onToggle, readonly }: ReminderConfigProps) {
@@ -26,7 +26,7 @@ export function ReminderConfig({ reminders = [], onToggle, readonly }: ReminderC
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {PRESET_REMINDERS.map((p) => {
-          const active = types.has(p.type as '24h' | '2h' | '30m');
+          const active = types.has(p.type);
           const Icon = p.icon;
           return (
             <label
@@ -47,7 +47,7 @@ export function ReminderConfig({ reminders = [], onToggle, readonly }: ReminderC
                 type="checkbox"
                 checked={active}
                 disabled={readonly}
-                onChange={(e) => onToggle?.(p.type, e.target.checked)}
+                onChange={(e) => onToggle?.(p.key, e.target.checked)}
                 style={{ width: 16, height: 16, accentColor: 'var(--primary)' }}
               />
               <Icon size={16} color={active ? '#D97706' : 'var(--gray-400)'} />

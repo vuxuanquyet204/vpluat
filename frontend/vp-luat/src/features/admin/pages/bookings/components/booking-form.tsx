@@ -252,7 +252,7 @@ export function BookingForm({
               <FormFieldSelect label="Luật sư" required {...field} error={errors.lawyer?.message}>
                 <option value="">-- Chọn LS --</option>
                 {lawyers.map((l) => (
-                  <option key={l.id} value={l.name}>
+                  <option key={l.id} value={l.id}>
                     {l.name}
                   </option>
                 ))}
@@ -317,9 +317,11 @@ export function BookingForm({
 
         <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--gray-200)' }}>
           <ReminderConfig
-            reminders={
-              reminders.h24 ? [{ type: '24h' as const, scheduledAt: '', sent: false, channel: 'email' as const }] : []
-            }
+            reminders={[
+              reminders.h24 ? { type: '24h' as const, scheduledAt: '', sent: false, channel: 'email' as const } : { type: '24h' as const, scheduledAt: '', sent: false, channel: 'email' as const },
+              reminders.h2 ? { type: '2h' as const, scheduledAt: '', sent: false, channel: 'email' as const } : { type: '2h' as const, scheduledAt: '', sent: false, channel: 'email' as const },
+              reminders.m30 ? { type: '30m' as const, scheduledAt: '', sent: false, channel: 'email' as const } : { type: '30m' as const, scheduledAt: '', sent: false, channel: 'email' as const },
+            ]}
             onToggle={(type, enabled) => {
               if (type === 'h24') setReminders((r) => ({ ...r, h24: enabled }));
               if (type === 'h2') setReminders((r) => ({ ...r, h2: enabled }));
