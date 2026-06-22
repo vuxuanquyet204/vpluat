@@ -1,34 +1,38 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { MockDB } from '../../../mock/db';
+import { bookingApi, type CreateBookingBody } from '@/lib/api/admin-booking';
 import { ghiAudit, notifySuccess, notifyError } from '../../../lib';
 import { notifyBookingCancelled } from '../../notifications/lib/notification-bridge';
 import type { Booking, BookingStatus } from '../../../types';
+
+function toCreateBookingBody(data: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>): CreateBookingBody {
+  const dateTime = new Date(`${data.date}T${data.time || '09:00'}:00`).toISOString();
+  return {
+    clientName: data.customerName,
+    clientEmail: data.customerEmail,
+    clientPhone: data.customerPhone,
+    lawyerId: data.lawyer,
+    serviceId: data.service,
+    scheduledAt: dateTime,
+    durationMinutes: data.durationMinutes ?? 60,
+    meetingType: data.method?.toUpperCase() ?? 'OFFICE',
+    source: 'ADMIN',
+  };
+}
 
 export function useCreateBooking() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const reminders: Booking['reminders'] = [];
-      const now = Date.now();
-      const dateTime = new Date(`${data.date}T${data.time}:00`).getTime();
-
-      const r = (data as { reminders?: { h24?: boolean; h2?: boolean; m30?: boolean } }).reminders;
-      if (r?.h24) reminders.push({ type: '24h', scheduledAt: new Date(dateTime - 24 * 60 * 60 * 1000).toISOString(), sent: false, channel: 'email' });
-      if (r?.h2) reminders.push({ type: '2h', scheduledAt: new Date(dateTime - 2 * 60 * 60 * 1000).toISOString(), sent: false, channel: 'sms' });
-      if (r?.m30) reminders.push({ type: '30m', scheduledAt: new Date(dateTime - 30 * 60 * 1000).toISOString(), sent: false, channel: 'email' });
-
-      const created = MockDB.insert<Booking>('bookings', {
-        ...data,
-        reminders,
-      } as Booking);
-      ghiAudit({ action: 'create', entity: 'booking', entityId: created.id, entityLabel: created.customerName });
-      return created;
+      const body = toCreateBookingBody(data);
+      const result = await bookingApi.adminCreate(body);
+      ghiAudit({ action: 'create', entity: 'booking', entityId: result.id, entityLabel: result.clientName });
+      return result;
     },
     onSuccess: (b) => {
-      qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
-      notifySuccess('Đã tạo lịch hẹn', `${b.customerName} • ${b.date} ${b.time}`);
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+      notifySuccess('Đã tạo lịch hẹn', `${b.clientName} • ${new Date(b.scheduledAt).toLocaleString('vi-VN')}`);
     },
     onError: (e) => notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể tạo'),
   });
@@ -38,25 +42,24 @@ export function useUpdateBooking() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (vars: { id: string; patch: Partial<Booking> }) => {
-      const before = MockDB.getById<Booking>('bookings', vars.id);
-      const updated = MockDB.update<Booking>('bookings', vars.id, vars.patch);
-      if (before && vars.patch.status && before.status !== vars.patch.status) {
+      if (vars.patch.status) {
+        const result = await bookingApi.updateStatus(vars.id, vars.patch.status.toUpperCase(), vars.patch.notes);
         ghiAudit({
           action: 'status_change',
           entity: 'booking',
           entityId: vars.id,
-          entityLabel: updated?.customerName,
-          diff: { before: { status: before.status }, after: { status: vars.patch.status } },
+          entityLabel: result.clientName,
+          diff: { before: {}, after: { status: vars.patch.status } },
         });
-        if (vars.patch.status === 'completed' || vars.patch.status === 'cancelled') {
-          // Không tạo lead ở đây — caller xử lý
-        }
-      } else {
-        ghiAudit({ action: 'update', entity: 'booking', entityId: vars.id, entityLabel: updated?.customerName });
+        return result;
       }
-      return updated;
+      return bookingApi.get(vars.id);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'bookings'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+      notifySuccess('Đã cập nhật lịch hẹn');
+    },
+    onError: (e) => notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật'),
   });
 }
 
@@ -64,56 +67,79 @@ export function useChangeBookingStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (vars: { id: string; status: BookingStatus; cancelledReason?: string }) => {
-      const before = MockDB.getById<Booking>('bookings', vars.id);
-      const updated = MockDB.update<Booking>('bookings', vars.id, {
-        status: vars.status,
-        cancelledReason: vars.status === 'cancelled' ? vars.cancelledReason : undefined,
-      } as Partial<Booking>);
+      const result = await bookingApi.updateStatus(
+        vars.id,
+        vars.status.toUpperCase(),
+        vars.cancelledReason,
+      );
       ghiAudit({
         action: 'status_change',
         entity: 'booking',
         entityId: vars.id,
-        entityLabel: updated?.customerName,
-        diff: { before: { status: before?.status }, after: { status: vars.status } },
+        entityLabel: result.clientName,
+        diff: {
+          before: {},
+          after: { status: vars.status },
+        },
       });
-      return updated;
+      return { result, cancelledReason: vars.cancelledReason };
     },
-    onSuccess: (b, vars) => {
-      qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
-      notifySuccess(`Đã cập nhật trạng thái: ${b?.status}`);
-      // NC-04: notify cancel
-      if (vars.status === 'cancelled' && b) {
-        notifyBookingCancelled(b.customerName, b.date);
+    onSuccess: ({ result, cancelledReason }) => {
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+      notifySuccess(`Đã cập nhật trạng thái: ${result.status}`);
+      if (result.status === 'CANCELLED') {
+        notifyBookingCancelled(result.clientName, result.scheduledAt);
       }
     },
+    onError: (e) => notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật'),
   });
 }
 
 export function useRescheduleBooking() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (vars: { id: string; date: string; time: string }) => {
-      const before = MockDB.getById<Booking>('bookings', vars.id);
-      const updated = MockDB.update<Booking>('bookings', vars.id, {
-        date: vars.date,
-        time: vars.time,
-      });
+    mutationFn: async (vars: { id: string; date: string; time: string; reason?: string }) => {
+      const newScheduledAt = new Date(`${vars.date}T${vars.time}:00`).toISOString();
+      const result = await bookingApi.reschedule(vars.id, newScheduledAt, undefined, vars.reason);
       ghiAudit({
         action: 'update',
         entity: 'booking',
         entityId: vars.id,
-        entityLabel: updated?.customerName,
+        entityLabel: result.clientName,
         diff: {
-          before: { date: before?.date, time: before?.time },
-          after: { date: vars.date, time: vars.time },
+          before: {},
+          after: { scheduledAt: newScheduledAt },
         },
       });
-      return updated;
+      return result;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+      qc.invalidateQueries({ queryKey: ['bookings'] });
       notifySuccess('Đã đổi lịch hẹn');
     },
+    onError: (e) => notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể đổi lịch'),
+  });
+}
+
+export function useCancelBooking() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { id: string; reason?: string }) => {
+      const result = await bookingApi.cancel(vars.id, vars.reason);
+      ghiAudit({
+        action: 'cancel',
+        entity: 'booking',
+        entityId: vars.id,
+        entityLabel: result.clientName,
+      });
+      return result;
+    },
+    onSuccess: (b) => {
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+      notifySuccess('Đã hủy lịch hẹn');
+      notifyBookingCancelled(b.clientName, b.scheduledAt);
+    },
+    onError: (e) => notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể hủy'),
   });
 }
 
@@ -121,14 +147,44 @@ export function useDeleteBooking() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const before = MockDB.getById<Booking>('bookings', id);
-      const ok = MockDB.delete('bookings', id);
-      if (ok) ghiAudit({ action: 'delete', entity: 'booking', entityId: id, entityLabel: before?.customerName });
-      return ok;
+      // Backend doesn't have delete endpoint, so we cancel instead
+      await bookingApi.updateStatus(id, 'CANCELLED', 'Deleted by admin');
+      ghiAudit({ action: 'delete', entity: 'booking', entityId: id });
+      return true;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+      qc.invalidateQueries({ queryKey: ['bookings'] });
       notifySuccess('Đã xóa lịch hẹn');
     },
+    onError: (e) => notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa'),
+  });
+}
+
+export function useUpdateReminders() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { id: string; reminders: Array<{ type: string; enabled: boolean; channel: string }> }) => {
+      const result = await bookingApi.updateReminders(vars.id, vars.reminders as Parameters<typeof bookingApi.updateReminders>[1]);
+      return result;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['booking'] });
+      notifySuccess('Đã cập nhật reminder');
+    },
+    onError: (e) => notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật reminder'),
+  });
+}
+
+export function useSendConfirmationEmail() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return bookingApi.sendConfirmationEmail(id);
+    },
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['booking', id] });
+      notifySuccess('Đã gửi email xác nhận');
+    },
+    onError: (e) => notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể gửi email'),
   });
 }

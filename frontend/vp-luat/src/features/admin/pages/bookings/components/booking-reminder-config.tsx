@@ -1,6 +1,6 @@
 'use client';
 
-import { Mail, Smartphone, Bell, Check, Clock } from 'lucide-react';
+import { Mail, Bell, Check, Clock } from 'lucide-react';
 import { StatusBadge } from '@/features/admin/shared';
 import type { Booking } from '@/features/admin/types';
 
@@ -12,7 +12,7 @@ interface ReminderConfigProps {
 
 const PRESET_REMINDERS = [
   { type: 'h24' as const, label: '24 giờ trước', description: 'Email nhắc lịch hẹn', icon: Mail, defaultChannel: 'email' as const },
-  { type: 'h2' as const, label: '2 giờ trước', description: 'SMS nhắc lịch hẹn', icon: Smartphone, defaultChannel: 'sms' as const },
+  { type: 'h2' as const, label: '2 giờ trước', description: 'Email nhắc lịch hẹn', icon: Mail, defaultChannel: 'email' as const },
   { type: 'm30' as const, label: '30 phút trước', description: 'Email xác nhận cuối', icon: Bell, defaultChannel: 'email' as const },
 ];
 
@@ -81,7 +81,7 @@ export function ReminderList({ reminders = [] }: ReminderListProps) {
   return (
     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
       {reminders.map((r, idx) => {
-        const Icon = r.channel === 'email' ? Mail : Smartphone;
+        const Icon = r.channel === 'email' ? Mail : Bell;
         return (
           <li
             key={idx}
