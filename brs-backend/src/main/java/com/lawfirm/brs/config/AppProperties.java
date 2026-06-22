@@ -21,6 +21,7 @@ public class AppProperties {
     private RateLimit rateLimit = new RateLimit();
     private Cache cache = new Cache();
     private Upload upload = new Upload();
+    private Mail mail = new Mail();
     private Sms sms = new Sms();
     private Cloudinary cloudinary = new Cloudinary();
 
@@ -70,6 +71,19 @@ public class AppProperties {
         private String maxFileSize = "10MB";
         private String maxRequestSize = "50MB";
         private List<String> allowedExtensions = List.of("jpg", "jpeg", "png", "gif", "pdf", "doc", "docx", "xls", "xlsx");
+    }
+
+    @Getter
+    @Setter
+    public static class Mail {
+        private boolean enabled = false;
+        private String host;
+        private int port = 587;
+        private String username;
+        private String password;
+        private String fromAddress = "noreply@lawfirm.vn";
+        private String fromName = "Van Phong Luat";
+        private boolean startTls = true;
     }
 
     @Getter

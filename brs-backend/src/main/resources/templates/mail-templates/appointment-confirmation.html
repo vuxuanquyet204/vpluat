@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xac nhan lich hen</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+        .info-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .info-row:last-child { border-bottom: none; }
+        .label { color: #666; font-weight: 500; }
+        .value { color: #1e3a5f; font-weight: 600; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Xac nhan lich hen</h1>
+    </div>
+    <div class="content">
+        <p>Xin chao <strong th:text="${clientName}">Khach hang</strong>,</p>
+        <p>Lich hen cua ban da duoc xac nhan thanh cong. Vui long den dung gio hoac lien he voi chung toi neu can thay doi.</p>
+
+        <div class="info-box">
+            <div class="info-row">
+                <span class="label">Ngay hen</span>
+                <span class="value" th:text="${dateTime}">--</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Luat su</span>
+                <span class="value" th:text="${lawyerName}">--</span>
+            </div>
+            <div class="info-row" th:if="${serviceName}">
+                <span class="label">Dich vu</span>
+                <span class="value" th:text="${serviceName}">--</span>
+            </div>
+            <div class="info-row" th:if="${meetingType}">
+                <span class="label">Hinh thuc</span>
+                <span class="value" th:text="${meetingType}">--</span>
+            </div>
+        </div>
+
+        <p>Neu ban can huy hoac doi lich, vui long lien he voi chung toi it nhat 24 gio truoc gio hen.</p>
+
+        <p style="margin-top: 30px;">Tran trong,<br><strong>Van Phong Luat</strong></p>
+    </div>
+    <div class="footer">
+        <p>Email nay duoc gui tu dong tu Van Phong Luat. Vui long khong tra loi email nay.</p>
+        <p>Hotline: 1900-xxxx | Email: contact@lawfirm.vn</p>
+    </div>
+</body>
+</html>
