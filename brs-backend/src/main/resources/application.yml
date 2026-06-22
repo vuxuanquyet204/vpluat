@@ -156,12 +156,7 @@ app:
     temperature: 0.7
     timeout: 30s
 
-# ============================================================
-# Email / SMTP Configuration (merged into spring section above)
-# ============================================================
-# Mail config is under spring.mail - see above
-
-app:
+  # Email Configuration
   mail:
     enabled: ${MAIL_ENABLED:false}
     from-address: ${MAIL_FROM_ADDRESS:noreply@lawfirm.vn}
