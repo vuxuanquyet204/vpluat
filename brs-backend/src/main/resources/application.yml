@@ -63,6 +63,23 @@ spring:
     password: ${RABBITMQ_PASSWORD:guest}
     virtual-host: /
 
+  # Email / SMTP
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: ${MAIL_STARTTLS:true}
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+    from: ${MAIL_FROM_ADDRESS:noreply@lawfirm.vn}
+
 # ============================================================
 # Server Configuration
 # ============================================================
@@ -140,24 +157,9 @@ app:
     timeout: 30s
 
 # ============================================================
-# Email / SMTP Configuration
+# Email / SMTP Configuration (merged into spring section above)
 # ============================================================
-spring:
-  mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: ${MAIL_STARTTLS:true}
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
-    from: ${MAIL_FROM_ADDRESS:noreply@lawfirm.vn}
+# Mail config is under spring.mail - see above
 
 app:
   mail:
