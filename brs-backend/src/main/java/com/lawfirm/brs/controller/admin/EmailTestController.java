@@ -30,14 +30,15 @@ public class EmailTestController {
             maskedUsername = "***" + username.substring(username.length() - 4);
         }
 
-        return ResponseEntity.ok(Map.of(
-            "enabled", appProperties.getMail().isEnabled(),
-            "host", appProperties.getMail().getHost(),
-            "port", appProperties.getMail().getPort(),
-            "username", maskedUsername,
-            "fromAddress", appProperties.getMail().getFromAddress(),
-            "fromName", appProperties.getMail().getFromName()
-        ));
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("enabled", appProperties.getMail().isEnabled());
+        result.put("host", appProperties.getMail().getHost());
+        result.put("port", appProperties.getMail().getPort());
+        result.put("username", maskedUsername);
+        result.put("fromAddress", appProperties.getMail().getFromAddress());
+        result.put("fromName", appProperties.getMail().getFromName());
+
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/test")
