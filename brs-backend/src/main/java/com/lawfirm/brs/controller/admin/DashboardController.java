@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -25,9 +26,18 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @GetMapping("/stats")
-    @Operation(summary = "Get dashboard statistics")
+    @Operation(summary = "Get dashboard statistics (legacy fields only)")
     public ResponseEntity<ApiResponse<DashboardStatsDTO>> getStats() {
         DashboardStatsDTO stats = dashboardService.getStats();
+        return ResponseEntity.ok(ApiResponse.success(stats));
+    }
+
+    @GetMapping("/stats/range")
+    @Operation(summary = "Get dashboard statistics for a given range")
+    public ResponseEntity<ApiResponse<DashboardStatsDTO>> getStatsRange(
+        @RequestParam(defaultValue = "week") String range
+    ) {
+        DashboardStatsDTO stats = dashboardService.getStatsRange(range);
         return ResponseEntity.ok(ApiResponse.success(stats));
     }
 }

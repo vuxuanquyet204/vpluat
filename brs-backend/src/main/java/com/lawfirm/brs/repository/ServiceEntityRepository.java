@@ -39,4 +39,7 @@ public interface ServiceEntityRepository extends JpaRepository<ServiceEntity, UU
 
     @Query("SELECT s FROM ServiceEntity s WHERE s.isActive = true AND s.deletedAt IS NULL AND (LOWER(s.slug) LIKE LOWER(CONCAT('%', :query, '%')))")
     List<ServiceEntity> searchByQuery(@Param("query") String query);
+
+    @Query("SELECT s FROM ServiceEntity s WHERE LOWER(s.name) = LOWER(:name) AND s.deletedAt IS NULL")
+    Optional<ServiceEntity> findByNameIgnoreCase(@Param("name") String name);
 }

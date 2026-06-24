@@ -5,10 +5,13 @@ import com.lawfirm.brs.dto.response.ApiResponse;
 import com.lawfirm.brs.dto.response.PageResponse;
 import com.lawfirm.brs.dto.response.PostDTO;
 import com.lawfirm.brs.service.content.PostManagementService;
+import com.lawfirm.brs.service.erp.PostErpService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +29,7 @@ import java.util.UUID;
 public class PostController {
 
     private final PostManagementService postService;
+    private final PostErpService postErpService;
 
     @PostMapping
     @Operation(summary = "Create a new post")
@@ -82,5 +86,15 @@ public class PostController {
             @RequestParam(required = false) String status) {
         PageResponse<PostDTO> posts = postService.getAllPosts(page, size, status);
         return ResponseEntity.ok(ApiResponse.success(posts));
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "Export posts to CSV")
+    public ResponseEntity<String> exportPosts() {
+        String csv = postErpService.exportCsv();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"posts.csv\"")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(csv);
     }
 }

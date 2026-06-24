@@ -111,6 +111,19 @@ public class EmailService {
     }
 
     @Async
+    public void sendAppointmentCancellation(String to, String clientName, String dateTime,
+                                          String lawyerName, String serviceName, String reason) {
+        String subject = "Thong bao huy lich hen - Van Phong Luat";
+        Map<String, Object> data = new java.util.HashMap<>();
+        data.put("clientName", clientName);
+        data.put("dateTime", dateTime);
+        data.put("lawyerName", lawyerName);
+        data.put("serviceName", serviceName != null ? serviceName : "");
+        data.put("reason", reason != null ? reason : "");
+        sendTemplateEmail(to, subject, "mail-templates/appointment-cancellation", data);
+    }
+
+    @Async
     public void sendLeadAssigned(String to, String userName, String leadName,
                                   String leadPhone, String leadEmail, String leadService, String leadMessage) {
         String subject = "Lead moi duoc phan cong - Van Phong Luat";

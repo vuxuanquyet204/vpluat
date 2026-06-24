@@ -87,6 +87,23 @@ public class Lead {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "score", nullable = false)
+    @Builder.Default
+    private Integer score = 0;
+
+    @Column(name = "converted_at")
+    private Instant convertedAt;
+
+    @Column(name = "company")
+    private String company;
+
+    @Column(name = "budget_range")
+    private String budgetRange;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "preferred_lawyer_id")
+    private LawyerProfile preferredLawyer;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 

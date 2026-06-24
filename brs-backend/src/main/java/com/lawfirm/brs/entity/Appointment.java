@@ -4,6 +4,8 @@ import com.lawfirm.brs.constants.AppointmentStatus;
 import com.lawfirm.brs.constants.MeetingType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -83,6 +85,22 @@ public class Appointment {
 
     @Column(name = "utm_campaign")
     private String utmCampaign;
+
+    @Column(name = "reminders_sent", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Builder.Default
+    private String remindersSent = "[]";
+
+    @Column(name = "reminders", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private String reminders;
+
+    @Column(name = "admin_notes", columnDefinition = "TEXT")
+    private String adminNotes;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lead_id")
+    private Lead lead;
 
     // OTP hashed with SHA-256 [IMPROVED v2]
     @Column(name = "otp_code_hash")

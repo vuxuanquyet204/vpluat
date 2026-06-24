@@ -53,7 +53,7 @@ public class ReviewService {
         log.debug("Publishing review: {}", id);
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Review not found: " + id));
-        review.approve();
+        review.approve(null);
         return reviewMapper.toDTO(reviewRepository.save(review));
     }
 

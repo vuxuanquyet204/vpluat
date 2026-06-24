@@ -63,15 +63,32 @@ public class BookingReminderService {
         return new BookingReminderConfigDTO(appointmentId, reminders);
     }
 
-    private List<BookingReminderConfigDTO.ReminderConfig> parseReminders(String json) {
-        if (json == null || json.isBlank()) {
+    private List<BookingReminderConfigDTO.ReminderConfig> parseReminders(Object reminders) {
+        if (reminders == null) {
+            return parseDefault();
+        }
+        String json;
+        if (reminders instanceof String str) {
+            json = str;
+        } else if (reminders instanceof Iterable<?> list) {
+            try {
+                return objectMapper.convertValue(reminders,
+                    new com.fasterxml.jackson.core.type.TypeReference<List<BookingReminderConfigDTO.ReminderConfig>>() {});
+            } catch (Exception e) {
+                log.warn("Failed to convert reminders: {}", reminders, e);
+                return parseDefault();
+            }
+        } else {
+            json = reminders.toString();
+        }
+        if (json.isBlank()) {
             return parseDefault();
         }
         try {
             return objectMapper.readValue(json,
-                new TypeReference<List<BookingReminderConfigDTO.ReminderConfig>>() {});
-        } catch (JsonProcessingException e) {
-            log.warn("Failed to parse reminders config: {}", json, e);
+                new com.fasterxml.jackson.core.type.TypeReference<List<BookingReminderConfigDTO.ReminderConfig>>() {});
+        } catch (Exception e) {
+            log.warn("Failed to parse reminders: {}", json, e);
             return parseDefault();
         }
     }
@@ -89,7 +106,7 @@ public class BookingReminderService {
     private String toJson(List<BookingReminderConfigDTO.ReminderConfig> reminders) {
         try {
             return objectMapper.writeValueAsString(reminders);
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             log.error("Failed to serialize reminder config", e);
             return "[]";
         }

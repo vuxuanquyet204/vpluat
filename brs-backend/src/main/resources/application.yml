@@ -34,6 +34,8 @@ spring:
     deserialization:
       fail-on-unknown-properties: false
     default-property-inclusion: non_null
+    date-format: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+    time-zone: "UTC"
 
   # Flyway
   flyway:
@@ -119,7 +121,7 @@ app:
   # Rate Limiting
   rate-limit:
     auth: 5
-    booking: 3
+    booking: 60
     lead: 5
     search: 60
     chatbot-per-session: 30

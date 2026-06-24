@@ -1,5 +1,6 @@
 package com.lawfirm.brs.entity;
 
+import com.lawfirm.brs.constants.ReviewStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -57,12 +58,39 @@ public class Review {
     @Builder.Default
     private String source = "WEBSITE";
 
+    @Column(name = "customer_email")
+    private String customerEmail;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private ReviewStatus status = ReviewStatus.PENDING;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "moderated_by")
+    private User moderatedBy;
+
+    @Column(name = "moderated_at")
+    private Instant moderatedAt;
+
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();
+        updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = Instant.now();
     }
 
     /**
@@ -78,8 +106,28 @@ public class Review {
     /**
      * Approve the review
      */
-    public void approve() {
+    public void approve(UUID moderatorId) {
+        this.status = ReviewStatus.APPROVED;
         this.isPublished = true;
+        this.moderatedBy = moderatorId == null ? null : new User();
+        if (moderatorId != null) {
+            this.moderatedBy.setId(moderatorId);
+        }
+        this.moderatedAt = Instant.now();
+    }
+
+    /**
+     * Reject the review
+     */
+    public void reject(UUID moderatorId, String reason) {
+        this.status = ReviewStatus.REJECTED;
+        this.isPublished = false;
+        this.rejectionReason = reason;
+        if (moderatorId != null) {
+            this.moderatedBy = new User();
+            this.moderatedBy.setId(moderatorId);
+        }
+        this.moderatedAt = Instant.now();
     }
 
     /**

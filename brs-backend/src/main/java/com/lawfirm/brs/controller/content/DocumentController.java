@@ -10,6 +10,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -116,6 +117,19 @@ public class DocumentController {
                 document.getFileName(),
                 document.getDownloadCount()
         )));
+    }
+
+    @PostMapping("/admin/documents")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Upload a new document (Admin)")
+    public ResponseEntity<ApiResponse<DocumentDTO>> uploadDocument(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) UUID serviceId,
+            @RequestParam(required = false) Boolean isPublic,
+            @RequestAttribute("userId") UUID uploadedBy) {
+        var doc = documentService.createDocument(file, title, serviceId, isPublic != null ? isPublic : false, false, uploadedBy);
+        return ResponseEntity.ok(ApiResponse.success("Document uploaded successfully", DocumentDTO.fromEntity(doc)));
     }
 
     // Response DTOs

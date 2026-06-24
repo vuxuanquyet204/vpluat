@@ -58,6 +58,10 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
 
+    @Column(name = "sessions_count", nullable = false)
+    @Builder.Default
+    private Integer sessionsCount = 0;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));

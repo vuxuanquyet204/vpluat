@@ -1,10 +1,13 @@
 package com.lawfirm.brs.controller.admin;
 
 import com.lawfirm.brs.dto.request.RegisterRequest;
+import com.lawfirm.brs.dto.response.ActivityLogResponse;
 import com.lawfirm.brs.dto.response.ApiResponse;
 import com.lawfirm.brs.dto.response.PageResponse;
 import com.lawfirm.brs.dto.response.UserDTO;
+import com.lawfirm.brs.repository.AuditLogRepository;
 import com.lawfirm.brs.service.admin.UserManagementService;
+import com.lawfirm.brs.service.erp.DashboardErpService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -13,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -26,6 +30,8 @@ import java.util.UUID;
 public class UserController {
 
     private final UserManagementService userService;
+    private final DashboardErpService dashboardService;
+    private final AuditLogRepository auditLogRepository;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -90,6 +96,29 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
+    }
+
+    @GetMapping("/{id}/activity")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Recent activity entries by a specific user")
+    public ResponseEntity<ApiResponse<List<ActivityLogResponse>>> activity(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "50") int limit) {
+        var entries = auditLogRepository.findByUserIdOrderByCreatedAtDesc(id);
+        var u = userService.getUserById(id);
+        var name = u == null ? "user" : u.getFullName();
+        var mapped = entries.stream().limit(limit)
+            .map(a -> ActivityLogResponse.builder()
+                .id(a.getId())
+                .actorName(name)
+                .action(a.getAction())
+                .entityType(a.getEntityType())
+                .entityId(a.getEntityId())
+                .summary(a.getAction() + (a.getEntityType() == null ? "" : " " + a.getEntityType()))
+                .createdAt(a.getCreatedAt())
+                .build())
+            .toList();
+        return ResponseEntity.ok(ApiResponse.success(mapped));
     }
 
     public record ChangeRoleRequest(String role) {}

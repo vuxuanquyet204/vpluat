@@ -16,6 +16,7 @@ import com.lawfirm.brs.repository.AvailabilitySlotRepository;
 import com.lawfirm.brs.repository.LawyerProfileRepository;
 import com.lawfirm.brs.repository.ServiceEntityRepository;
 import com.lawfirm.brs.service.auth.OtpService;
+import com.lawfirm.brs.service.notification.EmailService;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,7 @@ public class BookingService {
     private final LawyerProfileRepository lawyerRepository;
     private final ServiceEntityRepository serviceRepository;
     private final OtpService otpService;
+    private final EmailService emailService;
     private final AppointmentMapper appointmentMapper;
 
     @Transactional
@@ -144,6 +146,31 @@ public class BookingService {
 
         otpService.deleteOtp(appointmentId);
 
+        // Send cancellation email to customer
+        if (appointment.getClientEmail() != null && !appointment.getClientEmail().isBlank()) {
+            String dateTime = "N/A";
+            if (appointment.getScheduledAt() != null) {
+                var vietZone = java.time.ZoneId.of("Asia/Ho_Chi_Minh");
+                dateTime = java.time.ZonedDateTime.ofInstant(appointment.getScheduledAt(), vietZone)
+                    .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+            }
+            String lawyerName = appointment.getLawyer() != null 
+                ? appointment.getLawyer().getDisplayName("vi") 
+                : "Van Phong Luat";
+            String serviceName = appointment.getService() != null 
+                ? appointment.getService().getName() 
+                : null;
+
+            emailService.sendAppointmentCancellation(
+                appointment.getClientEmail(),
+                appointment.getClientName(),
+                dateTime,
+                lawyerName,
+                serviceName,
+                reason
+            );
+        }
+
         log.info("Appointment {} cancelled successfully", appointmentId);
 
         return appointmentMapper.toDTO(appointment);
@@ -162,10 +189,10 @@ public class BookingService {
         Page<Appointment> appointments;
 
         if (status != null && !status.isEmpty()) {
-            appointments = appointmentRepository.findByStatus(
+            appointments = appointmentRepository.findByStatusWithDetails(
                 AppointmentStatus.valueOf(status), pageable);
         } else {
-            appointments = appointmentRepository.findAll(pageable);
+            appointments = appointmentRepository.findAllWithDetails(pageable);
         }
 
         return appointments.map(appointmentMapper::toDTO);
@@ -178,14 +205,47 @@ public class BookingService {
         Appointment appointment = appointmentRepository.findById(appointmentId)
             .orElseThrow(() -> new ResourceNotFoundException("Appointment not found: " + appointmentId));
 
+        AppointmentStatus previousStatus = appointment.getStatus();
         appointment.setStatus(newStatus);
         if (notes != null && !notes.isBlank()) {
-            String existingNotes = appointment.getInternalNotes() != null 
+            String existingNotes = appointment.getInternalNotes() != null
                 ? appointment.getInternalNotes() + "\n" : "";
             appointment.setInternalNotes(existingNotes + "[" + Instant.now() + "] " + notes);
         }
+        if (newStatus == AppointmentStatus.CANCELLED) {
+            appointment.setCancelReason(notes);
+        }
 
         appointment = appointmentRepository.save(appointment);
+
+        // Send cancellation email when status transitions to CANCELLED
+        if (newStatus == AppointmentStatus.CANCELLED
+                && previousStatus != AppointmentStatus.CANCELLED
+                && appointment.getClientEmail() != null
+                && !appointment.getClientEmail().isBlank()) {
+            String dateTime = "N/A";
+            if (appointment.getScheduledAt() != null) {
+                var vietZone = java.time.ZoneId.of("Asia/Ho_Chi_Minh");
+                dateTime = java.time.ZonedDateTime.ofInstant(appointment.getScheduledAt(), vietZone)
+                    .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+            }
+            String lawyerName = appointment.getLawyer() != null
+                ? appointment.getLawyer().getDisplayName("vi")
+                : "Van Phong Luat";
+            String serviceName = appointment.getService() != null
+                ? appointment.getService().getName()
+                : null;
+
+            emailService.sendAppointmentCancellation(
+                appointment.getClientEmail(),
+                appointment.getClientName(),
+                dateTime,
+                lawyerName,
+                serviceName,
+                notes
+            );
+        }
+
         return appointmentMapper.toDTO(appointment);
     }
 }

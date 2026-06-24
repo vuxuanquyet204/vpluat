@@ -50,6 +50,22 @@ public class Document {
     @Builder.Default
     private Boolean leadGate = true;
 
+    @Column(name = "category")
+    private String category;
+
+    @Column(name = "mime_type")
+    private String mimeType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "uploaded_by")
+    private User uploadedBy;
+
+    @Column(name = "related_entity")
+    private String relatedEntity;
+
+    @Column(name = "related_id")
+    private UUID relatedId;
+
     @Version
     @Column(name = "version")
     private Long version;

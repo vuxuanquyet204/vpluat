@@ -25,4 +25,7 @@ public interface LawyerProfileRepository extends JpaRepository<LawyerProfile, UU
 
     @Query("SELECT l FROM LawyerProfile l WHERE LOWER(l.nameVi) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(l.nameEn) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<LawyerProfile> searchByName(@Param("query") String query);
+
+    @Query("SELECT l FROM LawyerProfile l WHERE LOWER(l.nameVi) LIKE LOWER(CONCAT('%', :name, '%'))")
+    List<LawyerProfile> findByDisplayNameContaining(@Param("name") String name);
 }

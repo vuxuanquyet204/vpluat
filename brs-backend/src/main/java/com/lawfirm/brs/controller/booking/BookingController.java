@@ -1,5 +1,6 @@
 package com.lawfirm.brs.controller.booking;
 
+import com.lawfirm.brs.dto.request.AdminBookingRequest;
 import com.lawfirm.brs.dto.request.BookingRequest;
 import com.lawfirm.brs.dto.request.OtpVerifyRequest;
 import com.lawfirm.brs.dto.response.ApiResponse;
@@ -144,7 +145,7 @@ public class BookingController {
     @PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
     @Operation(summary = "Admin override: create booking without OTP")
     public ResponseEntity<ApiResponse<AppointmentDTO>> adminCreate(
-            @Valid @RequestBody BookingRequest request) {
+            @Valid @RequestBody AdminBookingRequest request) {
         AppointmentDTO booking = bookingErp.adminCreate(request);
         return ResponseEntity.ok(ApiResponse.success("Booking created by admin", booking));
     }

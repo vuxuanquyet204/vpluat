@@ -5,16 +5,20 @@ import com.lawfirm.brs.dto.response.LeadDTO;
 import com.lawfirm.brs.dto.response.PageResponse;
 import com.lawfirm.brs.entity.Lead;
 import com.lawfirm.brs.entity.ServiceEntity;
+import com.lawfirm.brs.entity.User;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
 import com.lawfirm.brs.mapper.LeadMapper;
 import com.lawfirm.brs.repository.LeadRepository;
 import com.lawfirm.brs.repository.ServiceEntityRepository;
+import com.lawfirm.brs.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +38,7 @@ public class LeadService {
 
     private final LeadRepository leadRepository;
     private final ServiceEntityRepository serviceRepository;
+    private final UserRepository userRepository;
     private final LeadMapper leadMapper;
 
     @Transactional
@@ -82,10 +87,35 @@ public class LeadService {
         return leadMapper.toDTO(leadRepository.save(lead));
     }
 
-    public PageResponse<LeadDTO> getAllLeads(int page, int size, String status, String source) {
-        log.debug("Fetching leads: page={}, size={}, status={}, source={}", page, size, status, source);
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Lead> leads = leadRepository.findAll(pageable);
+    public PageResponse<LeadDTO> getAllLeads(int page, int size, String status, String source,
+                                             UUID assignedTo, String search) {
+        log.debug("Fetching leads: page={}, size={}, status={}, source={}, assignedTo={}, search={}",
+            page, size, status, source, assignedTo, search);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Specification<Lead> spec = (root, q, cb) -> {
+            var preds = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (status != null && !status.isBlank()) {
+                preds.add(cb.equal(root.get("status"),
+                    com.lawfirm.brs.constants.LeadStatus.valueOf(status.toUpperCase())));
+            }
+            if (source != null && !source.isBlank()) {
+                preds.add(cb.equal(root.get("source"), source));
+            }
+            if (assignedTo != null) {
+                preds.add(cb.equal(root.get("assignedTo").get("id"), assignedTo));
+            }
+            if (search != null && !search.isBlank()) {
+                String like = "%" + search.toLowerCase() + "%";
+                preds.add(cb.or(
+                    cb.like(cb.lower(root.get("name")), like),
+                    cb.like(cb.lower(root.get("email")), like),
+                    cb.like(cb.lower(root.get("phone")), like)
+                ));
+            }
+            return cb.and(preds.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+        Page<Lead> leads = leadRepository.findAll(spec, pageable);
         return PageResponse.of(
             leadMapper.toDTOList(leads.getContent()),
             page,
@@ -109,6 +139,14 @@ public class LeadService {
 
         if (status != null) {
             lead.setStatus(com.lawfirm.brs.constants.LeadStatus.valueOf(status));
+            if (lead.getStatus() == com.lawfirm.brs.constants.LeadStatus.WON) {
+                lead.setConvertedAt(Instant.now());
+            }
+        }
+        if (assignedToId != null) {
+            User user = userRepository.findById(assignedToId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + assignedToId));
+            lead.setAssignedTo(user);
         }
         if (notes != null) {
             String existingNotes = lead.getNotes() != null ? lead.getNotes() + "\n" : "";
@@ -135,5 +173,15 @@ public class LeadService {
         String raw = ((phone != null ? phone : "") + "|" +
                       (email != null ? email : "")).toLowerCase().trim();
         return DigestUtils.sha256Hex(raw);
+    }
+
+    @Transactional
+    public void deleteLead(UUID id) {
+        log.warn("Soft-deleting lead: {}", id);
+        Lead lead = leadRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Lead not found: " + id));
+        lead.setNotes((lead.getNotes() != null ? lead.getNotes() + "\n" : "")
+            + "[" + Instant.now() + "] deleted");
+        leadRepository.save(lead);
     }
 }

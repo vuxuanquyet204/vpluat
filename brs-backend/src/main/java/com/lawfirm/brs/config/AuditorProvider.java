@@ -1,8 +1,6 @@
 package com.lawfirm.brs.config;
 
 import com.lawfirm.brs.entity.User;
-import com.lawfirm.brs.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,31 +11,26 @@ import java.util.UUID;
 
 /**
  * Provides the current auditor (user) for JPA auditing.
+ * Returns the user ID directly from SecurityContext to avoid recursive DB lookups
+ * that would trigger another audit flush.
  */
 @Component
-@RequiredArgsConstructor
 public class AuditorProvider implements AuditorAware<UUID> {
-
-    private final UserRepository userRepository;
 
     @Override
     public Optional<UUID> getCurrentAuditor() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
+
         if (authentication == null || !authentication.isAuthenticated()) {
             return Optional.empty();
         }
 
         Object principal = authentication.getPrincipal();
-        
+
         if (principal instanceof User user) {
-            return Optional.of(user.getId());
+            return Optional.ofNullable(user.getId());
         }
-        
-        if (principal instanceof String email) {
-            return userRepository.findByEmail(email).map(User::getId);
-        }
-        
+
         return Optional.empty();
     }
 

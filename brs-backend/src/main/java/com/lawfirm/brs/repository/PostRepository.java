@@ -23,6 +23,8 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 
     Optional<Post> findBySlugAndDeletedAtIsNull(String slug);
 
+    boolean existsBySlug(String slug);
+
     Page<Post> findByStatusAndLanguage(PostStatus status, String language, Pageable pageable);
 
     Page<Post> findByStatus(PostStatus status, Pageable pageable);

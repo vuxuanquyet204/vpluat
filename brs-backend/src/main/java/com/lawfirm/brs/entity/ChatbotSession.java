@@ -52,6 +52,21 @@ public class ChatbotSession {
     @Column(name = "session_key")
     private String sessionKey;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Column(name = "message_count", nullable = false)
+    @Builder.Default
+    private Integer messageCount = 0;
+
+    @Column(name = "resolved", nullable = false)
+    @Builder.Default
+    private Boolean resolved = false;
+
+    @Column(name = "intent_summary", columnDefinition = "jsonb")
+    private String intentSummary;
+
     @PrePersist
     protected void onCreate() {
         startedAt = Instant.now();

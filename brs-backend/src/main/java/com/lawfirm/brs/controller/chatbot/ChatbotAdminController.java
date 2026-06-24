@@ -109,8 +109,28 @@ public class ChatbotAdminController {
         return ResponseEntity.ok(ApiResponse.success("Session closed successfully", null));
     }
 
+    @GetMapping("/unresolved")
+    @Operation(summary = "List sessions flagged as needing human follow-up")
+    public ResponseEntity<ApiResponse<ChatbotAdminService.ChatbotSessionListResult>> unresolved(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        ChatbotAdminService.ChatbotSessionListResult sessions = chatbotAdminService.getSessions(
+                page, size, null, null, null);
+        return ResponseEntity.ok(ApiResponse.success(sessions));
+    }
+
+    @PostMapping("/sessions/{id}/reply")
+    @Operation(summary = "Admin sends a manual reply inside a session")
+    public ResponseEntity<ApiResponse<Void>> manualReply(
+            @PathVariable UUID id,
+            @RequestBody ManualReplyRequest body) {
+        chatbotAdminService.appendAdminMessage(id, body.content(), body.actorId());
+        return ResponseEntity.ok(ApiResponse.success("Reply appended to session", null));
+    }
+
     // Request DTOs
     public record ChatbotConfigUpdateRequest(Map<String, Object> config) {}
 
     public record EscalateRequest(String note) {}
+    public record ManualReplyRequest(String content, UUID actorId) {}
 }
