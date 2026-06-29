@@ -6,7 +6,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { leadSchema, type LeadFormValues } from '@/features/admin/schema';
 import { FormFieldInput, FormFieldSelect, FormFieldTextarea } from '@/features/admin/components';
-import type { Lead, Lawyer, LeadStatus, LeadSource } from '@/features/admin/types';
+import type { Lead } from '@/lib/api/admin-crm';
+import type { Lawyer, LeadStatus, LeadSource } from '@/features/admin/types';
 
 const STATUS_OPTIONS: Array<{ value: LeadStatus; label: string }> = [
   { value: 'new', label: 'Mới' },
@@ -29,11 +30,17 @@ interface LeadQuickEditProps {
   lead: Lead;
   lawyers: Lawyer[];
   onClose: () => void;
-  onSave: (patch: Partial<Lead>) => void;
+  onSave: (values: LeadFormValues) => void;
   isSaving?: boolean;
 }
 
+const FE_STATUS: Record<string, string> = { NEW: 'new', CONTACTED: 'contacted', PROGRESS: 'progress', WON: 'converted', CONVERTED: 'converted', LOST: 'lost' };
+
 export function LeadQuickEdit({ lead, lawyers, onClose, onSave, isSaving }: LeadQuickEditProps) {
+  const assignedToName = typeof lead.assignedTo === 'object' && lead.assignedTo !== null
+    ? (lead.assignedTo as { fullName: string }).fullName
+    : (lead.assignedTo as string | undefined) ?? '';
+
   const {
     register,
     handleSubmit,
@@ -42,12 +49,12 @@ export function LeadQuickEdit({ lead, lawyers, onClose, onSave, isSaving }: Lead
     resolver: zodResolver(leadSchema),
     defaultValues: {
       name: lead.name,
-      phone: lead.phone,
-      email: lead.email,
-      service: lead.service,
-      source: lead.source,
-      status: lead.status,
-      assignedTo: lead.assignedTo,
+      phone: lead.phone ?? '',
+      email: lead.email ?? '',
+      service: lead.serviceName ?? '',
+      source: (FE_STATUS[lead.source?.toUpperCase() ?? ''] ?? lead.source?.toLowerCase() ?? 'other') as LeadFormValues['source'],
+      status: (FE_STATUS[lead.status?.toUpperCase() ?? ''] ?? lead.status?.toLowerCase() ?? 'new') as LeadFormValues['status'],
+      assignedTo: assignedToName,
       notes: lead.notes ?? '',
     },
   });

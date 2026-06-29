@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useAvailability } from '../hooks/use-availability';
-import { useMockQuery } from '@/features/admin/lib';
 import type { Lawyer } from '@/features/admin/types';
 
 interface AvailabilityViewProps {
@@ -13,9 +12,8 @@ interface AvailabilityViewProps {
 const DAY_NAMES = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
 export function BookingAvailabilityView({ onCreateAt }: AvailabilityViewProps) {
-  const { data: lawyers = [] } = useMockQuery<Lawyer>('lawyers');
   const [lawyerId, setLawyerId] = useState<string>('all');
-  const [weekStart, setWeekStart] = useState(() => {
+  const [weekStart, setWeekStart] = useState<string>(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     const dow = d.getDay();
@@ -24,7 +22,7 @@ export function BookingAvailabilityView({ onCreateAt }: AvailabilityViewProps) {
     return d.toISOString().slice(0, 10);
   });
 
-  const { days } = useAvailability(lawyerId, weekStart);
+  const { days, lawyers, isLoading } = useAvailability(lawyerId, weekStart);
 
   return (
     <div className="admin-card">
@@ -45,21 +43,34 @@ export function BookingAvailabilityView({ onCreateAt }: AvailabilityViewProps) {
           style={{ padding: '6px 10px', fontSize: '0.8rem' }}
         >
           <option value="all">Tất cả luật sư</option>
-          {lawyers.map((l) => (
+          {lawyers.map((l: Lawyer) => (
             <option key={l.id} value={l.id}>
               {l.name}
             </option>
           ))}
         </select>
-        <button type="button" className="action-btn" onClick={() => setWeekStart(shiftWeek(weekStart, -1))}>
+        <button
+          type="button"
+          className="action-btn"
+          onClick={() => setWeekStart(shiftWeek(weekStart, -1))}
+          aria-label="Tuần trước"
+        >
           <ChevronLeft size={14} />
         </button>
         <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--gray-700)' }}>
           Tuần {weekStart}
         </span>
-        <button type="button" className="action-btn" onClick={() => setWeekStart(shiftWeek(weekStart, 1))}>
+        <button
+          type="button"
+          className="action-btn"
+          onClick={() => setWeekStart(shiftWeek(weekStart, 1))}
+          aria-label="Tuần sau"
+        >
           <ChevronRight size={14} />
         </button>
+        {isLoading && (
+          <span style={{ fontSize: '0.75rem', color: 'var(--gray-400)' }}>Đang tải...</span>
+        )}
       </div>
 
       <div style={{ overflowX: 'auto' }}>
@@ -72,7 +83,14 @@ export function BookingAvailabilityView({ onCreateAt }: AvailabilityViewProps) {
         >
           <thead>
             <tr style={{ background: 'var(--gray-50)' }}>
-              <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid var(--gray-200)', minWidth: 60 }}>
+              <th
+                style={{
+                  padding: '8px',
+                  textAlign: 'left',
+                  borderBottom: '1px solid var(--gray-200)',
+                  minWidth: 60,
+                }}
+              >
                 Slot
               </th>
               {days.map((d) => (
@@ -85,8 +103,12 @@ export function BookingAvailabilityView({ onCreateAt }: AvailabilityViewProps) {
                     borderLeft: '1px solid var(--gray-100)',
                   }}
                 >
-                  <div style={{ color: 'var(--gray-500)', fontSize: '0.7rem' }}>{DAY_NAMES[d.dayOfWeek]}</div>
-                  <div style={{ fontWeight: 700 }}>{d.date.slice(8, 10)}/{d.date.slice(5, 7)}</div>
+                  <div style={{ color: 'var(--gray-500)', fontSize: '0.7rem' }}>
+                    {DAY_NAMES[d.dayOfWeek]}
+                  </div>
+                  <div style={{ fontWeight: 700 }}>
+                    {d.date.slice(8, 10)}/{d.date.slice(5, 7)}
+                  </div>
                 </th>
               ))}
             </tr>
@@ -108,7 +130,9 @@ export function BookingAvailabilityView({ onCreateAt }: AvailabilityViewProps) {
                 {days.map((day) => {
                   const cell = day.slots[slotIdx];
                   if (!cell) {
-                    return <td key={day.date} style={{ borderBottom: '1px solid var(--gray-100)' }} />;
+                    return (
+                      <td key={day.date} style={{ borderBottom: '1px solid var(--gray-100)' }} />
+                    );
                   }
                   return (
                     <td
@@ -155,9 +179,9 @@ export function BookingAvailabilityView({ onCreateAt }: AvailabilityViewProps) {
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
                           }}
-                          title={cell.customerName}
+                          title={cell.bookingTime ? `${cell.bookingTime} - ${cell.customerName}` : cell.customerName}
                         >
-                          {cell.customerName}
+                          {cell.bookingTime ? `${cell.bookingTime} ` : ''}{cell.customerName}
                         </span>
                       ) : (
                         <span style={{ color: 'var(--gray-300)', fontSize: '0.7rem' }}>—</span>

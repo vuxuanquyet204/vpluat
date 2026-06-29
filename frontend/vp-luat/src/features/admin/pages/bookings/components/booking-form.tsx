@@ -10,18 +10,21 @@ import { ReminderConfig } from './booking-reminder-config';
 import type { Booking, Lead, Lawyer } from '@/features/admin/types';
 
 const SERVICE_OPTIONS = [
-  'Thành lập doanh nghiệp',
-  'Tư vấn hợp đồng',
-  'M&A — Mua bán & sáp nhập',
-  'FDI — Đầu tư nước ngoài',
-  'Luật dân sự',
-  'Ly hôn & tranh chấp gia đình',
-  'Đất đai & BĐS',
-  'Luật lao động',
-  'Luật hình sự',
-  'Sở hữu trí tuệ',
-  'Giấy phép kinh doanh',
-  'Tư vấn đầu tư',
+  { slug: 'tu-van-phap-ly', label: 'Tư Vấn Pháp Lý' },
+  { slug: 'dai-dien-phap-ly', label: 'Đại Diện Pháp Lý' },
+  { slug: 'to-cao-khieu-nai', label: 'Tố Cáo, Khiếu Nại' },
+  { slug: 'thu-tuc-hanh-chinh', label: 'Thủ Tục Hành Chính' },
+  { slug: 'so-huu-tri-tue', label: 'Sở Hữu Trí Tuệ' },
+  { slug: 'lao-dong', label: 'Luật Lao Động' },
+  { slug: 'doanh-nghiep', label: 'Doanh Nghiệp' },
+  { slug: 'nha-dat', label: 'Nhà Đất' },
+  { slug: 'tu-van-hop-dong', label: 'Tư Vấn Hợp Đồng' },
+  { slug: 'ly-hon', label: 'Ly Hôn & Tranh Chấp Gia Đình' },
+  { slug: 'ma', label: 'M&A — Mua Bán & Sáp Nhập' },
+  { slug: 'fdi', label: 'FDI — Đầu Tư Nước Ngoài' },
+  { slug: 'hinh-su', label: 'Luật Hình Sự' },
+  { slug: 'giay-phep', label: 'Giấy Phép Kinh Doanh' },
+  { slug: 'tu-van-dau-tu', label: 'Tư Vấn Đầu Tư' },
 ];
 
 const METHOD_OPTIONS = [
@@ -58,11 +61,7 @@ export function BookingForm({
 }: BookingFormProps) {
   const [leadSearch, setLeadSearch] = useState('');
   const [showLeadMenu, setShowLeadMenu] = useState(false);
-  const [reminders, setReminders] = useState<{ h24: boolean; h2: boolean; m30: boolean }>({
-    h24: true,
-    h2: true,
-    m30: false,
-  });
+  const [reminderType, setReminderType] = useState<'24h' | '2h' | '30m' | null>('24h');
 
   const {
     register,
@@ -84,12 +83,12 @@ export function BookingForm({
       time: initial?.time ?? defaultTime ?? '09:00',
       durationMinutes: initial?.durationMinutes ?? 30,
       notes: initial?.notes ?? '',
-      reminders,
+      reminders: reminderType ? [{ type: reminderType, scheduledAt: '', sent: false, channel: 'email' as const }] : [],
     },
   });
 
   const submit = handleSubmit(async (values) => {
-    await onSubmit({ ...values, reminders });
+    await onSubmit({ ...values, reminders: reminderType ? [{ type: reminderType, scheduledAt: '', sent: false, channel: 'email' }] : [] });
   });
 
   const leadMatches = useMemo(() => {
@@ -237,8 +236,8 @@ export function BookingForm({
             <FormFieldSelect label="Dịch vụ" required {...field} error={errors.service?.message}>
               <option value="">-- Chọn dịch vụ --</option>
               {SERVICE_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {s}
+                <option key={s.slug} value={s.slug}>
+                  {s.label}
                 </option>
               ))}
             </FormFieldSelect>
@@ -317,16 +316,8 @@ export function BookingForm({
 
         <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--gray-200)' }}>
           <ReminderConfig
-            reminders={[
-              reminders.h24 ? { type: '24h' as const, scheduledAt: '', sent: false, channel: 'email' as const } : { type: '24h' as const, scheduledAt: '', sent: false, channel: 'email' as const },
-              reminders.h2 ? { type: '2h' as const, scheduledAt: '', sent: false, channel: 'email' as const } : { type: '2h' as const, scheduledAt: '', sent: false, channel: 'email' as const },
-              reminders.m30 ? { type: '30m' as const, scheduledAt: '', sent: false, channel: 'email' as const } : { type: '30m' as const, scheduledAt: '', sent: false, channel: 'email' as const },
-            ]}
-            onToggle={(type, enabled) => {
-              if (type === 'h24') setReminders((r) => ({ ...r, h24: enabled }));
-              if (type === 'h2') setReminders((r) => ({ ...r, h2: enabled }));
-              if (type === 'm30') setReminders((r) => ({ ...r, m30: enabled }));
-            }}
+            reminders={reminderType ? [{ type: reminderType, scheduledAt: '', sent: false, channel: 'email' as const }] : []}
+            onToggle={(type) => setReminderType(type === 'h24' ? '24h' : type === 'h2' ? '2h' : '30m')}
           />
         </div>
       </form>

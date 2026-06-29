@@ -11,6 +11,7 @@ import { BookingDetailDrawer } from './components/booking-detail-drawer';
 import { BookingFilters, type BookingFiltersValue } from './components/booking-filters';
 import { BookingAvailabilityView } from './components/booking-availability-view';
 import { useBookings } from './hooks/use-bookings';
+import { useLawyers } from './hooks/use-lawyers';
 import {
   useCreateBooking,
   useUpdateBooking,
@@ -75,8 +76,12 @@ export default function BookingsPage() {
   const [createLeadBooking, setCreateLeadBooking] = useState<Booking | null>(null);
 
   const { data: leads = [] } = useMockQuery<Lead>('leads');
-  const { data: allLawyers = [] } = useMockQuery<Lawyer>('lawyers');
-
+  const { data: realLawyers = [] } = useLawyers();
+  
+  // Fallback to mock lawyers if API fails
+  const { data: mockLawyers = [] } = useMockQuery<Lawyer>('lawyers');
+  const allLawyers = realLawyers.length > 0 ? realLawyers : mockLawyers;
+  
   const activeLawyerNames = useMemo(
     () => allLawyers.filter((l) => l.isActive).map((l) => l.name),
     [allLawyers],

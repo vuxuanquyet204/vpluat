@@ -2,10 +2,42 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 import { useAdminUIStore } from '@/features/admin/store';
 import { ADMIN_NAV_SECTIONS } from '@/features/admin/constants';
 import { useSidebarBadges } from '@/features/admin/lib/use-sidebar-badges';
 import { Scale, LogOut } from 'lucide-react';
+import { clearAuthToken, setLoggingOut } from '@/lib/api/client';
+function LogoutButton() {
+  const { closeSidebar } = useAdminUIStore();
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    clearAuthToken();
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.removeItem('admin-impersonated-user');
+        window.localStorage.removeItem('vp-luat-admin-current-user');
+      } catch {
+        // ignore
+      }
+    }
+    closeSidebar();
+    await signOut({ callbackUrl: '/login', redirect: true });
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleLogout}
+      className="admin-sidebar__logout"
+      aria-label="Đăng xuất"
+    >
+      <LogOut size={14} aria-hidden="true" />
+      Đăng xuất
+    </button>
+  );
+}
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -89,10 +121,7 @@ export function AdminSidebar() {
               <span className="admin-sidebar__user-role">Quản trị viên</span>
             </div>
           </div>
-          <Link href="/api/auth/signout" className="admin-sidebar__logout">
-            <LogOut size={14} aria-hidden="true" />
-            Đăng xuất
-          </Link>
+          <LogoutButton />
         </div>
       </aside>
     </>

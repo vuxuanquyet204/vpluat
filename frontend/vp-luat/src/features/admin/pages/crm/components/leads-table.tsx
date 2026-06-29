@@ -3,7 +3,8 @@
 import { Phone, Mail, MessageSquare, MoreHorizontal, Eye } from 'lucide-react';
 import { DataTableV2, type DataTableColumn } from '@/features/admin/components';
 import { RowUser, StatusBadge, type StatusVariant } from '@/features/admin/shared';
-import type { Lead, LeadStatus } from '@/features/admin/types';
+import type { Lead } from '@/lib/api/admin-crm';
+import type { LeadStatus } from '@/features/admin/types';
 
 const STATUS_MAP: Record<LeadStatus, { label: string; variant: StatusVariant }> = {
   new: { label: 'Mới', variant: 'blue' },
@@ -60,20 +61,20 @@ export function LeadsTable({
         <RowUser
           initials={l.name}
           name={l.name}
-          sub={`${l.phone} · ${l.email}`}
+          sub={`${l.phone ?? ''} · ${l.email ?? ''}`}
         />
       ),
     },
     {
       key: 'service',
       header: 'Dịch vụ',
-      cell: (l) => <span style={{ color: 'var(--gray-600)' }}>{l.service}</span>,
+      cell: (l) => <span style={{ color: 'var(--gray-600)' }}>{l.serviceName ?? ''}</span>,
     },
     {
       key: 'source',
       header: 'Nguồn',
       cell: (l) => (
-        <span className={`source-tag source-tag--${l.source === 'google_ads' ? 'google' : l.source}`}>
+        <span>
           {SOURCE_LABELS[l.source] ?? l.source}
         </span>
       ),
@@ -81,14 +82,14 @@ export function LeadsTable({
     {
       key: 'assignedTo',
       header: 'CSKH',
-      cell: (l) => <span style={{ color: 'var(--gray-600)' }}>{l.assignedTo}</span>,
+      cell: (l) => <span style={{ color: 'var(--gray-600)' }}>{l.assignedTo?.fullName ?? ''}</span>,
     },
     {
       key: 'status',
       header: 'Trạng thái',
       sortable: true,
       cell: (l) => {
-        const s = STATUS_MAP[l.status];
+        const s = STATUS_MAP[l.status as LeadStatus];
         return <StatusBadge label={s.label} variant={s.variant} />;
       },
     },

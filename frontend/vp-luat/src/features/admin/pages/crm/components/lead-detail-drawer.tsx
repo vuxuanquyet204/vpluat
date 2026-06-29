@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Edit3, Trash2 } from 'lucide-react';
 import { Drawer, ConfirmDialog } from '@/features/admin/components';
 import { StatusBadge, type StatusVariant } from '@/features/admin/shared';
@@ -9,22 +8,19 @@ import { LeadTimeline } from './lead-timeline';
 import { LeadNotes } from './lead-notes';
 import { LeadBookingsTab } from './lead-bookings-tab';
 import { LeadQuickEdit } from './lead-quick-edit';
-import { MockDB } from '@/features/admin/mock/db';
+import type { Lead } from '@/lib/api/admin-crm';
+import type { LeadStatus, LeadTimelineEntry, LeadNote, Booking, Lawyer } from '@/features/admin/types';
+import type { LeadFormValues } from '@/features/admin/schema';
 import {
+  useLeadTimeline,
+  useUpdateLead,
+  useDeleteLead,
+  useCan,
   notifyError,
   notifySuccess,
-  ghiAudit,
-  useCan,
-  useMockQuery,
 } from '@/features/admin/lib';
-import type {
-  Lead,
-  LeadStatus,
-  LeadTimelineEntry,
-  LeadNote,
-  Booking,
-  Lawyer,
-} from '@/features/admin/types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { leadApi } from '@/lib/api/admin-crm';
 
 const STATUS_MAP: Record<LeadStatus, { label: string; variant: StatusVariant }> = {
   new: { label: 'Mới', variant: 'blue' },
@@ -35,6 +31,16 @@ const STATUS_MAP: Record<LeadStatus, { label: string; variant: StatusVariant }> 
 };
 
 type TabKey = 'info' | 'timeline' | 'notes' | 'bookings';
+
+// Backend → frontend status mapping
+const FE_STATUS: Record<string, LeadStatus> = {
+  NEW: 'new',
+  CONTACTED: 'contacted',
+  PROGRESS: 'progress',
+  WON: 'converted',
+  CONVERTED: 'converted',
+  LOST: 'lost',
+};
 
 interface LeadDetailDrawerProps {
   lead: Lead | null;
@@ -51,80 +57,39 @@ export function LeadDetailDrawer({ lead, lawyers, onClose, onDeleted }: LeadDeta
   const canEdit = useCan('crm.write');
   const canDelete = useCan('crm.delete');
 
-  const { data: timeline = [] } = useMockQuery<LeadTimelineEntry>(
-    'lead_timeline',
-    lead ? (r) => r.leadId === lead.id : undefined,
-  );
-  const { data: notes = [] } = useMockQuery<LeadNote>(
-    'lead_notes',
-    lead ? (r) => r.leadId === lead.id : undefined,
-  );
-  const { data: bookings = [] } = useMockQuery<Booking>(
-    'bookings',
-    lead ? (r) => r.leadId === lead.id : undefined,
-  );
+  const { data: timelineData } = useLeadTimeline(lead?.id);
 
-  const updateMutation = useMutation({
-    mutationFn: async (patch: Partial<Lead>) => {
-      if (!lead) throw new Error('No lead');
-      const before = MockDB.getById<Lead>('leads', lead.id);
-      const updated = MockDB.update<Lead>('leads', lead.id, patch);
-      if (before && patch.status && before.status !== patch.status) {
-        ghiAudit({
-          action: 'status_change',
-          entity: 'lead',
-          entityId: lead.id,
-          entityLabel: updated?.name,
-          diff: { before: { status: before.status }, after: { status: patch.status } },
-        });
-        MockDB.insert<LeadTimelineEntry>('lead_timeline', {
-          id: `tl-${Date.now()}`,
-          leadId: lead.id,
-          type: 'status_change',
-          content: `Trạng thái: ${before.status} → ${patch.status}`,
-          authorId: 'system',
-          authorName: 'System',
-          createdAt: new Date().toISOString(),
-        });
-      } else {
-        ghiAudit({ action: 'update', entity: 'lead', entityId: lead.id, entityLabel: updated?.name });
-        MockDB.insert<LeadTimelineEntry>('lead_timeline', {
-          id: `tl-${Date.now()}`,
-          leadId: lead.id,
-          type: 'note',
-          content: 'Cập nhật thông tin lead',
-          authorId: 'system',
-          authorName: 'System',
-          createdAt: new Date().toISOString(),
-        });
-      }
-      return updated;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'leads'] });
-      qc.invalidateQueries({ queryKey: ['admin', 'lead_timeline'] });
-      notifySuccess('Đã cập nhật lead');
-      setEditing(false);
-    },
-    onError: (e: unknown) => notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật'),
-  });
+  // Map backend timeline → frontend format
+  const timelineEntries: LeadTimelineEntry[] = (timelineData ?? []).map((e) => ({
+    id: e.id,
+    leadId: e.entityId ?? '',
+    type: (e.action?.toLowerCase().includes('status') ? 'status_change' :
+          e.action?.toLowerCase().includes('note') ? 'note' :
+          e.action?.toLowerCase().includes('assign') ? 'assignment_change' : 'note') as LeadTimelineEntry['type'],
+    content: e.summary ?? e.action ?? '',
+    authorId: '',
+    authorName: e.actorName ?? 'System',
+    createdAt: e.createdAt?.toString() ?? new Date().toISOString(),
+  }));
 
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      if (!lead) return;
-      MockDB.delete('leads', lead.id);
-      ghiAudit({ action: 'delete', entity: 'lead', entityId: lead.id, entityLabel: lead.name });
-    },
+  const updateMutation = useUpdateLead();
+  const deleteMutation = useDeleteLead();
+
+  // Status quick-change via API
+  const quickStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      leadApi.update(id, { status }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'leads'] });
-      notifySuccess('Đã xóa lead');
-      onDeleted();
+      qc.invalidateQueries({ queryKey: ['admin', 'crm', 'leads'] });
+      notifySuccess('Đã cập nhật trạng thái');
     },
+    onError: (e: unknown) => notifyError('Lỗi', e instanceof Error ? e.message : 'Lỗi cập nhật'),
   });
 
   if (!lead) return null;
 
-  const status = STATUS_MAP[lead.status];
+  const feStatus = FE_STATUS[lead.status?.toUpperCase() ?? ''] ?? 'new';
+  const statusMeta = STATUS_MAP[feStatus] ?? STATUS_MAP.new;
 
   if (editing) {
     return (
@@ -133,7 +98,16 @@ export function LeadDetailDrawer({ lead, lawyers, onClose, onDeleted }: LeadDeta
           lead={lead}
           lawyers={lawyers}
           onClose={() => setEditing(false)}
-          onSave={(v) => updateMutation.mutate(v)}
+          onSave={(values) => {
+            const BE_STATUS: Record<string, string> = { new: 'NEW', contacted: 'CONTACTED', progress: 'PROGRESS', converted: 'CONVERTED', lost: 'LOST' };
+            updateMutation.mutate({
+              id: lead.id,
+              patch: {
+                status: BE_STATUS[values.status] ?? values.status.toUpperCase(),
+                notes: values.notes,
+              },
+            });
+          }}
           isSaving={updateMutation.isPending}
         />
       </Drawer>
@@ -149,7 +123,7 @@ export function LeadDetailDrawer({ lead, lawyers, onClose, onDeleted }: LeadDeta
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>{lead.name}</span>
-            <StatusBadge label={status.label} variant={status.variant} />
+            <StatusBadge label={statusMeta.label} variant={statusMeta.variant} />
           </div>
         }
         footer={
@@ -179,15 +153,18 @@ export function LeadDetailDrawer({ lead, lawyers, onClose, onDeleted }: LeadDeta
       >
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-            <ContactButton href={`tel:${lead.phone}`} label={lead.phone} />
-            <ContactButton href={`mailto:${lead.email}`} label={lead.email} />
+            <ContactButton href={`tel:${lead.phone ?? ''}`} label={lead.phone ?? ''} />
+            <ContactButton href={`mailto:${lead.email ?? ''}`} label={lead.email ?? ''} />
           </div>
-          <InfoRow label="Dịch vụ" value={lead.service} />
-          <InfoRow label="Nguồn" value={lead.source} />
-          <InfoRow label="CSKH" value={lead.assignedTo} />
+          <InfoRow label="Dịch vụ" value={lead.serviceName ?? ''} />
+          <InfoRow label="Nguồn" value={lead.source ?? ''} />
+          <InfoRow label="CSKH" value={lead.assignedTo?.fullName ?? ''} />
           <InfoRow
             label="Ngày tạo"
-            value={new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(lead.createdAt))}
+            value={lead.createdAt ? new Intl.DateTimeFormat('vi-VN', {
+              day: '2-digit', month: '2-digit', year: 'numeric',
+              hour: '2-digit', minute: '2-digit'
+            }).format(new Date(lead.createdAt)) : ''}
           />
           {lead.notes && <InfoRow label="Ghi chú" value={lead.notes} multiline />}
         </div>
@@ -210,9 +187,9 @@ export function LeadDetailDrawer({ lead, lawyers, onClose, onDeleted }: LeadDeta
               }}
             >
               {k === 'info' && 'Thông tin'}
-              {k === 'timeline' && `Hoạt động (${timeline.length})`}
-              {k === 'notes' && `Ghi chú (${notes.length})`}
-              {k === 'bookings' && `Lịch hẹn (${bookings.length})`}
+              {k === 'timeline' && `Hoạt động`}
+              {k === 'notes' && `Ghi chú`}
+              {k === 'bookings' && `Lịch hẹn`}
             </button>
           ))}
         </div>
@@ -222,24 +199,38 @@ export function LeadDetailDrawer({ lead, lawyers, onClose, onDeleted }: LeadDeta
             <InfoRow label="ID" value={<code style={{ fontSize: '0.78rem' }}>{lead.id}</code>} />
             <InfoRow
               label="Cập nhật"
-              value={new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(lead.updatedAt))}
+              value={lead.updatedAt ? new Intl.DateTimeFormat('vi-VN', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+              }).format(new Date(lead.updatedAt)) : ''}
             />
             <div style={{ marginTop: 16, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              <StatusChangeButtons lead={lead} onChange={(s) => updateMutation.mutate({ status: s })} disabled={!canEdit} />
+              <StatusChangeButtons
+                leadId={lead.id}
+                currentStatus={feStatus}
+                onChange={(s) => quickStatusMutation.mutate({ id: lead.id, status: s.toUpperCase() })}
+                disabled={!canEdit}
+              />
             </div>
           </div>
         )}
 
-        {tab === 'timeline' && <LeadTimeline entries={timeline} />}
-        {tab === 'notes' && <LeadNotes leadId={lead.id} notes={notes} />}
-        {tab === 'bookings' && <LeadBookingsTab bookings={bookings} />}
+        {tab === 'timeline' && <LeadTimeline entries={timelineEntries} />}
+        {tab === 'notes' && <LeadNotes leadId={lead.id} notes={[]} />}
+        {tab === 'bookings' && <LeadBookingsTab bookings={[]} />}
       </Drawer>
 
       <ConfirmDialog
         isOpen={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         onConfirm={() => {
-          deleteMutation.mutate();
+          deleteMutation.mutate(lead.id, {
+            onSuccess: () => {
+              notifySuccess(`Đã xóa lead "${lead.name}"`);
+              setConfirmDelete(false);
+              onDeleted();
+            },
+          });
           setConfirmDelete(false);
         }}
         title="Xóa lead"
@@ -283,11 +274,13 @@ function InfoRow({ label, value, multiline }: { label: string; value: React.Reac
 }
 
 function StatusChangeButtons({
-  lead,
+  leadId,
+  currentStatus,
   onChange,
   disabled,
 }: {
-  lead: Lead;
+  leadId: string;
+  currentStatus: LeadStatus;
   onChange: (s: LeadStatus) => void;
   disabled?: boolean;
 }) {
@@ -298,9 +291,9 @@ function StatusChangeButtons({
         <button
           key={s}
           type="button"
-          className={`action-btn ${lead.status === s ? 'action-btn--primary' : ''}`}
+          className={`action-btn ${currentStatus === s ? 'action-btn--primary' : ''}`}
           onClick={() => onChange(s)}
-          disabled={disabled || lead.status === s}
+          disabled={disabled || currentStatus === s}
           style={{ fontSize: '0.75rem' }}
         >
           {STATUS_MAP[s].label}

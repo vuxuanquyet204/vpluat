@@ -17,16 +17,16 @@ const PRESET_REMINDERS = [
 ];
 
 export function ReminderConfig({ reminders = [], onToggle, readonly }: ReminderConfigProps) {
-  const types = new Set(reminders.map((r) => r.type));
+  const activeReminder = reminders[0]?.type ?? null;
 
   return (
     <div>
       <div style={{ fontSize: '0.78rem', color: 'var(--gray-500)', marginBottom: 8 }}>
-        Reminder sẽ tự động gửi tới khách trước giờ hẹn
+        Chọn thời điểm gửi reminder cho khách
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {PRESET_REMINDERS.map((p) => {
-          const active = types.has(p.type);
+          const isSelected = activeReminder === p.type;
           const Icon = p.icon;
           return (
             <label
@@ -39,25 +39,27 @@ export function ReminderConfig({ reminders = [], onToggle, readonly }: ReminderC
                 border: '1px solid var(--gray-200)',
                 borderRadius: 'var(--radius-md, 8px)',
                 cursor: readonly ? 'default' : 'pointer',
-                background: active ? '#FFFBEB' : 'var(--white)',
-                opacity: readonly && !active ? 0.5 : 1,
+                background: isSelected ? '#FFFBEB' : 'var(--white)',
+                borderColor: isSelected ? '#D97706' : 'var(--gray-200)',
+                opacity: readonly && !isSelected ? 0.5 : 1,
               }}
             >
               <input
-                type="checkbox"
-                checked={active}
+                type="radio"
+                name="reminder"
+                checked={isSelected}
                 disabled={readonly}
-                onChange={(e) => onToggle?.(p.key, e.target.checked)}
+                onChange={() => onToggle?.(p.key, true)}
                 style={{ width: 16, height: 16, accentColor: 'var(--primary)' }}
               />
-              <Icon size={16} color={active ? '#D97706' : 'var(--gray-400)'} />
+              <Icon size={16} color={isSelected ? '#D97706' : 'var(--gray-400)'} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--gray-700)' }}>
                   {p.label}
                 </div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--gray-400)' }}>{p.description}</div>
               </div>
-              {active && <Check size={14} color="#059669" />}
+              {isSelected && <Check size={14} color="#059669" />}
             </label>
           );
         })}

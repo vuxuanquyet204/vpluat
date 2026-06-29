@@ -3,6 +3,7 @@ import type { Role, Permission } from '@/features/auth/utils/permissions';
 
 declare module 'next-auth' {
   interface Session {
+    expires?: string;
     user: {
       id: string;
       name?: string | null;

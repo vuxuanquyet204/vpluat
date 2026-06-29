@@ -10,6 +10,19 @@
 > - ⚠️ 3 trang có sẵn cần audit lại UI fidelity: `/`, `/booking`, `/login`
 > - ⚠️ Thiếu: TipTap rich editor, Recharts thay SVG, TanStack Table, Storybook, Playwright, Sentry, PostHog, next-intl
 
+## Phase 6.5 — Dashboard → Backend Wiring
+
+> Trang `/admin/dashboard` đã migrate sang BRS backend (`/api/admin/dashboard/*`).
+>
+> **Trạng thái**:
+> - ✅ Backend: fix bug 500 `/stats/range` (ReviewStatus enum mismatch)
+> - ✅ Frontend: 6 hook query mới trong `use-dashboard-stats.ts` (stats, visitors, service-distribution, lead-funnel, revenue, activity) với fallback MockDB qua flag `NEXT_PUBLIC_DASHBOARD_USE_MOCK`
+> - ✅ Multi-module Kanban (Lead / Booking / Review) với tabs chuyển panel
+> - ✅ Export CSV gọi thẳng backend `/admin/dashboard/export/csv`, fallback client-side
+> - ✅ Refresh button invalidate cả `['admin', 'dashboard']` queries
+>
+> **Sau UAT** sẽ xóa fallback path và collection `audit_logs` mock nếu không dùng nơi khác.
+
 ---
 
 # MỤC LỤC

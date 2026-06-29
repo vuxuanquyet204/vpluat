@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Plus, Phone, Video, MapPin } from 'lucide-react';
-import { useBookings } from '../hooks/use-bookings';
+import { useState, useMemo, Fragment } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Phone, Video, MapPin } from 'lucide-react';
+import { format, addDays, startOfWeek } from 'date-fns';
+import { bookingApi } from '@/lib/api/admin-booking';
 import { useMockQuery } from '@/features/admin/lib';
 import { StatusBadge, type StatusVariant } from '@/features/admin/shared';
 import type { Booking, BookingStatus } from '@/features/admin/types';
@@ -17,21 +19,6 @@ const STATUS_STYLE: Record<BookingStatus, { variant: StatusVariant; bg: string; 
 const HOURS = Array.from({ length: 11 }, (_, i) => 7 + i); // 07:00 → 17:00
 const HOUR_HEIGHT = 48; // px
 
-function startOfWeek(d: Date): Date {
-  const date = new Date(d);
-  date.setHours(0, 0, 0, 0);
-  const dow = date.getDay();
-  const diff = dow === 0 ? -6 : 1 - dow;
-  date.setDate(date.getDate() + diff);
-  return date;
-}
-
-function addDays(d: Date, n: number): Date {
-  const date = new Date(d);
-  date.setDate(date.getDate() + n);
-  return date;
-}
-
 function fmtDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
@@ -41,6 +28,17 @@ function fmtTime(t: string): number {
   return h * 60 + m;
 }
 
+function instantToLocalDate(isoString: string): string {
+  // Parse as UTC then convert to local timezone for display
+  const date = new Date(isoString);
+  return format(date, 'yyyy-MM-dd');
+}
+
+function instantToLocalTime(isoString: string): string {
+  const date = new Date(isoString);
+  return format(date, 'HH:mm');
+}
+
 interface BookingsCalendarProps {
   onSelectBooking: (b: Booking) => void;
   onCreateAt: (date: string, time: string) => void;
@@ -48,13 +46,48 @@ interface BookingsCalendarProps {
 }
 
 export function BookingsCalendar({ onSelectBooking, onCreateAt, lawyerFilter = 'all' }: BookingsCalendarProps) {
-  const { data: lawyers = [] } = useMockQuery<{ name: string }>('lawyers');
-  const bookings = useBookings({ lawyer: lawyerFilter });
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const [view, setView] = useState<'week' | 'day'>('week');
 
+  const weekStartStr = fmtDate(weekStart);
+  const weekEndStr = fmtDate(addDays(weekStart, view === 'day' ? 0 : 6));
+
+  // Fetch bookings from API for the calendar view
+  const { data: appointments = [], isLoading } = useQuery({
+    queryKey: ['bookings-calendar', weekStartStr, weekEndStr, lawyerFilter],
+    queryFn: () =>
+      bookingApi.calendar({
+        from: weekStartStr,
+        to: weekEndStr,
+        ...(lawyerFilter !== 'all' ? { lawyerId: lawyerFilter } : {}),
+      }),
+    staleTime: 30 * 1000,
+  });
+
+  // Convert Appointment[] → Booking[]
+  const bookings: Booking[] = useMemo(
+    () =>
+      appointments.map((appt) => ({
+        id: appt.id,
+        customerName: appt.clientName,
+        customerEmail: appt.clientEmail,
+        customerPhone: appt.clientPhone,
+        lawyer: appt.lawyerName ?? '',
+        service: appt.serviceName ?? '',
+        method: (appt.meetingType ?? 'OFFICE').toLowerCase() as Booking['method'],
+        date: appt.scheduledAt ? instantToLocalDate(appt.scheduledAt) : '',
+        time: appt.scheduledAt ? instantToLocalTime(appt.scheduledAt) : '',
+        status: appt.status?.toLowerCase() as BookingStatus,
+        notes: appt.internalNotes,
+        cancelledReason: appt.cancelReason,
+        createdAt: appt.createdAt ?? '',
+        updatedAt: appt.updatedAt ?? '',
+      })),
+    [appointments],
+  );
+
   const dates = useMemo(() => {
-    if (view === 'day') return [fmtDate(weekStart)];
+    if (view === 'day') return [weekStartStr];
     return Array.from({ length: 7 }, (_, i) => fmtDate(addDays(weekStart, i)));
   }, [weekStart, view]);
 
@@ -67,8 +100,6 @@ export function BookingsCalendar({ onSelectBooking, onCreateAt, lawyerFilter = '
     }
     return map;
   }, [bookings]);
-
-  const lawyerNames = useMemo(() => lawyers.map((l) => l.name), [lawyers]);
 
   return (
     <div className="admin-card">
@@ -120,6 +151,11 @@ export function BookingsCalendar({ onSelectBooking, onCreateAt, lawyerFilter = '
           <CalIcon size={14} />
           {formatRange(weekStart, view)}
         </div>
+        {isLoading && (
+          <span style={{ fontSize: '0.75rem', color: 'var(--gray-400)', marginLeft: 8 }}>
+            Đang tải...
+          </span>
+        )}
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           {(['week', 'day'] as const).map((v) => (
@@ -302,7 +338,7 @@ function CalendarCell({
       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >
       {bookings.map((b) => {
-        const meta = STATUS_STYLE[b.status];
+        const meta = STATUS_STYLE[b.status] ?? STATUS_STYLE.pending;
         const Icon = b.method === 'online' ? Video : b.method === 'phone' ? Phone : MapPin;
         return (
           <button
@@ -343,12 +379,7 @@ function CalendarCell({
 
 function formatRange(start: Date, view: 'week' | 'day'): string {
   if (view === 'day') {
-    return new Intl.DateTimeFormat('vi-VN', {
-      weekday: 'long',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    }).format(start);
+    return format(start, 'EEEE, dd/MM/yyyy');
   }
   const end = addDays(start, 6);
   return `${start.getDate()}/${start.getMonth() + 1} - ${end.getDate()}/${end.getMonth() + 1}/${end.getFullYear()}`;

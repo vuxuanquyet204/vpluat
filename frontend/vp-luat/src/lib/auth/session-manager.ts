@@ -1,11 +1,10 @@
 // lib/auth/session-manager.ts
-// Server-side auth utilities
+// Server-side auth utilities (khong import next-auth/react o day)
 
-import { signOut } from 'next-auth/react';
 import type { User } from '@/features/auth/types/user';
 import { validateRole, validatePermissions } from '@/features/auth/utils/permissions';
+import { clearAuthToken } from '@/lib/api/client';
 
-// Auth state matching our app's User type
 export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -13,7 +12,6 @@ export interface AuthState {
   error: string | null;
 }
 
-// Convert session user to our validated User type
 export function toAppUser(sessionUser: { id?: string; email?: string | null; name?: string | null; image?: string | null; role?: string; permissions?: string[] } | null | undefined): User | null {
   if (!sessionUser) return null;
 
@@ -27,7 +25,8 @@ export function toAppUser(sessionUser: { id?: string; email?: string | null; nam
   };
 }
 
-// Logout helper using NextAuth's signOut
-export async function logout(callbackUrl = '/login') {
-  await signOut({ redirect: true, callbackUrl });
+// Server-side helper to clear cached token reference.
+// Use this in server actions / route handlers before redirecting after sign-out.
+export function clearServerAuth() {
+  clearAuthToken();
 }

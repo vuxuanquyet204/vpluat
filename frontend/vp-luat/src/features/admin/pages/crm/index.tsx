@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus, Download, Users, LayoutGrid } from 'lucide-react';
+import { Plus, Download, LayoutGrid } from 'lucide-react';
 import { AdminPageHeader, FilterTabs, SearchBar } from '@/features/admin/shared';
 import { ConfirmDialog } from '@/features/admin/components';
 import { LeadsTable } from './components/leads-table';
@@ -12,18 +12,61 @@ import { LeadFilters, type LeadFiltersValue } from './components/lead-filters';
 import { LeadSourceChart } from './components/lead-source-chart';
 import { LeadStats } from './components/lead-timeline';
 import {
-  useMockQuery,
-  useUpdate,
-  useDelete,
-  useDeleteMany,
+  useLeads,
+  useLeadStats,
+  useLeadSourceCounts,
+  useUpdateLead,
+  useDeleteLead,
+  useDeleteManyLeads,
+  useBulkUpdateStatus,
+  useBulkAssign,
+  useBulkAssignByName,
   useCan,
-  exportToCSV,
   notifySuccess,
   notifyError,
+  exportToCSV,
 } from '@/features/admin/lib';
-import { MockDB } from '@/features/admin/mock/db';
-import { notifyLeadCreated } from '@/features/admin/pages/notifications/lib/notification-bridge';
-import type { Lead, Lawyer, LeadStatus, LeadSource } from '@/features/admin/types';
+import type { Lead } from '@/lib/api/admin-crm';
+import type { LeadStatus } from '@/features/admin/types';
+
+const LIMIT = 20;
+
+// Backend uses UPPERCASE, frontend uses lowercase
+// Backend: NEW, CONTACTED, QUALIFIED, PROPOSAL, NEGOTIATION, WON, LOST, DUPLICATE
+const BE_STATUS: Record<string, string> = {
+  new: 'NEW',
+  contacted: 'CONTACTED',
+  progress: 'NEGOTIATION',
+  converted: 'WON',
+  lost: 'LOST',
+};
+const FE_STATUS: Record<string, LeadStatus> = {
+  NEW: 'new',
+  CONTACTED: 'contacted',
+  QUALIFIED: 'progress',
+  PROPOSAL: 'progress',
+  NEGOTIATION: 'progress',
+  WON: 'converted',
+  LOST: 'lost',
+  DUPLICATE: 'lost',
+};
+
+// Normalise a backend Lead → Lead (compatible with LeadsTable props)
+function normalise(l: Lead) {
+  return {
+    id: l.id,
+    name: l.name,
+    phone: l.phone ?? '',
+    email: l.email ?? '',
+    serviceName: l.serviceName ?? '',
+    source: l.source ?? 'other',
+    status: l.status ?? 'NEW',
+    assignedTo: l.assignedTo,
+    notes: l.notes,
+    createdAt: l.createdAt,
+    updatedAt: l.updatedAt,
+  };
+}
 
 const STATUS_TABS = [
   { value: 'all', label: 'Tất cả', count: 0 },
@@ -39,11 +82,6 @@ export default function CRMPage() {
   const canCreate = useCan('crm.write');
   const canDelete = useCan('crm.delete');
 
-  // Data
-  const { data: allLeads = [], isLoading } = useMockQuery<Lead>('leads');
-  const { data: lawyers = [] } = useMockQuery<Lawyer>('lawyers');
-
-  // State
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [advancedFilters, setAdvancedFilters] = useState<LeadFiltersValue>({
@@ -53,125 +91,61 @@ export default function CRMPage() {
     dateFrom: '',
     dateTo: '',
   });
-  const [page, setPage] = useState(1);
-  const LIMIT = 20;
+  const [page, setPage] = useState(0);
 
-  // Form / Drawer
+  const backendParams = useMemo(() => ({
+    page,
+    size: LIMIT,
+    status: statusFilter !== 'all' ? BE_STATUS[statusFilter] : undefined,
+    source: advancedFilters.source !== 'all' ? advancedFilters.source.toUpperCase() : undefined,
+    search: search || undefined,
+  }), [page, statusFilter, advancedFilters, search]);
+
+  const { data: pageData, isLoading } = useLeads(backendParams);
+  const entries: Lead[] = pageData?.content ?? [];
+  const total = pageData?.totalElements ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+
+  const { stats } = useLeadStats({ ...backendParams, size: LIMIT, page: 0 });
+  const sourceCounts = useLeadSourceCounts(advancedFilters);
+
+  const updateMutation = useUpdateLead();
+  const deleteMutation = useDeleteLead();
+  const deleteManyMutation = useDeleteManyLeads();
+  const bulkStatusMutation = useBulkUpdateStatus();
+  const bulkAssignMutation = useBulkAssignByName();
+
   const [formOpen, setFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [detailLead, setDetailLead] = useState<Lead | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Lead | null>(null);
 
-  // Counts per status
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: allLeads.length };
-    for (const s of ['new', 'contacted', 'progress', 'converted', 'lost']) {
-      counts[s] = allLeads.filter((l) => l.status === s).length;
-    }
-    return counts;
-  }, [allLeads]);
-
-  const tabsWithCounts = STATUS_TABS.map((t) => ({ ...t, count: statusCounts[t.value] ?? 0 }));
-
-  // Filter
-  const filtered = useMemo(() => {
-    let result = allLeads;
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (l) =>
-          l.name.toLowerCase().includes(q) ||
-          l.phone.includes(q) ||
-          l.email.toLowerCase().includes(q),
-      );
-    }
-    if (statusFilter !== 'all') {
-      result = result.filter((l) => l.status === statusFilter);
-    }
-    if (advancedFilters.source !== 'all') {
-      result = result.filter((l) => l.source === advancedFilters.source);
-    }
-    if (advancedFilters.assignedTo !== 'all') {
-      result = result.filter((l) => l.assignedTo === advancedFilters.assignedTo);
-    }
-    if (advancedFilters.dateFrom) {
-      const from = new Date(advancedFilters.dateFrom).getTime();
-      result = result.filter((l) => new Date(l.createdAt).getTime() >= from);
-    }
-    if (advancedFilters.dateTo) {
-      const to = new Date(advancedFilters.dateTo).getTime() + 24 * 60 * 60 * 1000;
-      result = result.filter((l) => new Date(l.createdAt).getTime() <= to);
-    }
-    return result;
-  }, [allLeads, search, statusFilter, advancedFilters]);
-
-  const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
+  const tabsWithCounts = STATUS_TABS.map((t) => ({
+    ...t,
+    count: t.value === 'all' ? stats.total : (stats[t.value as keyof typeof stats] ?? 0),
+  }));
 
   const assignees = useMemo(() => {
     const set = new Set<string>();
-    allLeads.forEach((l) => set.add(l.assignedTo));
+    for (const l of entries) {
+      if (l.assignedTo?.fullName) set.add(l.assignedTo.fullName);
+    }
     return Array.from(set);
-  }, [allLeads]);
+  }, [entries]);
 
-  // Stats
-  const stats = useMemo(() => {
-    return {
-      total: allLeads.length,
-      newCount: statusCounts.new ?? 0,
-      contactedCount: (statusCounts.contacted ?? 0) + (statusCounts.progress ?? 0),
-      convertedCount: statusCounts.converted ?? 0,
-      lostCount: statusCounts.lost ?? 0,
-    };
-  }, [allLeads, statusCounts]);
-
-  // Source distribution
-  const sourceCounts = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const l of allLeads) map[l.source] = (map[l.source] ?? 0) + 1;
-    return map;
-  }, [allLeads]);
-
-  // Mutations
-  const updateMutation = useUpdate<Lead>('leads', 'lead');
-  const deleteMutation = useDelete('leads', 'lead');
-  const deleteManyMutation = useDeleteMany('leads', 'lead');
-
+  // ── Form submit ──────────────────────────────────────────────────────────
   const handleSubmitForm = useCallback(
     async (values: import('@/features/admin/schema').LeadFormValues) => {
       try {
         if (editingLead) {
-          await updateMutation.mutateAsync({ id: editingLead.id, patch: values });
+          await updateMutation.mutateAsync({
+            id: editingLead.id,
+            patch: {
+              status: BE_STATUS[values.status],
+              notes: values.notes,
+            },
+          });
           notifySuccess('Đã cập nhật lead');
-        } else {
-          const newLead: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'> = {
-            name: values.name,
-            phone: values.phone,
-            email: values.email,
-            service: values.service,
-            source: values.source,
-            status: values.status,
-            assignedTo: values.assignedTo,
-            notes: values.notes,
-          };
-          MockDB.insert<Lead>('leads', newLead as Lead);
-          // Ghi timeline
-          const created = MockDB.getAll<Lead>('leads').slice(-1)[0];
-          if (created) {
-            MockDB.insert('lead_timeline', {
-              id: `tl-${Date.now()}`,
-              leadId: created.id,
-              type: 'note',
-              content: 'Lead mới được tạo',
-              authorId: 'system',
-              authorName: 'System',
-              createdAt: new Date().toISOString(),
-            });
-          }
-          qc.invalidateQueries({ queryKey: ['admin', 'leads'] });
-          qc.invalidateQueries({ queryKey: ['admin', 'lead_timeline'] });
-          notifySuccess('Đã tạo lead mới');
-          // NC-04: auto-generate notification
-          notifyLeadCreated(values.name, values.source, created?.id ?? '');
         }
         setFormOpen(false);
         setEditingLead(null);
@@ -179,35 +153,38 @@ export default function CRMPage() {
         notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể lưu lead');
       }
     },
-    [editingLead, updateMutation, qc],
+    [editingLead, updateMutation],
   );
 
+  // ── Bulk actions ──────────────────────────────────────────────────────────
   const handleBulkStatusChange = useCallback(
     async (selected: Lead[], status: LeadStatus) => {
       try {
-        for (const l of selected) {
-          await updateMutation.mutateAsync({ id: l.id, patch: { status } });
-        }
+        await bulkStatusMutation.mutateAsync({
+          ids: selected.map((l) => l.id),
+          status: BE_STATUS[status] ?? status,
+        });
         notifySuccess(`Đã đổi trạng thái ${selected.length} lead → ${status}`);
       } catch (e) {
         notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
       }
     },
-    [updateMutation],
+    [bulkStatusMutation],
   );
 
   const handleBulkAssign = useCallback(
-    async (selected: Lead[], assignee: string) => {
+    async (selected: Lead[], assigneeName: string) => {
       try {
-        for (const l of selected) {
-          await updateMutation.mutateAsync({ id: l.id, patch: { assignedTo: assignee } });
-        }
-        notifySuccess(`Đã gán ${selected.length} lead cho ${assignee}`);
+        await bulkAssignMutation.mutateAsync({
+          ids: selected.map((l) => l.id),
+          assigneeName,
+        });
+        notifySuccess(`Đã gán ${selected.length} lead cho ${assigneeName}`);
       } catch (e) {
         notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể gán');
       }
     },
-    [updateMutation],
+    [bulkAssignMutation],
   );
 
   const handleBulkDelete = useCallback(
@@ -220,31 +197,36 @@ export default function CRMPage() {
     [deleteManyMutation],
   );
 
+  // ── Export ─────────────────────────────────────────────────────────────
   const handleExport = useCallback(() => {
-    exportToCSV(
-      filtered as unknown as Record<string, unknown>[],
-      `leads-${new Date().toISOString().slice(0, 10)}`,
-      [
-        { key: 'name', header: 'Họ tên' },
-        { key: 'phone', header: 'SĐT' },
-        { key: 'email', header: 'Email' },
-        { key: 'service', header: 'Dịch vụ' },
-        { key: 'source', header: 'Nguồn' },
-        { key: 'status', header: 'Trạng thái' },
-        { key: 'assignedTo', header: 'CSKH' },
-        { key: 'createdAt', header: 'Ngày tạo' },
-      ],
-    );
-    notifySuccess(`Đã export ${filtered.length} lead ra CSV`);
-  }, [filtered]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / LIMIT));
+    const rows = entries.map((l) => ({
+      name: l.name,
+      phone: l.phone ?? '',
+      email: l.email ?? '',
+      service: l.serviceName ?? '',
+      source: l.source ?? '',
+      status: l.status ?? '',
+      assignedTo: l.assignedTo?.fullName ?? '',
+      createdAt: l.createdAt,
+    }));
+    exportToCSV(rows as unknown as Record<string, unknown>[], `leads-${new Date().toISOString().slice(0, 10)}`, [
+      { key: 'name', header: 'Họ tên' },
+      { key: 'phone', header: 'SĐT' },
+      { key: 'email', header: 'Email' },
+      { key: 'service', header: 'Dịch vụ' },
+      { key: 'source', header: 'Nguồn' },
+      { key: 'status', header: 'Trạng thái' },
+      { key: 'assignedTo', header: 'CSKH' },
+      { key: 'createdAt', header: 'Ngày tạo' },
+    ]);
+    notifySuccess(`Đã export ${entries.length} lead ra CSV`);
+  }, [entries]);
 
   return (
     <div className="admin-view">
       <AdminPageHeader
         title="Quản lý Lead / CRM"
-        subtitle={`Theo dõi và chăm sóc ${allLeads.length} khách hàng tiềm năng`}
+        subtitle={`Theo dõi và chăm sóc ${stats.total} khách hàng tiềm năng`}
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
             <a
@@ -259,7 +241,7 @@ export default function CRMPage() {
               className="action-btn"
               onClick={handleExport}
               style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-              disabled={filtered.length === 0}
+              disabled={entries.length === 0}
             >
               <Download size={14} /> Export CSV
             </button>
@@ -267,10 +249,7 @@ export default function CRMPage() {
               <button
                 type="button"
                 className="action-btn action-btn--primary"
-                onClick={() => {
-                  setEditingLead(null);
-                  setFormOpen(true);
-                }}
+                onClick={() => { setEditingLead(null); setFormOpen(true); }}
                 style={{ display: 'flex', alignItems: 'center', gap: 4 }}
               >
                 <Plus size={14} /> Thêm Lead
@@ -280,10 +259,8 @@ export default function CRMPage() {
         }
       />
 
-      {/* Stats mini */}
       <LeadStats {...stats} />
 
-      {/* Chart: source distribution */}
       <div className="admin-card" style={{ marginTop: 16, marginBottom: 16 }}>
         <div className="admin-card__header">
           <div className="admin-card__title">Phân bổ Lead theo nguồn</div>
@@ -291,58 +268,61 @@ export default function CRMPage() {
         <LeadSourceChart sourceCounts={sourceCounts} />
       </div>
 
-      {/* Filters */}
       <div className="admin-card">
         <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <SearchBar
             value={search}
-            onChange={(v) => {
-              setSearch(v);
-              setPage(1);
-            }}
+            onChange={(v) => { setSearch(v); setPage(0); }}
             placeholder="Tìm theo tên, SĐT, email..."
           />
           <span style={{ color: 'var(--gray-400)', fontSize: '0.8rem' }}>
-            Tổng: {filtered.length} / {allLeads.length}
+            Tổng: {total}
           </span>
         </div>
 
         <FilterTabs
           tabs={tabsWithCounts}
           activeValue={statusFilter}
-          onChange={(v) => {
-            setStatusFilter(v);
-            setPage(1);
-          }}
+          onChange={(v) => { setStatusFilter(v); setPage(0); }}
         />
 
-        <LeadFilters value={advancedFilters} onChange={setAdvancedFilters} assignees={assignees} />
+        <LeadFilters
+          value={advancedFilters}
+          onChange={(v) => { setAdvancedFilters(v); setPage(0); }}
+          assignees={assignees}
+        />
 
         <LeadsTable
-          data={paginated}
+          data={entries}
           isLoading={isLoading}
           onRowClick={(l) => setDetailLead(l)}
-          onEdit={(l) => {
-            setEditingLead(l);
-            setFormOpen(true);
-          }}
+          onEdit={(l) => { setEditingLead(l); setFormOpen(true); }}
           onDelete={(l) => setConfirmDelete(l)}
           onBulkStatusChange={handleBulkStatusChange}
           onBulkAssign={handleBulkAssign}
           onBulkDelete={(rows) => canDelete && handleBulkDelete(rows)}
         />
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, fontSize: '0.82rem', color: 'var(--gray-500)' }}>
             <span>
-              Trang {page} / {totalPages} · {filtered.length} kết quả
+              Trang {page + 1} / {totalPages} · {total} kết quả
             </span>
             <div style={{ display: 'flex', gap: 4 }}>
-              <button type="button" className="action-btn" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+              <button
+                type="button"
+                className="action-btn"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+              >
                 ‹ Trước
               </button>
-              <button type="button" className="action-btn" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+              <button
+                type="button"
+                className="action-btn"
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+              >
                 Sau ›
               </button>
             </div>
@@ -353,20 +333,17 @@ export default function CRMPage() {
       {formOpen && (
         <LeadForm
           isOpen={formOpen}
-          onClose={() => {
-            setFormOpen(false);
-            setEditingLead(null);
-          }}
+          onClose={() => { setFormOpen(false); setEditingLead(null); }}
           onSubmit={handleSubmitForm}
           initial={editingLead}
-          lawyers={lawyers}
+          lawyers={[]}
           isLoading={updateMutation.isPending}
         />
       )}
 
       <LeadDetailDrawer
         lead={detailLead}
-        lawyers={lawyers}
+        lawyers={[]}
         onClose={() => setDetailLead(null)}
         onDeleted={() => setDetailLead(null)}
       />
@@ -377,9 +354,11 @@ export default function CRMPage() {
         onConfirm={() => {
           if (confirmDelete) {
             deleteMutation.mutate(confirmDelete.id, {
-              onSuccess: () => notifySuccess(`Đã xóa lead "${confirmDelete.name}"`),
+              onSuccess: () => {
+                notifySuccess(`Đã xóa lead "${confirmDelete.name}"`);
+                setConfirmDelete(null);
+              },
             });
-            setConfirmDelete(null);
           }
         }}
         title="Xóa lead"

@@ -5,7 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Modal } from '@/features/admin/shared';
 import { FormFieldInput, FormFieldSelect, FormFieldTextarea } from '@/features/admin/components';
 import { leadSchema, type LeadFormValues } from '@/features/admin/schema';
-import type { Lead, Lawyer } from '@/features/admin/types';
+import type { Lead } from '@/lib/api/admin-crm';
+import type { Lawyer } from '@/features/admin/types';
 
 const SERVICE_OPTIONS = [
   'Thành lập doanh nghiệp',
@@ -49,6 +50,12 @@ interface LeadFormProps {
 }
 
 export function LeadForm({ isOpen, onClose, onSubmit, initial, lawyers, isLoading }: LeadFormProps) {
+  // Normalise initial values for the form (backend uses UPPERCASE, form uses lowercase)
+  const FE_STATUS: Record<string, string> = { NEW: 'new', CONTACTED: 'contacted', PROGRESS: 'progress', WON: 'converted', CONVERTED: 'converted', LOST: 'lost' };
+  const assignedToName = typeof initial?.assignedTo === 'object' && initial?.assignedTo !== null
+    ? (initial.assignedTo as { fullName: string }).fullName
+    : (initial?.assignedTo as string | undefined) ?? '';
+
   const {
     register,
     handleSubmit,
@@ -60,12 +67,12 @@ export function LeadForm({ isOpen, onClose, onSubmit, initial, lawyers, isLoadin
     defaultValues: initial
       ? {
           name: initial.name,
-          phone: initial.phone,
-          email: initial.email,
-          service: initial.service,
-          source: initial.source,
-          status: initial.status,
-          assignedTo: initial.assignedTo,
+          phone: initial.phone ?? '',
+          email: initial.email ?? '',
+          service: initial.serviceName ?? '',
+          source: (FE_STATUS[initial.source?.toUpperCase() ?? ''] ?? initial.source?.toLowerCase() ?? 'other') as LeadFormValues['source'],
+          status: (FE_STATUS[initial.status?.toUpperCase() ?? ''] ?? initial.status?.toLowerCase() ?? 'new') as LeadFormValues['status'],
+          assignedTo: assignedToName,
           notes: initial.notes ?? '',
         }
       : {

@@ -56,9 +56,12 @@ import { useMockQuery, useUpdate, notifySuccess, notifyError } from '@/features/
 import {
   useDashboardStats,
   useTodayBookings,
-  useRecentAuditLogs,
+  useRecentActivity,
   useServiceDistribution,
   useLeadsTimelineChart,
+  useLeadFunnel,
+  useRevenueSeries,
+  useVisitorSeries,
   DASHBOARD_RANGES,
   rangeStart,
   type DashboardRange,
@@ -68,7 +71,7 @@ import {
 } from '@/features/admin/lib/use-dashboard-stats';
 import { SkeletonStats, SkeletonTable, SkeletonCard } from '@/features/admin/components';
 import { MockDB } from '@/features/admin/mock/db';
-import type { AuditLog, Lead, LeadStatus, Booking, BookingMethod } from '@/features/admin/types';
+import type { AuditLog, Lead, LeadStatus, Booking, BookingMethod, Review } from '@/features/admin/types';
 import { useQueryClient } from '@tanstack/react-query';
 
 // ─── Date Range Filter ──────────────────────────────────────────────────────
@@ -496,6 +499,494 @@ function KanbanBoard({ range }: { range: DashboardRange }) {
   );
 }
 
+// ─── Booking Kanban ────────────────────────────────────────────────────────
+
+interface BookingKanbanCard {
+  id: string;
+  name: string;
+  service: string;
+  time: string;
+  booking: Booking;
+}
+
+const BOOKING_KANBAN_COLUMNS: Array<{
+  id: Booking['status'];
+  label: string;
+  color: string;
+}> = [
+  { id: 'pending', label: 'Chờ xác nhận', color: '#D97706' },
+  { id: 'confirmed', label: 'Đã xác nhận', color: '#2563EB' },
+  { id: 'completed', label: 'Hoàn tất', color: '#059669' },
+  { id: 'cancelled', label: 'Đã hủy', color: '#DC2626' },
+];
+
+function SortableBookingCard({
+  card,
+  dotColor,
+}: {
+  card: BookingKanbanCard;
+  dotColor: string;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: card.id, strategy: rectSortingStrategy });
+  const style: React.CSSProperties = {
+    transform: transform
+      ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)`
+      : undefined,
+    transition,
+    opacity: isDragging ? 0.35 : 1,
+    background: 'var(--white)',
+    borderRadius: 8,
+    padding: '10px 12px',
+    border: '1px solid var(--gray-200, #E4E8EF)',
+    boxShadow: '0 1px 3px rgb(15 23 42 / 0.04)',
+    cursor: 'grab',
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <div className="kanban__card-name">{card.name}</div>
+      <div className="kanban__card-service">{card.service}</div>
+      <div className="kanban__card-meta">
+        <div className="kanban__card-time">{card.time}</div>
+        <div className="kanban__card-dot" style={{ background: dotColor }} />
+      </div>
+    </div>
+  );
+}
+
+function BookingKanbanBoard({ range }: { range: DashboardRange }) {
+  const qc = useQueryClient();
+  const { data: allBookings, isLoading } = useMockQuery<Booking>('bookings');
+  const updateBooking = useUpdate<Booking>('bookings');
+
+  const bookings = useMemo(() => {
+    const start = rangeStart(range).getTime();
+    return (allBookings ?? []).filter(
+      (b) => new Date(b.date).getTime() >= start,
+    );
+  }, [allBookings, range]);
+
+  const [columnItems, setColumnItems] = useState<Record<string, string[]>>({});
+  const [activeCardId, setActiveCardId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!bookings) return;
+    const grouped: Record<string, string[]> = {
+      pending: [],
+      confirmed: [],
+      completed: [],
+      cancelled: [],
+    };
+    bookings.forEach((b) => {
+      if (grouped[b.status]) grouped[b.status]!.push(b.id);
+    });
+    setColumnItems(grouped);
+  }, [bookings]);
+
+  const cards = useMemo<Record<string, BookingKanbanCard>>(() => {
+    const map: Record<string, BookingKanbanCard> = {};
+    (bookings ?? []).forEach((b) => {
+      map[b.id] = {
+        id: b.id,
+        name: b.customerName,
+        service: b.service,
+        time: `${b.date} ${b.time}`,
+        booking: b,
+      };
+    });
+    return map;
+  }, [bookings]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveCardId(String(event.active.id));
+  }, []);
+
+  const handleDragOver = useCallback(
+    (event: DragStartEvent | DragEndEvent) => {
+      if (!('over' in event) || !event.over) return;
+      const overId = String(event.over.id);
+      const fromColumnId = Object.keys(columnItems).find((k) =>
+        columnItems[k]?.includes(String(event.active.id)),
+      );
+      const overColumn = BOOKING_KANBAN_COLUMNS.find((c) =>
+        columnItems[c.id]?.includes(overId),
+      );
+      if (!overColumn || !fromColumnId || fromColumnId === overColumn.id) return;
+      setColumnItems((prev) => {
+        const fromColumn = prev[fromColumnId];
+        const toColumn = prev[overColumn.id];
+        if (!fromColumn || !toColumn) return prev;
+        const moved = fromColumn.find((id) => id === String(event.active.id));
+        if (!moved) return prev;
+        return {
+          ...prev,
+          [fromColumnId]: fromColumn.filter((id) => id !== moved),
+          [overColumn.id]: [...toColumn, moved],
+        };
+      });
+    },
+    [columnItems],
+  );
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const id = String(event.active.id);
+      const targetColumn = BOOKING_KANBAN_COLUMNS.find((c) =>
+        columnItems[c.id]?.includes(id),
+      );
+      setActiveCardId(null);
+      if (!targetColumn) return;
+      const before = cards[id]?.booking;
+      if (!before || before.status === targetColumn.id) return;
+      try {
+        await updateBooking.mutateAsync({
+          id,
+          patch: { status: targetColumn.id },
+        });
+        notifySuccess(
+          `Đã chuyển "${before.customerName}" → ${targetColumn.label}`,
+        );
+        qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
+        qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+      }
+    },
+    [columnItems, cards, updateBooking, qc],
+  );
+
+  if (isLoading) {
+    return (
+      <div className="admin-card">
+        <div className="admin-card__header">
+          <div className="admin-card__title">Booking Pipeline</div>
+        </div>
+        <SkeletonCard rows={3} />
+      </div>
+    );
+  }
+
+  const total = Object.values(columnItems).reduce((s, arr) => s + (arr?.length ?? 0), 0);
+
+  return (
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+    >
+      <div className="admin-card">
+        <div className="admin-card__header">
+          <div className="admin-card__title">
+            Booking Pipeline ({total} • {DASHBOARD_RANGES.find((r) => r.value === range)?.label ?? '7 ngày'})
+          </div>
+          <Link href="/admin/bookings" className="admin-card__action">
+            Quản lý Bookings →
+          </Link>
+        </div>
+        {total === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--gray-500)' }}>
+            <CalendarDays size={36} style={{ opacity: 0.2, marginBottom: 8 }} />
+            <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Chưa có booking nào</div>
+            <div style={{ fontSize: '0.72rem' }}>Lịch hẹn mới sẽ xuất hiện ở đây</div>
+          </div>
+        ) : (
+          <div className="kanban">
+            {BOOKING_KANBAN_COLUMNS.map((column) => (
+              <SortableContext
+                key={column.id}
+                items={columnItems[column.id] ?? []}
+                strategy={horizontalListSortingStrategy}
+              >
+                <div key={column.id} className={`kanban__col kanban__col--${column.id}`}>
+                  <div className="kanban__col-header">
+                    <span className="kanban__col-title">{column.label}</span>
+                    <span className="kanban__col-count">{columnItems[column.id]?.length ?? 0}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {(columnItems[column.id] ?? []).map((cardId) => {
+                      const card = cards[cardId];
+                      if (!card) return null;
+                      return (
+                        <SortableBookingCard key={cardId} card={card} dotColor={column.color} />
+                      );
+                    })}
+                  </div>
+                </div>
+              </SortableContext>
+            ))}
+          </div>
+        )}
+      </div>
+    </DndContext>
+  );
+}
+
+// ─── Review Kanban ─────────────────────────────────────────────────────────
+
+interface ReviewKanbanCard {
+  id: string;
+  name: string;
+  service: string;
+  time: string;
+  rating: number;
+}
+
+const REVIEW_KANBAN_COLUMNS = [
+  { id: 'pending', label: 'Chờ duyệt', color: '#D97706' },
+  { id: 'approved', label: 'Đã duyệt', color: '#059669' },
+  { id: 'rejected', label: 'Từ chối', color: '#DC2626' },
+] as const;
+
+type ReviewStatusKey = (typeof REVIEW_KANBAN_COLUMNS)[number]['id'];
+
+function SortableReviewCard({
+  card,
+  dotColor,
+}: {
+  card: ReviewKanbanCard;
+  dotColor: string;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: card.id, strategy: rectSortingStrategy });
+  const style: React.CSSProperties = {
+    transform: transform
+      ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)`
+      : undefined,
+    transition,
+    opacity: isDragging ? 0.35 : 1,
+    background: 'var(--white)',
+    borderRadius: 8,
+    padding: '10px 12px',
+    border: '1px solid var(--gray-200, #E4E8EF)',
+    boxShadow: '0 1px 3px rgb(15 23 42 / 0.04)',
+    cursor: 'grab',
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <div className="kanban__card-name">{card.name}</div>
+      <div className="kanban__card-service">{card.service}</div>
+      <div className="kanban__card-meta">
+        <div className="kanban__card-time" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Star size={11} fill="#F59E0B" stroke="#F59E0B" />
+          {card.rating}
+        </div>
+        <div className="kanban__card-dot" style={{ background: dotColor }} />
+      </div>
+    </div>
+  );
+}
+
+function ReviewKanbanBoard({ range }: { range: DashboardRange }) {
+  const qc = useQueryClient();
+  const { data: allReviews, isLoading } = useMockQuery<Review>('reviews');
+  const updateReview = useUpdate<Review>('reviews');
+
+  const reviews = useMemo(() => {
+    const start = rangeStart(range).getTime();
+    return (allReviews ?? []).filter(
+      (r) => new Date(r.createdAt).getTime() >= start,
+    );
+  }, [allReviews, range]);
+
+  const [columnItems, setColumnItems] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    if (!reviews) return;
+    const grouped: Record<string, string[]> = {
+      pending: [],
+      approved: [],
+      rejected: [],
+    };
+    reviews.forEach((r) => {
+      if (grouped[r.status]) grouped[r.status]!.push(r.id);
+    });
+    setColumnItems(grouped);
+  }, [reviews]);
+
+  const cards = useMemo<Record<string, ReviewKanbanCard>>(() => {
+    const map: Record<string, ReviewKanbanCard> = {};
+    (reviews ?? []).forEach((r) => {
+      map[r.id] = {
+        id: r.id,
+        name: r.authorName,
+        service: r.service,
+        time: timeAgo(r.createdAt),
+        rating: r.rating,
+      };
+    });
+    return map;
+  }, [reviews]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragOver = useCallback(
+    (event: DragStartEvent | DragEndEvent) => {
+      if (!('over' in event) || !event.over) return;
+      const overId = String(event.over.id);
+      const fromColumnId = Object.keys(columnItems).find((k) =>
+        columnItems[k]?.includes(String(event.active.id)),
+      );
+      const overColumn = REVIEW_KANBAN_COLUMNS.find((c) =>
+        columnItems[c.id]?.includes(overId),
+      );
+      if (!overColumn || !fromColumnId || fromColumnId === overColumn.id) return;
+      setColumnItems((prev) => {
+        const fromColumn = prev[fromColumnId];
+        const toColumn = prev[overColumn.id];
+        if (!fromColumn || !toColumn) return prev;
+        const moved = fromColumn.find((id) => id === String(event.active.id));
+        if (!moved) return prev;
+        return {
+          ...prev,
+          [fromColumnId]: fromColumn.filter((id) => id !== moved),
+          [overColumn.id]: [...toColumn, moved],
+        };
+      });
+    },
+    [columnItems],
+  );
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const id = String(event.active.id);
+      const targetColumn = REVIEW_KANBAN_COLUMNS.find((c) =>
+        columnItems[c.id]?.includes(id),
+      );
+      if (!targetColumn) return;
+      const before = cards[id];
+      if (!before) return;
+      try {
+        await updateReview.mutateAsync({
+          id,
+          patch: { status: targetColumn.id },
+        });
+        notifySuccess(`Đã chuyển đánh giá → ${targetColumn.label}`);
+        qc.invalidateQueries({ queryKey: ['admin', 'reviews'] });
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
+        qc.invalidateQueries({ queryKey: ['admin', 'reviews'] });
+      }
+    },
+    [columnItems, cards, updateReview, qc],
+  );
+
+  if (isLoading) {
+    return (
+      <div className="admin-card">
+        <div className="admin-card__header">
+          <div className="admin-card__title">Review Pipeline</div>
+        </div>
+        <SkeletonCard rows={3} />
+      </div>
+    );
+  }
+
+  const total = Object.values(columnItems).reduce((s, arr) => s + (arr?.length ?? 0), 0);
+
+  return (
+    <DndContext
+      sensors={sensors}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+    >
+      <div className="admin-card">
+        <div className="admin-card__header">
+          <div className="admin-card__title">
+            Review Pipeline ({total} • {DASHBOARD_RANGES.find((r) => r.value === range)?.label ?? '7 ngày'})
+          </div>
+          <Link href="/admin/reviews" className="admin-card__action">
+            Quản lý Reviews →
+          </Link>
+        </div>
+        {total === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--gray-500)' }}>
+            <MessageCircle size={36} style={{ opacity: 0.2, marginBottom: 8 }} />
+            <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Chưa có đánh giá nào</div>
+            <div style={{ fontSize: '0.72rem' }}>Đánh giá từ khách sẽ xuất hiện ở đây</div>
+          </div>
+        ) : (
+          <div className="kanban">
+            {REVIEW_KANBAN_COLUMNS.map((column) => (
+              <SortableContext
+                key={column.id}
+                items={columnItems[column.id] ?? []}
+                strategy={horizontalListSortingStrategy}
+              >
+                <div key={column.id} className={`kanban__col kanban__col--${column.id}`}>
+                  <div className="kanban__col-header">
+                    <span className="kanban__col-title">{column.label}</span>
+                    <span className="kanban__col-count">{columnItems[column.id]?.length ?? 0}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {(columnItems[column.id] ?? []).map((cardId) => {
+                      const card = cards[cardId];
+                      if (!card) return null;
+                      return (
+                        <SortableReviewCard key={cardId} card={card} dotColor={column.color} />
+                      );
+                    })}
+                  </div>
+                </div>
+              </SortableContext>
+            ))}
+          </div>
+        )}
+      </div>
+    </DndContext>
+  );
+}
+
+// ─── Kanban Tabs (multi-module) ────────────────────────────────────────────
+
+type KanbanTabId = 'leads' | 'bookings' | 'reviews';
+
+const KANBAN_TABS: Array<{ id: KanbanTabId; label: string }> = [
+  { id: 'leads', label: 'Lead' },
+  { id: 'bookings', label: 'Booking' },
+  { id: 'reviews', label: 'Review' },
+];
+
+function KanbanTabs({ range }: { range: DashboardRange }) {
+  const [tab, setTab] = useState<KanbanTabId>('leads');
+  return (
+    <div className="admin-card">
+      <div
+        className="admin-card__header"
+        style={{ borderBottom: '1px solid var(--gray-200)' }}
+      >
+        <div className="admin-card__title">Pipeline</div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {KANBAN_TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={tab === t.id ? 'action-btn action-btn--primary' : 'action-btn'}
+              style={{ fontSize: '0.72rem', padding: '4px 10px' }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {tab === 'leads' && <KanbanBoard range={range} />}
+      {tab === 'bookings' && <BookingKanbanBoard range={range} />}
+      {tab === 'reviews' && <ReviewKanbanBoard range={range} />}
+    </div>
+  );
+}
+
 // ─── Recent Activity (từ audit_logs real) ──────────────────────────────────
 
 const ACTION_ICON: Record<string, { Icon: typeof CalendarCheck; bg: string; color: string }> = {
@@ -523,7 +1014,7 @@ const ENTITY_LABEL: Record<string, string> = {
 };
 
 function RecentActivity({ range }: { range: DashboardRange }) {
-  const { data, isLoading } = useRecentAuditLogs(range, 8);
+  const { data, isLoading } = useRecentActivity(range, 8);
   return (
     <div className="admin-card">
       <div className="admin-card__header">
@@ -860,6 +1351,7 @@ function useRefreshDashboard() {
   const qc = useQueryClient();
   return useCallback(() => {
     qc.invalidateQueries({ queryKey: ['admin'] });
+    qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
     notifySuccess('Đã làm mới dashboard');
   }, [qc]);
 }
@@ -871,7 +1363,9 @@ export default function DashboardPage() {
   const [dateRange, setDateRange] = useState<DashboardRange>('week');
   const stats = useDashboardStats(dateRange);
   const { data: todayBookings, isLoading: bookingsLoading } = useTodayBookings();
-  const donutData = useServiceDistribution(dateRange);
+  const serviceDist = useServiceDistribution(dateRange);
+  const funnel = useLeadFunnel(dateRange);
+  const visitors = useVisitorSeries(dateRange);
   const chartData = useLeadsTimelineChart(dateRange);
   const refresh = useRefreshDashboard();
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -900,9 +1394,36 @@ export default function DashboardPage() {
     setRefreshing(false);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const rangeLabel =
       DASHBOARD_RANGES.find((r) => r.value === dateRange)?.label ?? dateRange;
+    const stamp = new Date().toISOString().slice(0, 10);
+    const filename = `dashboard-${dateRange}-${stamp}.csv`;
+
+    // Thu goi backend export truoc (co du lieu that + funnel/services/visitors).
+    // Neu fail thi fallback ve client-side render tu mock.
+    try {
+      const tokenMod = await import('@/lib/api/client');
+      const token = tokenMod.getAuthToken?.() ?? '';
+      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+      const resp = await fetch(`${base}/admin/dashboard/export/csv?range=${dateRange}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      notifySuccess('Đã xuất báo cáo (từ backend)', filename);
+      return;
+    } catch {
+      // Fallback xuong CSV client-side tu data dang hien thi
+    }
     const lines: string[] = [];
     lines.push(`Báo cáo Dashboard — Văn Phòng Luật`);
     lines.push(`Khoảng thời gian: ${rangeLabel}`);
@@ -923,7 +1444,7 @@ export default function DashboardPage() {
     lines.push('');
     lines.push('== Phân bổ dịch vụ ==');
     lines.push('Dịch vụ,Lead,Phần trăm (%)');
-    donutData.forEach((d) => {
+    serviceDist.data.forEach((d) => {
       lines.push(`${d.label},${d.value},${d.percentage}`);
     });
     lines.push('');
@@ -932,20 +1453,26 @@ export default function DashboardPage() {
     chartData.forEach((c) => {
       lines.push(`${c.date},${c.leads},${c.visits}`);
     });
+    lines.push('');
+    lines.push('== Lead funnel ==');
+    lines.push('Stage,Count');
+    lines.push(`Total,${funnel.data.total}`);
+    lines.push(`Contacted,${funnel.data.contacted}`);
+    lines.push(`Qualified,${funnel.data.qualified}`);
+    lines.push(`Converted,${funnel.data.converted}`);
+    lines.push(`Conversion rate (%),${funnel.data.conversionRate}`);
 
-    // BOM để Excel nhận diện UTF-8 đúng tiếng Việt
     const csv = '\uFEFF' + lines.join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const stamp = new Date().toISOString().slice(0, 10);
     a.href = url;
-    a.download = `dashboard-${dateRange}-${stamp}.csv`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    notifySuccess('Đã xuất báo cáo', `dashboard-${dateRange}-${stamp}.csv`);
+    notifySuccess('Đã xuất báo cáo', filename);
   };
 
   return (
@@ -1157,13 +1684,13 @@ export default function DashboardPage() {
               Xem CRM →
             </Link>
           </div>
-          {donutData.length === 0 ? (
+          {serviceDist.data.length === 0 ? (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--gray-500)' }}>
               <BarChart3 size={36} style={{ opacity: 0.2, marginBottom: 8 }} />
               <div style={{ fontSize: '0.85rem' }}>Chưa có dữ liệu</div>
             </div>
           ) : (
-            <DonutChart segments={donutData as DonutSegment[]} />
+            <DonutChart segments={serviceDist.data as DonutSegment[]} />
           )}
         </div>
       </div>
@@ -1190,7 +1717,7 @@ export default function DashboardPage() {
           marginBottom: 24,
         }}
       >
-        <KanbanBoard range={dateRange} />
+        <KanbanTabs range={dateRange} />
         <RecentActivity range={dateRange} />
       </div>
 

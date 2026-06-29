@@ -4,9 +4,11 @@ import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, User, Settings, LogOut, Shield, LogIn, UserPlus, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import { useAdminAuth } from '@/features/admin/pages/users/hooks/use-admin-auth';
 import { useAdminUIStore } from '@/features/admin/store';
 import { notifyInfo } from '@/features/admin/lib';
+import { clearAuthToken, setLoggingOut } from '@/lib/api/client';
 
 const ROLE_LABEL: Record<string, string> = {
   super_admin: 'Super Admin',
@@ -69,14 +71,20 @@ export function UserMenu() {
     router.refresh();
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    setLoggingOut(true);
+    clearAuthToken();
     if (typeof window !== 'undefined') {
-      window.localStorage.removeItem('admin-impersonated-user');
-      window.localStorage.removeItem('vp-luat-admin-current-user');
+      try {
+        window.localStorage.removeItem('admin-impersonated-user');
+        window.localStorage.removeItem('vp-luat-admin-current-user');
+      } catch {
+        // ignore
+      }
     }
-    notifyInfo('Đã đăng xuất', 'Vui lòng đăng nhập lại để tiếp tục');
     setOpen(false);
-    router.push('/admin/login');
+    notifyInfo('Đã đăng xuất', 'Vui lòng đăng nhập lại để tiếp tục');
+    await signOut({ callbackUrl: '/login', redirect: true });
   };
 
   return (

@@ -1,6 +1,22 @@
 export { useMockQuery, useMockDoc, mockQueryKey } from './use-mock-query';
 export { useCreate, useUpdate, useDelete, useDeleteMany } from './crud';
 export {
+  useLeads,
+  useLead,
+  useLeadTimeline,
+  useLeadStats,
+  useLeadSourceCounts,
+  useUpdateLead,
+  useDeleteLead,
+  useDeleteManyLeads,
+  useAddLeadNote,
+  useBulkUpdateStatus,
+  useBulkAssign,
+  useBulkAssignByName,
+  type LeadStats,
+  type SourceCount,
+} from './use-leads';
+export {
   notifySuccess,
   notifyError,
   notifyWarning,

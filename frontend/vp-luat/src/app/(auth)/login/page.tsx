@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -9,10 +9,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, Lock, Mail, Scale, ShieldCheck, Phone, MapPin } from 'lucide-react';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/admin';
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      const messages: Record<string, string> = {
+        CredentialsSignin: 'Email hoặc mật khẩu không đúng',
+        undefined: 'Đăng nhập thất bại. Vui lòng thử lại.',
+        Configuration: 'Lỗi cấu hình máy chủ. Liên hệ quản trị viên.',
+      };
+      setError(messages[errorParam] || `Đăng nhập thất bại (${errorParam})`);
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,15 +44,19 @@ export default function LoginPage() {
         redirect: false,
       });
 
-      if (result?.error) {
+      if (!result || result.error) {
         setError('Email hoặc mật khẩu không đúng');
-      } else {
-        router.push('/admin');
+        setIsLoading(false);
+        return;
+      }
+
+      if (result.ok) {
+        router.push(callbackUrl);
         router.refresh();
       }
-    } catch {
+    } catch (err) {
+      console.error('Login error:', err);
       setError('Đã xảy ra lỗi. Vui lòng thử lại.');
-    } finally {
       setIsLoading(false);
     }
   }
@@ -253,5 +271,13 @@ export default function LoginPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-sm text-gray-500">Đang tải...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

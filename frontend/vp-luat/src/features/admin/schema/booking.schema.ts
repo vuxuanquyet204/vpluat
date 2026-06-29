@@ -25,11 +25,14 @@ export const bookingSchema = z.object({
   durationMinutes: z.number().int().min(15).max(240).optional(),
   notes: z.string().max(2000).optional(),
   reminders: z
-    .object({
-      h24: z.boolean(),
-      h2: z.boolean(),
-      m30: z.boolean(),
-    })
+    .array(
+      z.object({
+        type: z.enum(['24h', '2h', '30m']),
+        scheduledAt: z.string(),
+        sent: z.boolean(),
+        channel: z.enum(['email', 'sms', 'notification']),
+      })
+    )
     .optional(),
 });
 

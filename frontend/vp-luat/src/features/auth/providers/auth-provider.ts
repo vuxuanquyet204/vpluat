@@ -1,7 +1,4 @@
-import NextAuth from 'next-auth';
-import { authOptions } from './auth-options';
+import { handlers, auth, signIn, signOut } from './auth-options';
 
-const { handlers, auth } = NextAuth(authOptions);
-
-export { handlers, auth };
-export default NextAuth(authOptions);
+export { handlers, auth, signIn, signOut };
+export default { handlers, auth, signIn, signOut };
