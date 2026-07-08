@@ -6,15 +6,14 @@ import com.lawfirm.brs.dto.request.AdminBookingRequest;
 import com.lawfirm.brs.dto.request.BookingRequest;
 import com.lawfirm.brs.dto.response.AppointmentDTO;
 import com.lawfirm.brs.entity.Appointment;
-import com.lawfirm.brs.entity.Lead;
 import com.lawfirm.brs.entity.LawyerProfile;
 import com.lawfirm.brs.entity.ServiceEntity;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
 import com.lawfirm.brs.mapper.AppointmentMapper;
 import com.lawfirm.brs.repository.AppointmentRepository;
 import com.lawfirm.brs.repository.LawyerProfileRepository;
-import com.lawfirm.brs.repository.LeadRepository;
 import com.lawfirm.brs.repository.ServiceEntityRepository;
+import com.lawfirm.brs.service.crm.LeadService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,7 +36,7 @@ public class BookingErpService {
     private final AppointmentRepository appointmentRepository;
     private final LawyerProfileRepository lawyerRepository;
     private final ServiceEntityRepository serviceRepository;
-    private final LeadRepository leadRepository;
+    private final LeadService leadService;
     private final AppointmentMapper appointmentMapper;
 
     /**
@@ -99,21 +98,23 @@ public class BookingErpService {
             .internalNotes("Created by admin override")
             .build();
 
-        Appointment saved = appointmentRepository.save(appt);
-        log.info("Created booking {} for {}", saved.getId(), saved.getClientEmail());
+        // Link/create Lead up front so the appointment is associated with CRM
+        com.lawfirm.brs.entity.Lead lead = leadService.findOrCreateLeadForBooking(
+            request.clientName(),
+            request.clientEmail(),
+            request.clientPhone(),
+            service,
+            "DIRECT",
+            null,
+            null,
+            null,
+            LeadStatus.WON,
+            "Booking confirmed: " + request.scheduledAt()
+        );
+        appt.setLead(lead);
 
-        // Auto-create Lead in CRM for this booking
-        Lead lead = Lead.builder()
-            .name(request.clientName())
-            .email(request.clientEmail())
-            .phone(request.clientPhone())
-            .source("DIRECT")
-            .status(LeadStatus.WON)
-            .service(service)
-            .notes("Booking confirmed: " + saved.getScheduledAt())
-            .build();
-        Lead savedLead = leadRepository.save(lead);
-        log.info("Auto-created lead {} for booking {}", savedLead.getId(), saved.getId());
+        Appointment saved = appointmentRepository.save(appt);
+        log.info("Created booking {} for {} (linked lead {})", saved.getId(), saved.getClientEmail(), lead.getId());
 
         return appointmentMapper.toDTO(saved);
     }

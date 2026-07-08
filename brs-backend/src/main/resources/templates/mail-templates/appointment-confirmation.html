@@ -26,19 +26,19 @@
 
         <div class="info-box">
             <div class="info-row">
-                <span class="label">Ngay hen</span>
+                <span class="label">Ngay hen: </span>
                 <span class="value" th:text="${dateTime}">--</span>
             </div>
             <div class="info-row">
-                <span class="label">Luat su</span>
+                <span class="label">Luat su: </span>
                 <span class="value" th:text="${lawyerName}">--</span>
             </div>
             <div class="info-row" th:if="${serviceName}">
-                <span class="label">Dich vu</span>
+                <span class="label">Dich vu: </span>
                 <span class="value" th:text="${serviceName}">--</span>
             </div>
             <div class="info-row" th:if="${meetingType}">
-                <span class="label">Hinh thuc</span>
+                <span class="label">Hinh thuc: </span>
                 <span class="value" th:text="${meetingType}">--</span>
             </div>
         </div>

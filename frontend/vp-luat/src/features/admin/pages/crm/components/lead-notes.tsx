@@ -4,22 +4,26 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { FormFieldTextarea, EmptyStateWithCta } from '@/features/admin/components';
 import { leadNoteSchema, type LeadNoteFormValues } from '@/features/admin/schema';
-import { useAddLeadNote } from '@/features/admin/lib';
+import { useAddLeadNote, useLeadNotes } from '@/features/admin/lib/use-leads';
 import { notifyError, notifySuccess } from '@/features/admin/lib';
-import { getCurrentUser } from '@/features/admin/lib';
-import type { LeadNote } from '@/features/admin/types';
 
 interface LeadNotesProps {
   leadId: string;
-  notes: LeadNote[];
 }
 
-export function LeadNotes({ leadId, notes }: LeadNotesProps) {
+/**
+ * Ghi chú tab content. Notes are stored in the legacy `leads.notes` text blob
+ * (`[timestamp] content\n...`); the dedicated {@code /crm/leads/{id}/notes}
+ * endpoint splits them into individual entries that we render newest-first.
+ */
+export function LeadNotes({ leadId }: LeadNotesProps) {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+
+  const { data: notes, isLoading } = useLeadNotes(leadId);
 
   const {
     register,
@@ -44,7 +48,12 @@ export function LeadNotes({ leadId, notes }: LeadNotesProps) {
     }
   });
 
-  const sorted = [...notes].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  if (isLoading) {
+    return <div style={{ color: 'var(--gray-500)', padding: '12px 0' }}>Đang tải ghi chú…</div>;
+  }
+
+  const list = notes ?? [];
+  const showEmpty = list.length === 0 && !showForm;
 
   return (
     <div>
@@ -82,16 +91,16 @@ export function LeadNotes({ leadId, notes }: LeadNotesProps) {
         </form>
       )}
 
-      {sorted.length === 0 && !showForm ? (
+      {showEmpty ? (
         <EmptyStateWithCta
           title="Chưa có ghi chú"
           description="Thêm ghi chú để theo dõi chi tiết về lead."
         />
       ) : (
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {sorted.map((n) => (
+          {list.map((n, idx) => (
             <li
-              key={n.id}
+              key={`${n.createdAt}-${idx}`}
               style={{
                 padding: '10px 12px',
                 border: '1px solid var(--gray-200)',
@@ -100,19 +109,27 @@ export function LeadNotes({ leadId, notes }: LeadNotesProps) {
                 background: 'var(--white)',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ fontSize: '0.78rem', color: 'var(--gray-500)', marginBottom: 4 }}>
-                  <strong style={{ color: 'var(--gray-700)' }}>{n.authorName}</strong> ·{' '}
-                  {new Intl.DateTimeFormat('vi-VN', {
-                    day: '2-digit', month: '2-digit', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                  }).format(new Date(n.createdAt))}
-                </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--gray-500)', marginBottom: 4 }}>
+                {new Intl.DateTimeFormat('vi-VN', {
+                  day: '2-digit', month: '2-digit', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit',
+                }).format(new Date(n.createdAt))}
               </div>
               <div style={{ fontSize: '0.85rem', color: 'var(--gray-700)', whiteSpace: 'pre-wrap' }}>{n.content}</div>
             </li>
           ))}
         </ul>
+      )}
+
+      {list.length > 0 && !showForm && (
+        <button
+          type="button"
+          className="action-btn"
+          onClick={() => qc.invalidateQueries({ queryKey: ['admin', 'crm', 'leads', leadId, 'notes'] })}
+          style={{ marginTop: 4 }}
+        >
+          Làm mới
+        </button>
       )}
     </div>
   );

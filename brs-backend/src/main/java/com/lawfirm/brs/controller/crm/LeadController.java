@@ -3,9 +3,12 @@ package com.lawfirm.brs.controller.crm;
 import com.lawfirm.brs.dto.request.LeadRequest;
 import com.lawfirm.brs.dto.response.ActivityLogResponse;
 import com.lawfirm.brs.dto.response.ApiResponse;
+import com.lawfirm.brs.dto.response.AppointmentDTO;
 import com.lawfirm.brs.dto.response.BulkImportResponse;
 import com.lawfirm.brs.dto.response.LeadDTO;
+import com.lawfirm.brs.dto.response.LeadNoteDTO;
 import com.lawfirm.brs.dto.response.PageResponse;
+import com.lawfirm.brs.service.booking.BookingService;
 import com.lawfirm.brs.service.crm.LeadService;
 import com.lawfirm.brs.service.erp.LeadPipelineService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +38,7 @@ public class LeadController {
 
     private final LeadService leadService;
     private final LeadPipelineService pipeline;
+    private final BookingService bookingService;
 
     @PostMapping("/leads")
     @Operation(summary = "Create a new lead (public)")
@@ -90,7 +94,19 @@ public class LeadController {
             @PathVariable UUID id,
             @RequestBody UpdateLeadRequest request,
             @RequestParam(required = false) UUID actorId) {
-        LeadDTO lead = leadService.updateLeadStatus(id, request.status(), request.assignedTo(), request.notes());
+        LeadDTO lead = leadService.updateLeadStatus(
+            id,
+            request.status(),
+            request.assignedTo(),
+            request.notes(),
+            request.name(),
+            request.phone(),
+            request.email(),
+            request.serviceId(),
+            request.source(),
+            request.assignedToName(),
+            request.serviceName()
+        );
         pipeline.recordActivity(id, actorId, "STATUS_CHANGED",
             request.notes() != null ? request.notes() : "status=" + request.status(),
             null);
@@ -118,6 +134,20 @@ public class LeadController {
         LeadDTO lead = leadService.addNote(id, request.note(), actorId);
         pipeline.recordActivity(id, actorId, "NOTED", request.note(), null);
         return ResponseEntity.ok(ApiResponse.success("Note added successfully", lead));
+    }
+
+    @GetMapping("/leads/{id}/notes")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER', 'LAWYER')")
+    @Operation(summary = "List note history for a lead, newest first")
+    public ResponseEntity<ApiResponse<List<LeadNoteDTO>>> listNotes(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success("Notes retrieved", leadService.getNotes(id)));
+    }
+
+    @GetMapping("/leads/{id}/bookings")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER')")
+    @Operation(summary = "List appointments for a lead, newest first")
+    public ResponseEntity<ApiResponse<List<AppointmentDTO>>> listBookings(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(bookingService.getBookingsByLeadId(id)));
     }
 
     @DeleteMapping("/leads/{id}")
@@ -160,7 +190,18 @@ public class LeadController {
         return request.getRemoteAddr();
     }
 
-    public record UpdateLeadRequest(String status, UUID assignedTo, String notes) {}
+    public record UpdateLeadRequest(
+            String status,
+            UUID assignedTo,
+            String notes,
+            String name,
+            String phone,
+            String email,
+            UUID serviceId,
+            String source,
+            String assignedToName,
+            String serviceName
+    ) {}
     public record AddNoteRequest(String note) {}
     public record AssignRequest(UUID assigneeId) {}
 }

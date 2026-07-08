@@ -25,31 +25,14 @@ import {
   notifySuccess,
   notifyError,
   exportToCSV,
+  toBackendStatus,
 } from '@/features/admin/lib';
 import type { Lead } from '@/lib/api/admin-crm';
 import type { LeadStatus } from '@/features/admin/types';
 
 const LIMIT = 20;
 
-// Backend uses UPPERCASE, frontend uses lowercase
-// Backend: NEW, CONTACTED, QUALIFIED, PROPOSAL, NEGOTIATION, WON, LOST, DUPLICATE
-const BE_STATUS: Record<string, string> = {
-  new: 'NEW',
-  contacted: 'CONTACTED',
-  progress: 'NEGOTIATION',
-  converted: 'WON',
-  lost: 'LOST',
-};
-const FE_STATUS: Record<string, LeadStatus> = {
-  NEW: 'new',
-  CONTACTED: 'contacted',
-  QUALIFIED: 'progress',
-  PROPOSAL: 'progress',
-  NEGOTIATION: 'progress',
-  WON: 'converted',
-  LOST: 'lost',
-  DUPLICATE: 'lost',
-};
+import { toFrontendStatus } from '@/features/admin/lib';
 
 // Normalise a backend Lead → Lead (compatible with LeadsTable props)
 function normalise(l: Lead) {
@@ -60,7 +43,7 @@ function normalise(l: Lead) {
     email: l.email ?? '',
     serviceName: l.serviceName ?? '',
     source: l.source ?? 'other',
-    status: l.status ?? 'NEW',
+    status: toFrontendStatus(l.status),
     assignedTo: l.assignedTo,
     notes: l.notes,
     createdAt: l.createdAt,
@@ -96,13 +79,13 @@ export default function CRMPage() {
   const backendParams = useMemo(() => ({
     page,
     size: LIMIT,
-    status: statusFilter !== 'all' ? BE_STATUS[statusFilter] : undefined,
+    status: statusFilter !== 'all' ? toBackendStatus(statusFilter) : undefined,
     source: advancedFilters.source !== 'all' ? advancedFilters.source.toUpperCase() : undefined,
     search: search || undefined,
   }), [page, statusFilter, advancedFilters, search]);
 
   const { data: pageData, isLoading } = useLeads(backendParams);
-  const entries: Lead[] = pageData?.content ?? [];
+  const entries: Lead[] = useMemo(() => (pageData?.content ?? []).map(normalise), [pageData]);
   const total = pageData?.totalElements ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
@@ -138,10 +121,15 @@ export default function CRMPage() {
     async (values: import('@/features/admin/schema').LeadFormValues) => {
       try {
         if (editingLead) {
+          const backendStatus = toBackendStatus(values.status);
+          if (!backendStatus) {
+            notifyError('Trạng thái không hợp lệ', values.status);
+            return;
+          }
           await updateMutation.mutateAsync({
             id: editingLead.id,
             patch: {
-              status: BE_STATUS[values.status],
+              status: backendStatus,
               notes: values.notes,
             },
           });
@@ -159,10 +147,15 @@ export default function CRMPage() {
   // ── Bulk actions ──────────────────────────────────────────────────────────
   const handleBulkStatusChange = useCallback(
     async (selected: Lead[], status: LeadStatus) => {
+      const backendStatus = toBackendStatus(status);
+      if (!backendStatus) {
+        notifyError('Trạng thái không hợp lệ', status);
+        return;
+      }
       try {
         await bulkStatusMutation.mutateAsync({
           ids: selected.map((l) => l.id),
-          status: BE_STATUS[status] ?? status,
+          status: backendStatus,
         });
         notifySuccess(`Đã đổi trạng thái ${selected.length} lead → ${status}`);
       } catch (e) {

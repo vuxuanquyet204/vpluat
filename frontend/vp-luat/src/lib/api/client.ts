@@ -97,20 +97,70 @@ export function setLoggingOut(value: boolean) {
   isLoggingOut = value;
 }
 
-// Response interceptor: handle 401
+// Coalesce concurrent 401/403 responses into a single sign-out flow so we
+// don't spam the auth provider when every parallel query fails at once.
+let authFailureInFlight: Promise<void> | null = null;
+let lastAuthFailureAt = 0;
+const AUTH_FAILURE_DEDUPE_MS = 2000;
+
+async function handleAuthFailure(reason: '401' | '403'): Promise<void> {
+  if (typeof window === 'undefined' || isLoggingOut) return;
+
+  const now = Date.now();
+  // Skip if a recent failure already kicked off the sign-out flow.
+  if (authFailureInFlight && now - lastAuthFailureAt < AUTH_FAILURE_DEDUPE_MS) {
+    return authFailureInFlight;
+  }
+  lastAuthFailureAt = now;
+
+  authFailureInFlight = (async () => {
+    try {
+      // Drop the stale token immediately so subsequent requests don't keep
+      // re-attaching it.
+      clearAuthToken();
+
+      // Try to refresh via NextAuth; if there's no session at all, sign in.
+      const { getSession } = await import('next-auth/react');
+      const session = await getSession();
+
+      if (session) {
+        const sessionToken = (session.user as { accessToken?: string } | null)?.accessToken;
+        if (sessionToken) {
+          setAuthToken(sessionToken);
+          return;
+        }
+      }
+
+      const { signIn } = await import('next-auth/react');
+      signIn(undefined, { callbackUrl: window.location.pathname });
+    } catch {
+      // Best-effort: if anything fails, fall through and let the caller
+      // observe the rejected error.
+    } finally {
+      // Allow a new failure flow after the dedupe window so users can
+      // retry once the auth state settles.
+      setTimeout(() => {
+        authFailureInFlight = null;
+      }, AUTH_FAILURE_DEDUPE_MS);
+    }
+  })();
+
+  return authFailureInFlight;
+}
+
+// Response interceptor: handle 401/403 (token expired or revoked)
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (
-      error.response?.status === 401 &&
-      typeof window !== 'undefined' &&
-      !isLoggingOut
-    ) {
-      const { getSession } = await import('next-auth/react');
-      const session = await getSession();
-      if (!session) {
-        const { signIn } = await import('next-auth/react');
-        signIn(undefined, { callbackUrl: window.location.pathname });
+    const status = error.response?.status;
+    if (typeof window !== 'undefined' && !isLoggingOut) {
+      if (status === 401) {
+        await handleAuthFailure('401');
+      } else if (status === 403) {
+        // 403 from a backend using stateless JWT almost always means the
+        // access token is expired/revoked and the security context fell
+        // back to anonymous. Treat the same as 401 to recover gracefully.
+        await handleAuthFailure('403');
       }
     }
     return Promise.reject(error);

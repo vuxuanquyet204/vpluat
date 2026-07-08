@@ -14,6 +14,32 @@ const STATUS_MAP: Record<LeadStatus, { label: string; variant: StatusVariant }> 
   lost: { label: 'Mất lead', variant: 'red' },
 };
 
+const FALLBACK_STATUS: { label: string; variant: StatusVariant } = {
+  label: 'Không rõ',
+  variant: 'gray',
+};
+
+// Backend stores Lead.status in uppercase (NEW, CONTACTED, QUALIFIED,
+// PROPOSAL, NEGOTIATION, WON, LOST, DUPLICATE) while the UI uses
+// lowercase tokens. Collapse anything unknown to a safe fallback so the
+// table never crashes when a new status slips through.
+function resolveStatus(raw: string | undefined | null): { label: string; variant: StatusVariant } {
+  if (!raw) return FALLBACK_STATUS;
+  const upper = raw.toUpperCase();
+  const FE_STATUS_MAP: Record<string, LeadStatus> = {
+    NEW: 'new',
+    CONTACTED: 'contacted',
+    QUALIFIED: 'progress',
+    PROPOSAL: 'progress',
+    NEGOTIATION: 'progress',
+    WON: 'converted',
+    LOST: 'lost',
+    DUPLICATE: 'lost',
+  };
+  const token = FE_STATUS_MAP[upper] ?? (upper.toLowerCase() as LeadStatus);
+  return STATUS_MAP[token] ?? FALLBACK_STATUS;
+}
+
 const SOURCE_LABELS: Record<string, string> = {
   facebook: 'Facebook',
   google_ads: 'Google Ads',
@@ -89,7 +115,7 @@ export function LeadsTable({
       header: 'Trạng thái',
       sortable: true,
       cell: (l) => {
-        const s = STATUS_MAP[l.status as LeadStatus];
+        const s = resolveStatus(l.status);
         return <StatusBadge label={s.label} variant={s.variant} />;
       },
     },

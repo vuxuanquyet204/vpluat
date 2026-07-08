@@ -32,11 +32,23 @@ public class LeadDTO {
     private String utmMedium;
     private String utmCampaign;
     private String status;
+    /** Flat fields kept for backwards compatibility. */
     private UUID assignedToId;
     private String assignedToName;
+    /** Nested object — consumed by frontend lead.assignedTo?.fullName */
+    private AssignedToDTO assignedTo;
     private Instant firstContactAt;
     private Instant lastContactAt;
     private String notes;
     private Instant createdAt;
     private Instant updatedAt;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AssignedToDTO {
+        private UUID id;
+        private String fullName;
+    }
 }

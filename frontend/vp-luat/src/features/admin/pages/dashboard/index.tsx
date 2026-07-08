@@ -52,7 +52,7 @@ import {
 } from '@dnd-kit/sortable';
 import { Badge, RowUser, LineChart, DonutChart } from '@/features/admin/shared';
 import type { ChartDataPoint, DonutSegment } from '@/features/admin/types';
-import { useMockQuery, useUpdate, notifySuccess, notifyError } from '@/features/admin/lib';
+import { useMockQuery, useUpdate, notifySuccess, notifyError, toBackendStatus } from '@/features/admin/lib';
 import {
   useDashboardStats,
   useTodayBookings,
@@ -392,10 +392,15 @@ function KanbanBoard({ range }: { range: DashboardRange }) {
       if (!targetColumn) return;
       const before = cards[id]?.lead;
       if (!before || before.status === targetColumn.id) return;
+      const backendStatus = toBackendStatus(targetColumn.id);
+      if (!backendStatus) {
+        notifyError('Trạng thái không hợp lệ', targetColumn.id);
+        return;
+      }
       try {
         await updateLead.mutateAsync({
           id,
-          patch: { status: targetColumn.id },
+          patch: { status: backendStatus as Lead['status'] },
         });
         notifySuccess(
           `Đã chuyển "${before.name}" → ${targetColumn.label}`,

@@ -59,10 +59,25 @@ export const leadApi = {
   timeline: (id: string) =>
     api.get<import('./admin-dashboard').ActivityLog[]>(`/crm/leads/${id}/timeline`),
 
+  notes: (id: string) =>
+    api.get<Array<{ createdAt: string; content: string }>>(`/crm/leads/${id}/notes`),
+
+  bookings: (id: string) =>
+    api.get<import('./admin-booking').Appointment[]>(`/crm/leads/${id}/bookings`),
+
   create: (body: Partial<Lead>) => api.post<Lead>(`/crm/leads`, body),
 
-  update: (id: string, body: { status?: string; assignedTo?: string; notes?: string }) =>
-    api.patch<Lead>(`/crm/leads/${id}`, body),
+  update: (id: string, body: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    status?: string;
+    assignedTo?: string;
+    assignedToName?: string;
+    serviceName?: string;
+    source?: string;
+    notes?: string;
+  }) => api.patch<Lead>(`/crm/leads/${id}`, body),
 
   assign: (id: string, assigneeId: string) =>
     api.patch<Lead>(`/crm/leads/${id}/assign`, { assigneeId }),

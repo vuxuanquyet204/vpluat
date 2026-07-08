@@ -1,9 +1,18 @@
 export { useMockQuery, useMockDoc, mockQueryKey } from './use-mock-query';
 export { useCreate, useUpdate, useDelete, useDeleteMany } from './crud';
 export {
+  toBackendStatus,
+  toFrontendStatus,
+  FE_TO_BE as LEAD_FE_TO_BE,
+  BE_TO_FE as LEAD_BE_TO_FE,
+  type BackendLeadStatus,
+} from './lead-status';
+export {
   useLeads,
   useLead,
   useLeadTimeline,
+  useLeadNotes,
+  useLeadBookings,
   useLeadStats,
   useLeadSourceCounts,
   useUpdateLead,

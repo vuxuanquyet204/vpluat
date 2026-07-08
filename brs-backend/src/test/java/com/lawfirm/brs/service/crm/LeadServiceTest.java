@@ -108,4 +108,44 @@ class LeadServiceTest {
         assertThat(result).isNotNull();
         verify(leadRepository).save(any(Lead.class));
     }
+
+    @Test
+    @DisplayName("parseNotes splits legacy notes blob into timestamped entries, newest first")
+    void parseNotesSplitsBlobNewestFirst() {
+        Instant fallback = Instant.parse("2025-01-01T00:00:00Z");
+        String blob = "[2026-07-08T03:00:00Z] first note\n"
+            + "[2026-07-08T04:30:00Z] second note\n"
+            + "[2026-07-08T05:15:00Z] latest note";
+
+        var parsed = LeadService.parseNotes(blob, fallback);
+
+        assertThat(parsed).hasSize(3);
+        assertThat(parsed.get(0).content()).isEqualTo("latest note");
+        assertThat(parsed.get(1).content()).isEqualTo("second note");
+        assertThat(parsed.get(2).content()).isEqualTo("first note");
+        assertThat(parsed.get(0).createdAt()).isEqualTo(Instant.parse("2026-07-08T05:15:00Z"));
+    }
+
+    @Test
+    @DisplayName("parseNotes falls back when timestamp missing or invalid")
+    void parseNotesFallsBackOnBadTimestamp() {
+        Instant fallback = Instant.parse("2025-01-01T00:00:00Z");
+        String blob = "no-timestamp line\n[not-a-date] bad\n[2026-07-08T03:00:00Z] good";
+
+        var parsed = LeadService.parseNotes(blob, fallback);
+
+        assertThat(parsed).hasSize(3);
+        assertThat(parsed.get(0).content()).isEqualTo("good");
+        assertThat(parsed.get(0).createdAt()).isEqualTo(Instant.parse("2026-07-08T03:00:00Z"));
+        // Two fallback entries share the timestamp — sort is stable; just assert count + content
+        long fallbackCount = parsed.stream().filter(n -> n.createdAt().equals(fallback)).count();
+        assertThat(fallbackCount).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("parseNotes returns empty list for null/blank input")
+    void parseNotesHandlesNull() {
+        assertThat(LeadService.parseNotes(null, Instant.now())).isEmpty();
+        assertThat(LeadService.parseNotes("   \n  ", Instant.now())).isEmpty();
+    }
 }

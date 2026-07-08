@@ -1,12 +1,14 @@
 package com.lawfirm.brs.service.booking;
 
 import com.lawfirm.brs.constants.AppointmentStatus;
+import com.lawfirm.brs.constants.LeadStatus;
 import com.lawfirm.brs.dto.request.BookingRequest;
 import com.lawfirm.brs.dto.request.OtpVerifyRequest;
 import com.lawfirm.brs.dto.response.AppointmentDTO;
 import com.lawfirm.brs.entity.Appointment;
 import com.lawfirm.brs.entity.AvailabilitySlot;
 import com.lawfirm.brs.entity.LawyerProfile;
+import com.lawfirm.brs.entity.Lead;
 import com.lawfirm.brs.entity.ServiceEntity;
 import com.lawfirm.brs.exception.BusinessException;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
@@ -16,6 +18,7 @@ import com.lawfirm.brs.repository.AvailabilitySlotRepository;
 import com.lawfirm.brs.repository.LawyerProfileRepository;
 import com.lawfirm.brs.repository.ServiceEntityRepository;
 import com.lawfirm.brs.service.auth.OtpService;
+import com.lawfirm.brs.service.crm.LeadService;
 import com.lawfirm.brs.service.notification.EmailService;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +51,7 @@ public class BookingService {
     private final OtpService otpService;
     private final EmailService emailService;
     private final AppointmentMapper appointmentMapper;
+    private final LeadService leadService;
 
     @Transactional
     public AppointmentDTO createBooking(BookingRequest request) {
@@ -77,6 +81,27 @@ public class BookingService {
             .build();
 
         appointment = appointmentRepository.save(appointment);
+
+        // Ensure the booking has a corresponding Lead in CRM so it shows up
+        // on the Lead management page right after creation.
+        try {
+            Lead lead = leadService.findOrCreateLeadForBooking(
+                request.clientName(),
+                request.clientEmail(),
+                request.clientPhone(),
+                service,
+                request.source() != null ? request.source() : "WEBSITE",
+                request.utmSource(),
+                request.utmMedium(),
+                request.utmCampaign(),
+                LeadStatus.NEW,
+                "Auto-created from booking " + appointment.getId() + " (pending)"
+            );
+            appointment.setLead(lead);
+            appointment = appointmentRepository.save(appointment);
+        } catch (Exception ex) {
+            log.warn("Failed to link lead for booking {}: {}", appointment.getId(), ex.getMessage());
+        }
 
         String otp = otpService.generateOtp(appointment.getId(), request.clientPhone());
         log.info("OTP generated for appointment {}: {}", appointment.getId(), otp);
@@ -247,5 +272,13 @@ public class BookingService {
         }
 
         return appointmentMapper.toDTO(appointment);
+    }
+
+    public List<AppointmentDTO> getBookingsByLeadId(UUID leadId) {
+        log.debug("Fetching appointments for lead: {}", leadId);
+        return appointmentRepository.findByLeadIdOrderByScheduledAtDesc(leadId)
+            .stream()
+            .map(appointmentMapper::toDTO)
+            .toList();
     }
 }

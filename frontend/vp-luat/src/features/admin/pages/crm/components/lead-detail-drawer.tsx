@@ -9,15 +9,18 @@ import { LeadNotes } from './lead-notes';
 import { LeadBookingsTab } from './lead-bookings-tab';
 import { LeadQuickEdit } from './lead-quick-edit';
 import type { Lead } from '@/lib/api/admin-crm';
-import type { LeadStatus, LeadTimelineEntry, LeadNote, Booking, Lawyer } from '@/features/admin/types';
+import type { LeadStatus, LeadTimelineEntry, Booking, BookingMethod, BookingStatus, Lawyer } from '@/features/admin/types';
+import type { Appointment } from '@/lib/api/admin-booking';
 import type { LeadFormValues } from '@/features/admin/schema';
 import {
   useLeadTimeline,
   useUpdateLead,
   useDeleteLead,
+  useLeadBookings,
   useCan,
   notifyError,
   notifySuccess,
+  toBackendStatus,
 } from '@/features/admin/lib';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { leadApi } from '@/lib/api/admin-crm';
@@ -42,6 +45,29 @@ const FE_STATUS: Record<string, LeadStatus> = {
   LOST: 'lost',
 };
 
+// Backend appointment → frontend Booking
+function toBooking(a: Appointment): Booking {
+  const scheduledAt = a.scheduledAt ? new Date(a.scheduledAt) : new Date();
+  return {
+    id: a.id,
+    leadId: a.id, // not used by tab
+    customerName: a.clientName,
+    customerEmail: a.clientEmail,
+    customerPhone: a.clientPhone,
+    service: a.serviceName ?? '',
+    lawyer: a.lawyerName ?? '',
+    method: (a.meetingType?.toLowerCase() as BookingMethod) ?? 'office',
+    date: scheduledAt.toISOString().slice(0, 10),
+    time: scheduledAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+    durationMinutes: a.durationMinutes,
+    status: (a.status?.toLowerCase() as BookingStatus) ?? 'pending',
+    notes: a.internalNotes,
+    cancelledReason: a.cancelReason,
+    createdAt: a.createdAt?.toString() ?? new Date().toISOString(),
+    updatedAt: a.updatedAt?.toString() ?? new Date().toISOString(),
+  };
+}
+
 interface LeadDetailDrawerProps {
   lead: Lead | null;
   lawyers: Lawyer[];
@@ -58,6 +84,7 @@ export function LeadDetailDrawer({ lead, lawyers, onClose, onDeleted }: LeadDeta
   const canDelete = useCan('crm.delete');
 
   const { data: timelineData } = useLeadTimeline(lead?.id);
+  const { data: bookingsData } = useLeadBookings(lead?.id);
 
   // Map backend timeline → frontend format
   const timelineEntries: LeadTimelineEntry[] = (timelineData ?? []).map((e) => ({
@@ -99,11 +126,21 @@ export function LeadDetailDrawer({ lead, lawyers, onClose, onDeleted }: LeadDeta
           lawyers={lawyers}
           onClose={() => setEditing(false)}
           onSave={(values) => {
-            const BE_STATUS: Record<string, string> = { new: 'NEW', contacted: 'CONTACTED', progress: 'PROGRESS', converted: 'CONVERTED', lost: 'LOST' };
+            const backendStatus = toBackendStatus(values.status);
+            if (!backendStatus) {
+              notifyError('Trạng thái không hợp lệ', `Không nhận diện được: ${values.status}`);
+              return;
+            }
             updateMutation.mutate({
               id: lead.id,
               patch: {
-                status: BE_STATUS[values.status] ?? values.status.toUpperCase(),
+                name: values.name,
+                phone: values.phone,
+                email: values.email,
+                status: backendStatus,
+                assignedToName: values.assignedTo || undefined,
+                serviceName: values.service || undefined,
+                source: values.source?.toUpperCase() ?? undefined,
                 notes: values.notes,
               },
             });
@@ -208,7 +245,14 @@ export function LeadDetailDrawer({ lead, lawyers, onClose, onDeleted }: LeadDeta
               <StatusChangeButtons
                 leadId={lead.id}
                 currentStatus={feStatus}
-                onChange={(s) => quickStatusMutation.mutate({ id: lead.id, status: s.toUpperCase() })}
+                onChange={(s) => {
+                  const backendStatus = toBackendStatus(s);
+                  if (!backendStatus) {
+                    notifyError('Trạng thái không hợp lệ', s);
+                    return;
+                  }
+                  quickStatusMutation.mutate({ id: lead.id, status: backendStatus });
+                }}
                 disabled={!canEdit}
               />
             </div>
@@ -216,8 +260,10 @@ export function LeadDetailDrawer({ lead, lawyers, onClose, onDeleted }: LeadDeta
         )}
 
         {tab === 'timeline' && <LeadTimeline entries={timelineEntries} />}
-        {tab === 'notes' && <LeadNotes leadId={lead.id} notes={[]} />}
-        {tab === 'bookings' && <LeadBookingsTab bookings={[]} />}
+        {tab === 'notes' && <LeadNotes leadId={lead.id} />}
+        {tab === 'bookings' && (
+          <LeadBookingsTab bookings={(bookingsData ?? []).map(toBooking)} />
+        )}
       </Drawer>
 
       <ConfirmDialog

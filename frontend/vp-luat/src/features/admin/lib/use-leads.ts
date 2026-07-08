@@ -7,6 +7,7 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { leadApi, type Lead } from '@/lib/api/admin-crm';
+import type { Appointment } from '@/lib/api/admin-booking';
 import { notifyError, notifySuccess, ghiAudit } from './index';
 import { getCurrentUser } from './rbac';
 
@@ -46,6 +47,8 @@ export interface LeadStats {
 const QK_LEADS = (p?: LeadQueryParams) => ['admin', 'crm', 'leads', p ?? {}] as const;
 const QK_LEAD = (id: string) => ['admin', 'crm', 'leads', id] as const;
 const QK_TIMELINE = (id: string) => ['admin', 'crm', 'leads', id, 'timeline'] as const;
+const QK_NOTES = (id: string) => ['admin', 'crm', 'leads', id, 'notes'] as const;
+const QK_BOOKINGS = (id: string) => ['admin', 'crm', 'leads', id, 'bookings'] as const;
 
 export interface LeadQueryParams {
   page?: number;
@@ -106,6 +109,22 @@ export function useLeadTimeline(id: string | null | undefined) {
   });
 }
 
+export function useLeadNotes(id: string | null | undefined) {
+  return useQuery({
+    queryKey: QK_NOTES(id ?? ''),
+    queryFn: () => leadApi.notes(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function useLeadBookings(id: string | null | undefined) {
+  return useQuery({
+    queryKey: QK_BOOKINGS(id ?? ''),
+    queryFn: () => leadApi.bookings(id!),
+    enabled: Boolean(id),
+  });
+}
+
 // ─── Stats ───────────────────────────────────────────────────────────────────
 
 export function useLeadStats(params: LeadQueryParams = {}) {
@@ -136,7 +155,17 @@ export function useUpdateLead() {
       patch,
     }: {
       id: string;
-      patch: { status?: string; assignedTo?: string; notes?: string };
+      patch: {
+        name?: string;
+        phone?: string;
+        email?: string;
+        status?: string;
+        assignedTo?: string;
+        assignedToName?: string;
+        serviceName?: string;
+        source?: string;
+        notes?: string;
+      };
     }) => {
       const actor = getCurrentUser();
       return leadApi.update(id, patch);
@@ -207,6 +236,7 @@ export function useAddLeadNote() {
     onSuccess: (_updated, { id }) => {
       qc.invalidateQueries({ queryKey: ['admin', 'crm', 'leads'] });
       qc.invalidateQueries({ queryKey: QK_TIMELINE(id) });
+      qc.invalidateQueries({ queryKey: QK_NOTES(id) });
     },
     onError: (e: unknown) => {
       notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể thêm ghi chú');

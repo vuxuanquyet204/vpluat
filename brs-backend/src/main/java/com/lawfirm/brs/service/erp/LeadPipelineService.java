@@ -1,5 +1,7 @@
 package com.lawfirm.brs.service.erp;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lawfirm.brs.dto.response.ActivityLogResponse;
 import com.lawfirm.brs.dto.response.BulkImportResponse;
 import com.lawfirm.brs.dto.response.LeadDTO;
@@ -46,19 +48,29 @@ public class LeadPipelineService {
     private final BulkImportRepository bulkImportRepository;
     private final LeadMapper leadMapper;
 
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+
     /**
      * Append an entry to the lead timeline.
+     * <p>
+     * The {@code meta} payload is stored on the {@code metadata} column (jsonb).
+     * Passing {@code null} is equivalent to an empty object. The Map is
+     * serialised to JSON before binding because the entity column type is
+     * {@code String} annotated with {@link org.hibernate.annotations.JdbcTypeCode}(SqlTypes.JSON).
      */
     public void recordActivity(UUID leadId, UUID actorId, String action, String note, Map<String, Object> meta) {
         if (!leadRepository.existsById(leadId)) {
             throw new ResourceNotFoundException("Lead not found: " + leadId);
         }
+        String metadataJson = serializeJson((meta == null || meta.isEmpty())
+            ? Collections.emptyMap()
+            : meta);
         LeadActivity activity = LeadActivity.builder()
             .lead(Lead.builder().id(leadId).build())
             .user(buildUserRef(actorId))
             .action(action)
             .note(note)
-            .metadata(meta == null ? "{}" : toJson(meta))
+            .metadata(metadataJson)
             .build();
         activityRepository.save(activity);
     }
@@ -170,7 +182,7 @@ public class LeadPipelineService {
         job.setTotalRows(total);
         job.setImportedCount(imported);
         job.setFailedCount(total - imported);
-        job.setErrorLog(toJson(Map.of("errors", errors.stream().limit(50).toList())));
+        job.setErrorLog(serializeJson(Map.of("errors", errors.stream().limit(50).toList())));
         job.setFinishedAt(Instant.now());
         bulkImportRepository.save(job);
 
@@ -240,21 +252,16 @@ public class LeadPipelineService {
         return s;
     }
 
-    private static String toJson(Object o) {
-        // Tiny inline JSON serialiser (no Jackson dependency in this method).
-        // Avoid pulling ObjectMapper here to keep service dependency-light.
+    private static String serializeJson(Object o) {
+        // Use Jackson for proper JSON serialisation. Replaces the previous
+        // ad-hoc string builder that produced invalid JSON for nested values.
         if (o == null) return "{}";
-        if (o instanceof Map<?, ?> map) {
-            StringBuilder sb = new StringBuilder("{");
-            boolean first = true;
-            for (Map.Entry<?, ?> e : map.entrySet()) {
-                if (!first) sb.append(',');
-                first = false;
-                sb.append('"').append(e.getKey()).append("\":\"").append(e.getValue()).append('"');
-            }
-            return sb.append('}').toString();
+        try {
+            return JSON_MAPPER.writeValueAsString(o);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to serialise payload as JSON: {}", e.getMessage());
+            return "{}";
         }
-        return "\"" + o + "\"";
     }
 
     private static String truncate(String s, int max) {

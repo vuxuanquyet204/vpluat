@@ -81,4 +81,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         AppointmentStatus status, Instant from);
 
     List<Appointment> findByScheduledAtBetween(Instant from, Instant to);
+
+    @EntityGraph(attributePaths = {"lawyer", "service", "lead"})
+    List<Appointment> findByLeadIdOrderByScheduledAtDesc(UUID leadId);
 }
