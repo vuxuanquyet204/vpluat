@@ -60,7 +60,7 @@ public class DocumentController {
     // ==================== Admin Endpoints ====================
 
     @GetMapping("/admin/documents")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "List all documents (Admin)")
     public ResponseEntity<ApiResponse<List<DocumentDTO>>> getAllDocuments(
             @RequestParam(required = false) UUID serviceId) {
@@ -78,7 +78,7 @@ public class DocumentController {
     }
 
     @GetMapping("/admin/documents/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Get document by ID (Admin)")
     public ResponseEntity<ApiResponse<DocumentDTO>> getDocument(@PathVariable UUID id) {
         var document = documentService.getDocument(id);
@@ -86,7 +86,7 @@ public class DocumentController {
     }
 
     @DeleteMapping("/admin/documents/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Delete a document (Admin)")
     public ResponseEntity<ApiResponse<Void>> deleteDocument(
             @PathVariable UUID id,
@@ -96,7 +96,7 @@ public class DocumentController {
     }
 
     @PatchMapping("/admin/documents/{id}/visibility")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Toggle document visibility (Admin)")
     public ResponseEntity<ApiResponse<DocumentDTO>> toggleVisibility(
             @PathVariable UUID id) {
@@ -108,7 +108,7 @@ public class DocumentController {
     }
 
     @GetMapping("/admin/documents/{id}/download-count")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Get document download statistics (Admin)")
     public ResponseEntity<ApiResponse<DocumentDownloadStats>> getDownloadStats(@PathVariable UUID id) {
         var document = documentService.getDocument(id);
@@ -120,7 +120,7 @@ public class DocumentController {
     }
 
     @PostMapping("/admin/documents")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Upload a new document (Admin)")
     public ResponseEntity<ApiResponse<DocumentDTO>> uploadDocument(
             @RequestParam("file") MultipartFile file,

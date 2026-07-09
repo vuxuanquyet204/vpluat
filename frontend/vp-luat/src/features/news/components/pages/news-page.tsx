@@ -7,10 +7,13 @@ import { NewsFilterTabs } from '../../components/news-filter-tabs';
 import { ArticleCard } from '../../components/article-card';
 import { NewsSidebar } from '../../components/news-sidebar';
 import { NewsPagination } from '../../components/news-pagination';
-import { NEWS_ARTICLES } from '../../lib/data/news-data';
+import { usePosts, useFeaturedPosts } from '../../hooks/use-news';
 import type { NewsArticle, NewsCategory } from '../../types';
 
 const PER_PAGE = 6;
+
+// Fallback data when API fails
+const FALLBACK_CATEGORIES = ['tin-tuc', 'nghi-dinh', 'blog', 'case-study', 'huong-dan'];
 
 export default function NewsPage() {
   const [activeCategory, setActiveCategory] = useState<'all' | NewsCategory>('all');
@@ -18,15 +21,29 @@ export default function NewsPage() {
   const [appliedQuery, setAppliedQuery] = useState('');
   const [page, setPage] = useState(1);
 
+  const { data: featuredData, isLoading: featuredLoading } = useFeaturedPosts();
+  const { data: postsData, isLoading: postsLoading } = usePosts(page - 1, PER_PAGE);
+
   const featured = useMemo(() => {
+    if (!featuredData || featuredData.length === 0) {
+      return {
+        main: null,
+        sides: [],
+      };
+    }
     return {
-      main: NEWS_ARTICLES.find((a) => a.isFeatured) ?? NEWS_ARTICLES[0],
-      sides: NEWS_ARTICLES.filter((a) => a.isFeatured && a.id !== (NEWS_ARTICLES.find((x) => x.isFeatured) ?? NEWS_ARTICLES[0]).id).slice(0, 3),
+      main: featuredData[0] || null,
+      sides: featuredData.slice(1, 4),
     };
-  }, []);
+  }, [featuredData]);
+
+  const allArticles = useMemo(() => {
+    if (!postsData?.content) return [];
+    return postsData.content;
+  }, [postsData]);
 
   const filtered = useMemo(() => {
-    let list = NEWS_ARTICLES;
+    let list = allArticles;
     if (activeCategory !== 'all') {
       list = list.filter((a) => a.category === activeCategory);
     }
@@ -39,17 +56,32 @@ export default function NewsPage() {
           a.tags.some((t) => t.toLowerCase().includes(q)),
       );
     }
-    return list.filter((a) => !a.isFeatured);
-  }, [activeCategory, appliedQuery]);
+    // Exclude featured from the list if showing featured
+    if (featured.main) {
+      list = list.filter((a) => a.id !== featured.main!.id);
+    }
+    return list;
+  }, [allArticles, activeCategory, appliedQuery, featured]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const paginated = filtered.slice(0, PER_PAGE);
+
+  const isLoading = featuredLoading || postsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner" />
+        <p>Đang tải tin tức...</p>
+      </div>
+    );
+  }
 
   return (
     <>
       <NewsHero onSearch={setAppliedQuery} defaultQuery={searchQuery} />
 
-      <NewsFeatured main={featured.main} sides={featured.sides} />
+      {featured.main && <NewsFeatured main={featured.main} sides={featured.sides} />}
 
       <section className="main-layout">
         <div className="container">

@@ -21,7 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/crm/reviews")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER')")
+@PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH') or hasRole('MANAGER')")
 @Tag(name = "Admin - Reviews", description = "Review management endpoints")
 public class ReviewController {
 
@@ -57,7 +57,7 @@ public class ReviewController {
     }
 
     @PostMapping("/{id}/publish")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('MANAGER')")
     @Operation(summary = "Approve a review (PENDING -> APPROVED)")
     public ResponseEntity<ApiResponse<ReviewDTO>> publishReview(
             @PathVariable UUID id,
@@ -67,7 +67,7 @@ public class ReviewController {
     }
 
     @PostMapping("/{id}/reject")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('MANAGER')")
     @Operation(summary = "Reject a review with a reason")
     public ResponseEntity<ApiResponse<ReviewDTO>> rejectReview(
             @PathVariable UUID id,
@@ -77,7 +77,7 @@ public class ReviewController {
     }
 
     @PostMapping("/{id}/feature")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Toggle featured status")
     public ResponseEntity<ApiResponse<ReviewDTO>> toggleFeatureReview(@PathVariable UUID id) {
         ReviewDTO review = reviewService.toggleFeature(id);
@@ -85,7 +85,7 @@ public class ReviewController {
     }
 
     @PostMapping("/bulk/moderate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('MANAGER')")
     @Operation(summary = "Bulk approve/reject a list of reviews")
     public ResponseEntity<ApiResponse<BulkResultResponse>> bulkModerate(
             @RequestBody BulkModerateRequest body) {
@@ -94,7 +94,7 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Hard-delete a review")
     public ResponseEntity<ApiResponse<Void>> deleteReview(@PathVariable UUID id) {
         reviewService.deleteReview(id);

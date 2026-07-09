@@ -66,10 +66,10 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health/**").permitAll()
                 // Authenticated endpoints
                 .requestMatchers("/api/auth/me", "/api/auth/me/**").authenticated()
-                .requestMatchers("/api/bookings/**").authenticated()
+                .requestMatchers("/api/bookings/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "CSKH", "LAWYER")
                 // Admin/Editor endpoints
-                .requestMatchers("/api/crm/**").hasAnyRole("ADMIN", "CSKH", "LAWYER")
-                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "EDITOR")
+                .requestMatchers("/api/crm/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "CSKH", "LAWYER")
+                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "EDITOR")
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())

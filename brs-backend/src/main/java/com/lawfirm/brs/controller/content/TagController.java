@@ -16,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/tags")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
+@PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR')")
 public class TagController {
 
     private final TagService tagService;
@@ -43,7 +43,7 @@ public class TagController {
     }
 
     @DeleteMapping("/{slug}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Delete a tag")
     public ResponseEntity<ApiResponse<Void>> deleteTag(@PathVariable String slug) {
         tagService.deleteTag(slug);

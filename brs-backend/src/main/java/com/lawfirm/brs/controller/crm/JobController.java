@@ -58,7 +58,7 @@ public class JobController {
     // ==================== Admin Endpoints ====================
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR')")
     @Operation(summary = "Create a new job posting (Admin)")
     public ResponseEntity<ApiResponse<PostDTO>> createJob(
             @Valid @RequestBody JobPostingRequest request) {
@@ -67,7 +67,7 @@ public class JobController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR')")
     @Operation(summary = "Update a job posting (Admin)")
     public ResponseEntity<ApiResponse<PostDTO>> updateJob(
             @PathVariable UUID id,
@@ -77,7 +77,7 @@ public class JobController {
     }
 
     @PatchMapping("/{id}/publish")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR')")
     @Operation(summary = "Publish a job posting (Admin)")
     public ResponseEntity<ApiResponse<PostDTO>> publishJob(@PathVariable UUID id) {
         PostDTO job = jobService.publishJob(id);
@@ -85,7 +85,7 @@ public class JobController {
     }
 
     @PatchMapping("/{id}/close")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR')")
     @Operation(summary = "Close a job posting (Admin)")
     public ResponseEntity<ApiResponse<PostDTO>> closeJob(@PathVariable UUID id) {
         PostDTO job = jobService.closeJob(id);
@@ -93,7 +93,7 @@ public class JobController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Delete a job posting (Admin)")
     public ResponseEntity<ApiResponse<Void>> deleteJob(@PathVariable UUID id) {
         jobService.deleteJob(id);
@@ -101,7 +101,7 @@ public class JobController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR')")
     @Operation(summary = "Get all job postings including drafts (Admin)")
     public ResponseEntity<ApiResponse<PageResponse<PostDTO>>> getAllJobs(
             @RequestParam(defaultValue = "0") int page,
@@ -112,7 +112,7 @@ public class JobController {
     }
 
     @GetMapping("/applications")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
     @Operation(summary = "Get all job applications (Admin)")
     public ResponseEntity<ApiResponse<PageResponse<JobApplicationDTO>>> getAllApplications(
             @RequestParam(defaultValue = "0") int page,
@@ -124,7 +124,7 @@ public class JobController {
     }
 
     @GetMapping("/applications/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
     @Operation(summary = "Get job application by ID (Admin)")
     public ResponseEntity<ApiResponse<JobApplicationDTO>> getApplicationById(@PathVariable UUID id) {
         JobApplicationDTO application = jobService.getApplicationById(id);
@@ -132,7 +132,7 @@ public class JobController {
     }
 
     @PatchMapping("/applications/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
     @Operation(summary = "Update application status (Admin)")
     public ResponseEntity<ApiResponse<JobApplicationDTO>> updateApplicationStatus(
             @PathVariable UUID id,

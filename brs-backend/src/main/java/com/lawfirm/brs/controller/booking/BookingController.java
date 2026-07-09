@@ -87,7 +87,7 @@ public class BookingController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
     @Operation(summary = "Get all bookings with pagination")
     public ResponseEntity<ApiResponse<PageResponse<AppointmentDTO>>> getAllBookings(
             @RequestParam(defaultValue = "0") int page,
@@ -104,7 +104,7 @@ public class BookingController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
     @Operation(summary = "Update booking status")
     public ResponseEntity<ApiResponse<AppointmentDTO>> updateStatus(
             @PathVariable UUID id,
@@ -118,7 +118,7 @@ public class BookingController {
     }
 
     @PostMapping("/{id}/reschedule")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'LAWYER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH') or hasRole('LAWYER')")
     @Operation(summary = "Reschedule a booking to a new date/time")
     public ResponseEntity<ApiResponse<AppointmentDTO>> reschedule(
             @PathVariable UUID id,
@@ -129,7 +129,7 @@ public class BookingController {
     }
 
     @GetMapping("/calendar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'LAWYER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH') or hasRole('LAWYER')")
     @Operation(summary = "List bookings for a date range as calendar events")
     public ResponseEntity<ApiResponse<List<AppointmentDTO>>> calendar(
             @RequestParam(required = false) UUID lawyerId,
@@ -142,7 +142,7 @@ public class BookingController {
     }
 
     @PostMapping("/admin")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
     @Operation(summary = "Admin override: create booking without OTP")
     public ResponseEntity<ApiResponse<AppointmentDTO>> adminCreate(
             @Valid @RequestBody AdminBookingRequest request) {
@@ -153,7 +153,7 @@ public class BookingController {
     // === Booking History ===
 
     @GetMapping("/{id}/history")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'LAWYER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH') or hasRole('LAWYER')")
     @Operation(summary = "Get booking history/audit trail")
     public ResponseEntity<ApiResponse<List<BookingHistoryDTO>>> getHistory(@PathVariable UUID id) {
         List<BookingHistoryDTO> history = bookingHistoryService.getHistory(id);
@@ -163,7 +163,7 @@ public class BookingController {
     // === Booking Reminders ===
 
     @GetMapping("/{id}/reminders")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'LAWYER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH') or hasRole('LAWYER')")
     @Operation(summary = "Get reminder configuration for a booking")
     public ResponseEntity<ApiResponse<BookingReminderConfigDTO>> getReminders(@PathVariable UUID id) {
         BookingReminderConfigDTO config = bookingReminderService.getConfig(id);
@@ -171,7 +171,7 @@ public class BookingController {
     }
 
     @PatchMapping("/{id}/reminders")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
     @Operation(summary = "Update reminder configuration for a booking")
     public ResponseEntity<ApiResponse<BookingReminderConfigDTO>> updateReminders(
             @PathVariable UUID id,
@@ -181,7 +181,7 @@ public class BookingController {
     }
 
     @PostMapping("/{id}/send-confirmation-email")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
     @Operation(summary = "Send appointment confirmation email to customer")
     public ResponseEntity<ApiResponse<String>> sendConfirmationEmail(@PathVariable UUID id) {
         var appt = bookingService.getAppointmentById(id);
@@ -207,7 +207,7 @@ public class BookingController {
     // === Booking Stats (Admin) ===
 
     @GetMapping("/admin/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
     @Operation(summary = "Get booking statistics for a date")
     public ResponseEntity<ApiResponse<com.lawfirm.brs.dto.response.BookingStatsDTO>> getStats(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {

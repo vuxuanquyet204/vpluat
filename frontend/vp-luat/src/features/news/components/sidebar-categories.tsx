@@ -1,6 +1,6 @@
 'use client';
 
-import { NEWS_CATEGORIES } from '../lib/data/news-data';
+import { useCategories } from '../hooks/use-news';
 import type { NewsCategory } from '../types';
 
 interface SidebarCategoriesProps {
@@ -9,6 +9,24 @@ interface SidebarCategoriesProps {
 }
 
 export function SidebarCategories({ active, onChange }: SidebarCategoriesProps) {
+  const { data: categories = [], isLoading } = useCategories();
+
+  if (isLoading) {
+    return (
+      <div className="sidebar-widget">
+        <h3 className="sidebar-widget__title">
+          <i className="fa-solid fa-folder-open" aria-hidden="true" />
+          Danh mục
+        </h3>
+        <div className="cat-list">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="skeleton" style={{ height: '40px', marginBottom: '8px' }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="sidebar-widget">
       <h3 className="sidebar-widget__title">
@@ -16,12 +34,12 @@ export function SidebarCategories({ active, onChange }: SidebarCategoriesProps) 
         Danh mục
       </h3>
       <div className="cat-list">
-        {NEWS_CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <button
             key={cat.id}
             type="button"
             className={`cat-list__item ${active === cat.id ? 'active' : ''}`}
-            onClick={() => onChange(cat.id)}
+            onClick={() => onChange(cat.id as 'all' | NewsCategory)}
           >
             <span>{cat.label}</span>
             <span className="cat-list__count">{cat.count}</span>

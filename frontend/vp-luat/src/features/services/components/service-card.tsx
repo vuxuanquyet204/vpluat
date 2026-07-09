@@ -1,13 +1,12 @@
 import Link from 'next/link';
 import { ArrowRight, Check } from 'lucide-react';
 import type { Service } from '../types';
-import { LAWYERS_BY_ID } from '../../lawyers/lib/data/lawyers-data';
 
 interface ServiceCardProps {
   service: Service;
 }
 
-const COLOR_CLASS: Record<Service['color'], string> = {
+const COLOR_CLASS: Record<string, string> = {
   primary: 'service-card__icon--primary',
   accent: 'service-card__icon--accent',
   green: 'service-card__icon--green',
@@ -16,23 +15,28 @@ const COLOR_CLASS: Record<Service['color'], string> = {
   purple: 'service-card__icon--purple',
 };
 
-function formatPrice(v: number) {
+function formatPrice(v?: number) {
+  if (!v) return 'Liên hệ';
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(v);
 }
 
 export function ServiceCard({ service }: ServiceCardProps) {
-  const lawyer = LAWYERS_BY_ID[service.lawyerId];
+  const colorClass = COLOR_CLASS[service.color || 'primary'] || COLOR_CLASS.primary;
+  const categoryLabel = service.category?.replace('-', ' ') || 'Dịch vụ';
+  const features = service.features || [];
+  const hasLawyer = !!service.lawyerId;
+  const icon = service.icon || 'fa-solid fa-gavel';
 
   return (
     <article className="service-card fade-in">
       <div className="service-card__top">
-        <i className={`service-card__icon ${COLOR_CLASS[service.color]} ${service.icon}`} aria-hidden="true" />
+        <i className={`service-card__icon ${colorClass} ${icon}`} aria-hidden="true" />
         {service.popular && (
           <span className="service-card__category">Phổ biến</span>
         )}
         {!service.popular && (
           <span className="service-card__category">
-            {service.category.replace('-', ' ')}
+            {categoryLabel}
           </span>
         )}
       </div>
@@ -40,24 +44,26 @@ export function ServiceCard({ service }: ServiceCardProps) {
       <h3 className="service-card__name">{service.name}</h3>
       <p className="service-card__desc">{service.shortDescription}</p>
 
-      <ul className="service-card__list">
-        {service.features.slice(0, 4).map((f) => (
-          <li key={f} className="service-card__list-item">
-            <Check size={12} strokeWidth={3} className="service-card__list-icon" aria-hidden="true" />
-            <span>{f}</span>
-          </li>
-        ))}
-      </ul>
+      {features.length > 0 && (
+        <ul className="service-card__list">
+          {features.slice(0, 4).map((f, i) => (
+            <li key={`${f}-${i}`} className="service-card__list-item">
+              <Check size={12} strokeWidth={3} className="service-card__list-icon" aria-hidden="true" />
+              <span>{f}</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
-      {lawyer && (
+      {hasLawyer && (
         <div className="service-card__lawyer">
           <div className="service-card__lawyer-avatar" aria-hidden="true">
-            {lawyer.initials}
+            <i className="fa-solid fa-user" />
           </div>
           <div className="service-card__lawyer-info">
-            <div className="service-card__lawyer-name">{lawyer.name}</div>
+            <div className="service-card__lawyer-name">Tư vấn viên</div>
             <div className="service-card__lawyer-exp">
-              {lawyer.experience} năm kinh nghiệm
+              Chuyên gia pháp lý
             </div>
           </div>
         </div>

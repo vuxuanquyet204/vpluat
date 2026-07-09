@@ -2,22 +2,24 @@
 
 import { useState } from 'react';
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRecentReviews } from '@/features/home/hooks/use-reviews';
 
-const TESTIMONIALS = [
+// Fallback testimonials when API fails
+const FALLBACK_TESTIMONIALS = [
   {
-    text: 'Tôi rất hài lòng với dịch vụ tư vấn luật của VP Luật. Đội ngũ luật sư chuyên nghiệp, tận tâm và giải quyết vụ việc của tôi nhanh chóng. Đặc biệt, họ luôn cập nhật tiến độ và giải đáp mọi thắc mắc của tôi một cách nhiệt tình.',
+    text: 'Tôi rất hài lòng với dịch vụ tư vấn luật của VP Luật. Đội ngũ luật sư chuyên nghiệp, tận tâm và giải quyết vụ việc của tôi nhanh chóng.',
     name: 'Nguyễn Thị Lan',
     role: 'Giám đốc, Công ty TNHH ABC',
     initials: 'NL',
   },
   {
-    text: 'VP Luật đã hỗ trợ chúng tôi trong vụ tranh chấp đất đai kéo dài nhiều năm. Nhờ sự tận tâm của đội ngũ luật sư, chúng tôi đã giành chiến thắng và bảo vệ được quyền lợi hợp pháp. Chi phí hợp lý, quy trình minh bạch.',
+    text: 'VP Luật đã hỗ trợ chúng tôi trong vụ tranh chấp đất đai kéo dài nhiều năm. Nhờ sự tận tâm của đội ngũ luật sư, chúng tôi đã giành chiến thắng.',
     name: 'Trần Văn Minh',
     role: 'Chủ tịch HĐQT, Tập đoàn XYZ',
     initials: 'TM',
   },
   {
-    text: 'Dịch vụ tư vấn M&A của VP Luật giúp chúng tôi hoàn tất thương vụ mua lại một cách suôn sẻ. Đội ngũ am hiểu sâu về luật doanh nghiệp, phản hồi nhanh chóng và đưa ra các giải pháp sáng tạo cho các vấn đề phức tạp.',
+    text: 'Dịch vụ tư vấn M&A của VP Luật giúp chúng tôi hoàn tất thương vụ mua lại một cách suôn sẻ. Đội ngũ am hiểu sâu về luật doanh nghiệp.',
     name: 'Lê Hoàng Nam',
     role: 'CFO, Tập đoàn DEF',
     initials: 'HN',
@@ -26,14 +28,40 @@ const TESTIMONIALS = [
 
 export function TestimonialsSection() {
   const [current, setCurrent] = useState(0);
+  const { data: reviews = [], isLoading } = useRecentReviews(10);
+
+  // Use API data if available, otherwise fallback
+  const testimonials = reviews.length > 0
+    ? reviews.slice(0, 5).map((review) => ({
+        text: review.content,
+        name: review.clientName,
+        role: review.clientRole || `${review.serviceName ? 'Khách hàng ' + review.serviceName : 'Khách hàng'}`,
+        initials: review.initials || review.clientName?.slice(0, 2).toUpperCase() || 'CL',
+      }))
+    : FALLBACK_TESTIMONIALS;
+
+  const total = testimonials.length;
 
   const prev = () => {
-    setCurrent((prev) => (prev === 0 ? TESTIMONIALS.length - 1 : prev - 1));
+    setCurrent((prev) => (prev === 0 ? total - 1 : prev - 1));
   };
 
   const next = () => {
-    setCurrent((prev) => (prev === TESTIMONIALS.length - 1 ? 0 : prev + 1));
+    setCurrent((prev) => (prev === total - 1 ? 0 : prev + 1));
   };
+
+  if (isLoading) {
+    return (
+      <section className="section">
+        <div className="container">
+          <div className="loading-container">
+            <div className="loading-spinner" />
+            <p>Đang tải đánh giá...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="section">
@@ -51,7 +79,7 @@ export function TestimonialsSection() {
             className="testimonials__track"
             style={{ transform: `translateX(-${current * 100}%)` }}
           >
-            {TESTIMONIALS.map((testimonial, index) => (
+            {testimonials.map((testimonial, index) => (
               <div key={index} className="testimonial-card">
                 <div className="testimonial-card__inner">
                   <span className="testimonial-card__quote-icon">"</span>
@@ -88,7 +116,7 @@ export function TestimonialsSection() {
             <ChevronLeft size={20} />
           </button>
           <div className="testimonials__dots">
-            {TESTIMONIALS.map((_, index) => (
+            {testimonials.map((_, index) => (
               <button
                 key={index}
                 className={`testimonials__dot ${index === current ? 'active' : ''}`}

@@ -44,7 +44,7 @@ public class AvailabilityController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
     @Operation(summary = "Create availability slot")
     public ResponseEntity<ApiResponse<AvailabilitySlotDTO>> createSlot(
             @Valid @RequestBody AvailabilitySlotRequest request) {
@@ -53,7 +53,7 @@ public class AvailabilityController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
     @Operation(summary = "Delete availability slot")
     public ResponseEntity<ApiResponse<Void>> deleteSlot(@PathVariable UUID id) {
         availabilityService.deleteSlot(id);

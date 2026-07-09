@@ -59,7 +59,7 @@ public class LeadController {
     }
 
     @GetMapping("/leads")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR') or hasRole('CSKH') or hasRole('MANAGER')")
     @Operation(summary = "List leads with pagination and filters")
     public ResponseEntity<ApiResponse<PageResponse<LeadDTO>>> getAllLeads(
             @RequestParam(defaultValue = "0") int page,
@@ -73,7 +73,7 @@ public class LeadController {
     }
 
     @GetMapping("/leads/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR') or hasRole('CSKH') or hasRole('MANAGER')")
     @Operation(summary = "Get lead by ID")
     public ResponseEntity<ApiResponse<LeadDTO>> getLeadById(@PathVariable UUID id) {
         LeadDTO lead = leadService.getLeadById(id);
@@ -81,14 +81,14 @@ public class LeadController {
     }
 
     @GetMapping("/leads/{id}/timeline")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR') or hasRole('CSKH') or hasRole('MANAGER')")
     @Operation(summary = "Get lead activity timeline")
     public ResponseEntity<ApiResponse<List<ActivityLogResponse>>> getTimeline(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(pipeline.getTimeline(id)));
     }
 
     @PatchMapping("/leads/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR') or hasRole('CSKH') or hasRole('MANAGER')")
     @Operation(summary = "Update lead status / assign / notes")
     public ResponseEntity<ApiResponse<LeadDTO>> updateLeadStatus(
             @PathVariable UUID id,
@@ -114,7 +114,7 @@ public class LeadController {
     }
 
     @PatchMapping("/leads/{id}/assign")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR') or hasRole('CSKH') or hasRole('MANAGER')")
     @Operation(summary = "Assign lead to a user")
     public ResponseEntity<ApiResponse<LeadDTO>> assign(
             @PathVariable UUID id,
@@ -125,7 +125,7 @@ public class LeadController {
     }
 
     @PostMapping("/leads/{id}/notes")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR') or hasRole('CSKH') or hasRole('MANAGER')")
     @Operation(summary = "Add note to lead")
     public ResponseEntity<ApiResponse<LeadDTO>> addNote(
             @PathVariable UUID id,
@@ -137,21 +137,21 @@ public class LeadController {
     }
 
     @GetMapping("/leads/{id}/notes")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER', 'LAWYER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH') or hasRole('MANAGER') or hasRole('LAWYER')")
     @Operation(summary = "List note history for a lead, newest first")
     public ResponseEntity<ApiResponse<List<LeadNoteDTO>>> listNotes(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success("Notes retrieved", leadService.getNotes(id)));
     }
 
     @GetMapping("/leads/{id}/bookings")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH') or hasRole('MANAGER')")
     @Operation(summary = "List appointments for a lead, newest first")
     public ResponseEntity<ApiResponse<List<AppointmentDTO>>> listBookings(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(bookingService.getBookingsByLeadId(id)));
     }
 
     @DeleteMapping("/leads/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Soft-delete a lead")
     public ResponseEntity<Void> deleteLead(@PathVariable UUID id) {
         leadService.deleteLead(id);
@@ -159,7 +159,7 @@ public class LeadController {
     }
 
     @PostMapping(value = "/leads/bulk/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR') or hasRole('CSKH') or hasRole('MANAGER')")
     @Operation(summary = "Bulk import leads from CSV")
     public ResponseEntity<ApiResponse<BulkImportResponse>> bulkImport(
             @RequestParam("file") MultipartFile file,
@@ -169,7 +169,7 @@ public class LeadController {
     }
 
     @GetMapping("/leads/export/csv")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CSKH', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR') or hasRole('CSKH') or hasRole('MANAGER')")
     @Operation(summary = "Export leads as CSV")
     public ResponseEntity<byte[]> exportCsv(
             @RequestParam(required = false) String status,

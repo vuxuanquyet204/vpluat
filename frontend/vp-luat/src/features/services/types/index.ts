@@ -10,6 +10,7 @@ export type ServiceCategory =
 
 export type ServiceColor = 'primary' | 'accent' | 'green' | 'red' | 'blue' | 'purple';
 
+// Flexible service type that accepts both strict types and API string responses
 export interface Service {
   id: string;
   slug: string;
@@ -17,14 +18,14 @@ export interface Service {
   title?: string;
   shortDescription: string;
   description: string;
-  category: ServiceCategory;
-  price: number;
-  duration: string;
+  category: ServiceCategory | string;
+  price?: number;
+  duration?: string;
   fee?: string;
-  icon: string;
-  color: ServiceColor;
-  features: string[];
-  lawyerId: string;
+  icon?: string;
+  color?: ServiceColor | string;
+  features?: string[];
+  lawyerId?: string;
   lawyerIds?: string[];
   benefits?: string[];
   faqIds?: string[];

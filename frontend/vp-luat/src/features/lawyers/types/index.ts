@@ -16,15 +16,16 @@ export type LawyerPosition =
   | 'cong-su'
   | 'tu-van-vien';
 
+// Flexible lawyer type that accepts both strict types and API string responses
 export interface Lawyer {
   id: string;
   slug: string;
   name: string;
-  position: LawyerPosition;
+  position: LawyerPosition | string;
   bio: string;
   initials: string;
   avatarColor: string;
-  specialties: LawyerSpecialty[];
+  specialties: LawyerSpecialty[] | string[];
   experience: number;
   successfulCases: number;
   rating: number;
@@ -36,6 +37,7 @@ export interface Lawyer {
   isVerified: boolean;
   achievements?: string[];
   education?: string[];
+  avatar?: string;
 }
 
 export interface LawyerStat {

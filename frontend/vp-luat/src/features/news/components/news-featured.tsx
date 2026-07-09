@@ -1,15 +1,27 @@
 import Link from 'next/link';
 import { Clock, Eye, Flame } from 'lucide-react';
-import type { NewsArticle } from '../types';
-import { CATEGORY_LABELS } from '../lib/data/news-data';
+import type { PostApiResponse } from '../api/news-api';
 
 interface NewsFeaturedProps {
-  main: NewsArticle;
-  sides: NewsArticle[];
+  main: PostApiResponse;
+  sides: PostApiResponse[];
 }
 
 function formatDate(iso: string) {
-  return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso));
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+}
+
+function getCategoryLabel(category: string): string {
+  const labels: Record<string, string> = {
+    'tin-tuc': 'Tin tức',
+    'nghi-dinh': 'Nghị định',
+    'blog': 'Blog',
+    'case-study': 'Case study',
+    'huong-dan': 'Hướng dẫn',
+  };
+  return labels[category] || category;
 }
 
 export function NewsFeatured({ main, sides }: NewsFeaturedProps) {
@@ -36,7 +48,7 @@ export function NewsFeatured({ main, sides }: NewsFeaturedProps) {
                   </span>
                 )}
                 <span className={`featured__cat cat-${main.category}`}>
-                  {CATEGORY_LABELS[main.category]}
+                  {getCategoryLabel(main.category)}
                 </span>
               </div>
               <h2 className="featured__title">{main.title}</h2>
@@ -69,7 +81,7 @@ export function NewsFeatured({ main, sides }: NewsFeaturedProps) {
                 </div>
                 <div className="featured__side-body">
                   <div className={`featured__side-cat cat-${s.category}`}>
-                    {CATEGORY_LABELS[s.category]}
+                    {getCategoryLabel(s.category)}
                   </div>
                   <div className="featured__side-title">{s.title}</div>
                   <div className="featured__side-meta">

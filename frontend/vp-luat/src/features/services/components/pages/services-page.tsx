@@ -7,16 +7,42 @@ import { ServiceCard } from '@/features/services/components/service-card';
 import { ProcessTimeline } from '@/features/services/components/process-timeline';
 import { ServicesFaq } from '@/features/services/components/services-faq';
 import { ServicesCta } from '@/features/services/components/services-cta';
-import { SERVICES, SERVICES_STATS } from '@/features/services/lib/data/services-data';
+import { useServices } from '@/features/services/hooks/use-services';
 import type { ServiceCategory } from '@/features/services/types';
+
+// Fallback stats when API fails
+const DEFAULT_STATS = {
+  totalServices: 0,
+  totalLawyers: 6,
+  totalClients: 1200,
+  successRate: 95,
+};
 
 export default function ServicesPage() {
   const [active, setActive] = useState<'all' | ServiceCategory>('all');
+  const { data: services = [], isLoading } = useServices();
 
   const filtered = useMemo(() => {
-    if (active === 'all') return SERVICES;
-    return SERVICES.filter((s) => s.category === active);
-  }, [active]);
+    if (active === 'all') return services;
+    return services.filter((s) => s.category === active);
+  }, [active, services]);
+
+  // Calculate stats from API data
+  const stats = useMemo(() => ({
+    totalServices: services.length,
+    totalLawyers: DEFAULT_STATS.totalLawyers,
+    totalClients: DEFAULT_STATS.totalClients,
+    successRate: DEFAULT_STATS.successRate,
+  }), [services]);
+
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner" />
+        <p>Đang tải dịch vụ...</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -29,10 +55,10 @@ export default function ServicesPage() {
           { label: 'Dịch vụ' },
         ]}
         stats={[
-          { value: `${SERVICES_STATS.totalServices}+`, label: 'Dịch vụ' },
-          { value: `${SERVICES_STATS.totalLawyers}`, label: 'Luật sư' },
-          { value: `${SERVICES_STATS.totalClients}+`, label: 'Khách hàng' },
-          { value: `${SERVICES_STATS.successRate}%`, label: 'Tỷ lệ thành công' },
+          { value: `${stats.totalServices}+`, label: 'Dịch vụ' },
+          { value: `${stats.totalLawyers}`, label: 'Luật sư' },
+          { value: `${stats.totalClients}+`, label: 'Khách hàng' },
+          { value: `${stats.successRate}%`, label: 'Tỷ lệ thành công' },
         ]}
       />
 
@@ -48,7 +74,7 @@ export default function ServicesPage() {
                 : 'Dịch vụ ' + active.replace('-', ' & ')}
             </h2>
             <p className="section__subtitle">
-              Hiển thị {filtered.length} dịch vụ trong tổng số {SERVICES.length} dịch vụ của chúng tôi.
+              Hiển thị {filtered.length} dịch vụ trong tổng số {services.length} dịch vụ của chúng tôi.
             </p>
           </div>
 

@@ -24,7 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/dashboard")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+@PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR')")
 @Tag(name = "Admin - Dashboard ERP", description = "Charts, activity, exports")
 public class DashboardErpController {
 

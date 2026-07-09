@@ -19,7 +19,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin/posts")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
+@PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR')")
 @Tag(name = "Admin - Posts ERP", description = "Revisions and post utilities")
 public class PostErpController {
 

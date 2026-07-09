@@ -25,7 +25,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin/lawyers")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN', 'CSKH')")
+@PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR') or hasRole('CSKH')")
 @Tag(name = "Admin - Lawyer Schedule", description = "Manage lawyer weekly schedules and overrides")
 public class LawyerScheduleController {
 

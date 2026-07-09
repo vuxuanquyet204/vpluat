@@ -1,14 +1,26 @@
 import Link from 'next/link';
 import { Clock, Eye, MessageSquare, Image as ImageIcon } from 'lucide-react';
-import type { NewsArticle } from '../types';
-import { CATEGORY_LABELS } from '../lib/data/news-data';
+import type { PostApiResponse } from '../api/news-api';
 
 interface ArticleCardProps {
-  article: NewsArticle;
+  article: PostApiResponse;
 }
 
 function formatDate(iso: string) {
-  return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso));
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+}
+
+function getCategoryLabel(category: string): string {
+  const labels: Record<string, string> = {
+    'tin-tuc': 'Tin tức',
+    'nghi-dinh': 'Nghị định',
+    'blog': 'Blog',
+    'case-study': 'Case study',
+    'huong-dan': 'Hướng dẫn',
+  };
+  return labels[category] || category;
 }
 
 export function ArticleCard({ article }: ArticleCardProps) {
@@ -26,7 +38,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
 
       <div className="article-card__body">
         <div className={`article-card__cat cat-${article.category}`}>
-          {CATEGORY_LABELS[article.category]}
+          {getCategoryLabel(article.category)}
         </div>
         <h3 className="article-card__title">{article.title}</h3>
         <p className="article-card__excerpt">{article.excerpt}</p>

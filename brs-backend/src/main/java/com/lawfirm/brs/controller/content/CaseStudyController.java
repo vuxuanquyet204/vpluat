@@ -20,7 +20,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin/case-studies")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
+@PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR')")
 @Tag(name = "Admin - Case Studies", description = "Case study management endpoints")
 public class CaseStudyController {
 
@@ -74,7 +74,7 @@ public class CaseStudyController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Delete a case study")
     public ResponseEntity<ApiResponse<Void>> deleteCaseStudy(@PathVariable UUID id) {
         caseStudyService.deleteCaseStudy(id);

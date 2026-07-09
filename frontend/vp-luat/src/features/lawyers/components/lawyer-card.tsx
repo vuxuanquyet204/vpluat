@@ -2,7 +2,7 @@
 
 import { Star } from 'lucide-react';
 import { POSITION_LABELS, SPECIALTY_LABELS } from '../lib/data/lawyers-data';
-import type { Lawyer } from '../types';
+import type { Lawyer, LawyerPosition, LawyerSpecialty } from '../types';
 
 interface LawyerCardProps {
   lawyer: Lawyer;
@@ -27,6 +27,22 @@ function renderStars(rating: number) {
   return stars;
 }
 
+// Helper to get position label from position string
+function getPositionLabel(position: LawyerPosition | string): string {
+  if (position in POSITION_LABELS) {
+    return POSITION_LABELS[position as LawyerPosition];
+  }
+  return position;
+}
+
+// Helper to get specialty label from specialty string
+function getSpecialtyLabel(specialty: LawyerSpecialty | string): string {
+  if (specialty in SPECIALTY_LABELS) {
+    return SPECIALTY_LABELS[specialty as LawyerSpecialty];
+  }
+  return specialty;
+}
+
 export function LawyerCard({ lawyer, onViewProfile, onBook }: LawyerCardProps) {
   return (
     <article className="lawyer-card">
@@ -46,7 +62,7 @@ export function LawyerCard({ lawyer, onViewProfile, onBook }: LawyerCardProps) {
       </div>
 
       <h3 className="lawyer-name">{lawyer.name}</h3>
-      <p className="lawyer-position">{POSITION_LABELS[lawyer.position]}</p>
+      <p className="lawyer-position">{getPositionLabel(lawyer.position)}</p>
 
       <div className="lawyer-stars">
         {renderStars(lawyer.rating)}
@@ -57,7 +73,7 @@ export function LawyerCard({ lawyer, onViewProfile, onBook }: LawyerCardProps) {
 
       <div className="lawyer-tags">
         {lawyer.specialties.map((sp) => (
-          <span key={sp} className="lawyer-tag">{SPECIALTY_LABELS[sp]}</span>
+          <span key={sp} className="lawyer-tag">{getSpecialtyLabel(sp)}</span>
         ))}
       </div>
 

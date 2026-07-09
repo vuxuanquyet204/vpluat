@@ -21,7 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin/chatbot")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
 @Tag(name = "Admin - Chatbot", description = "Chatbot administration and monitoring endpoints")
 public class ChatbotAdminController {
 
