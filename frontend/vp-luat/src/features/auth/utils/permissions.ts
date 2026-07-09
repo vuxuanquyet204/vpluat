@@ -129,6 +129,47 @@ export const RoleDisplayNames: Record<Role, string> = {
   VIEWER: 'Người xem',
 };
 
+// Navigation config by role - which nav items each role can access
+export const ROLE_NAV_CONFIG: Record<Role, string[]> = {
+  SUPER_ADMIN: [
+    'dashboard', 'bookings', 'crm', 'blog', 'services', 'reviews',
+    'chatbot', 'newsletter', 'landing-pages', 'users', 'audit', 'settings'
+  ],
+  ADMIN: [
+    'dashboard', 'bookings', 'crm', 'blog', 'services', 'reviews',
+    'chatbot', 'newsletter', 'landing-pages', 'users', 'audit', 'settings'
+  ],
+  CRM_STAFF: ['dashboard', 'crm', 'bookings', 'reviews'],
+  LAWYER: ['dashboard', 'bookings', 'crm'],
+  EDITOR: ['dashboard', 'blog', 'landing-pages'],
+  MARKETING: ['dashboard', 'blog', 'landing-pages'],
+  VIEWER: ['dashboard'],
+};
+
+// Check if role can access a specific nav item
+export function canAccessNav(role: Role, navId: string): boolean {
+  const allowedNavs = ROLE_NAV_CONFIG[role];
+  return allowedNavs?.includes(navId) ?? false;
+}
+
+// Get allowed nav items for a role
+export function getNavByRole(role: Role): string[] {
+  return ROLE_NAV_CONFIG[role] ?? [];
+}
+
+// Check if role should use staff portal (not admin portal)
+export function isStaffRole(role: Role): boolean {
+  return !['SUPER_ADMIN', 'ADMIN'].includes(role);
+}
+
+// Get default dashboard path for role
+export function getDashboardPath(role: Role): string {
+  if (isStaffRole(role)) {
+    return '/staff/dashboard';
+  }
+  return '/admin/dashboard';
+}
+
 // Valid roles set for O(1) lookup
 const VALID_ROLES = new Set<Role>([
   'SUPER_ADMIN', 'ADMIN', 'EDITOR', 'LAWYER', 'CRM_STAFF', 'MARKETING', 'VIEWER'

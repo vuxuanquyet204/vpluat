@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, Lock, Mail, Scale, ShieldCheck, Phone, MapPin } from 'lucide-react';
+import { getDashboardPath } from '@/features/auth/utils/permissions';
+import type { Role } from '@/features/auth/utils/permissions';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/admin';
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -51,7 +53,28 @@ function LoginForm() {
       }
 
       if (result.ok) {
-        router.push(callbackUrl);
+        // Fetch session to get user role
+        const sessionRes = await fetch('/api/auth/session');
+        const sessionData = await sessionRes.json();
+        const userRole = (sessionData?.user?.role as Role) ?? 'VIEWER';
+
+        // Clear stale localStorage data from previous sessions (admin/staff confusion)
+        if (typeof window !== 'undefined') {
+          try {
+            window.localStorage.removeItem('admin-impersonated-user');
+            window.localStorage.removeItem('vp-luat-admin-current-user');
+          } catch {
+            // ignore
+          }
+        }
+
+        // Determine redirect path based on role
+        let redirectPath = callbackUrl;
+        if (callbackUrl === '/' || callbackUrl === '/login') {
+          redirectPath = getDashboardPath(userRole);
+        }
+
+        router.push(redirectPath);
         router.refresh();
       }
     } catch (err) {
@@ -64,7 +87,8 @@ function LoginForm() {
   async function handleSocialSignIn(provider: 'google' | 'facebook') {
     setIsLoading(true);
     try {
-      await signIn(provider, { callbackUrl: '/admin' });
+      // Determine callback URL based on stored role hint (best effort)
+      await signIn(provider, { callbackUrl: '/' });
     } finally {
       setIsLoading(false);
     }
