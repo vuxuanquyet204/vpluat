@@ -1,5 +1,7 @@
 package com.lawfirm.brs.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.lawfirm.brs.constants.MeetingType;
 import jakarta.validation.constraints.*;
 
@@ -8,59 +10,105 @@ import java.util.UUID;
 
 /**
  * Booking request DTO.
+ * Accepts the frontend's nested payload (customer/consultationType)
+ * as well as the legacy flat fields.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record BookingRequest(
-    @NotBlank(message = "Client name is required")
-    @Size(max = 255, message = "Client name is too long")
+    @JsonProperty("clientName")
     String clientName,
 
-    @NotBlank(message = "Client email is required")
-    @Email(message = "Invalid email format")
+    @JsonProperty("clientEmail")
     String clientEmail,
 
-    @NotBlank(message = "Client phone is required")
-    @Pattern(regexp = "^(\\+84|0)\\d{9,10}$", message = "Invalid Vietnamese phone number")
+    @JsonProperty("clientPhone")
     String clientPhone,
 
-    @NotNull(message = "Lawyer ID is required")
+    @JsonProperty("lawyerId")
     UUID lawyerId,
 
-    @NotNull(message = "Service ID is required")
-    UUID serviceId,
+    @JsonProperty("serviceId")
+    String serviceId,
 
-    @NotNull(message = "Scheduled time is required")
+    @JsonProperty("scheduledAt")
     Instant scheduledAt,
 
-    @Min(value = 15, message = "Duration must be at least 15 minutes")
-    @Max(value = 240, message = "Duration cannot exceed 240 minutes")
+    @JsonProperty("reservationId")
+    UUID reservationId,
+
+    @JsonProperty("durationMinutes")
     Integer durationMinutes,
 
-    @NotNull(message = "Meeting type is required")
+    @JsonProperty("meetingType")
     MeetingType meetingType,
 
     String timezone,
 
-    @Size(max = 50, message = "Source is too long")
     String source,
 
-    @Size(max = 100, message = "UTM source is too long")
     String utmSource,
 
-    @Size(max = 100, message = "UTM medium is too long")
     String utmMedium,
 
-    @Size(max = 100, message = "UTM campaign is too long")
-    String utmCampaign
+    String utmCampaign,
+
+    /** Client's free-form description of their legal issue (flat field from legacy clients). */
+    String issueSummary,
+
+    // Nested customer payload from frontend
+    CustomerPayload customer,
+
+    String consultationType
 ) {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record CustomerPayload(
+        String fullName,
+        String phone,
+        String email,
+        String issueSummary
+    ) {}
+
     public BookingRequest {
-        if (timezone == null) {
+        // Flatten nested customer into flat fields if present
+        if (customer != null) {
+            if (isBlank(clientName) && !isBlank(customer.fullName())) {
+                clientName = customer.fullName();
+            }
+            if (isBlank(clientPhone) && !isBlank(customer.phone())) {
+                clientPhone = customer.phone();
+            }
+            if (isBlank(clientEmail) && !isBlank(customer.email())) {
+                clientEmail = customer.email();
+            }
+            if (isBlank(issueSummary) && !isBlank(customer.issueSummary())) {
+                issueSummary = customer.issueSummary();
+            }
+        }
+
+        // Map consultationType -> meetingType if missing
+        if (meetingType == null && consultationType != null && !consultationType.isBlank()) {
+            try {
+                meetingType = MeetingType.valueOf(consultationType.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                // Try common aliases
+                if (consultationType.equalsIgnoreCase("IN_PERSON")) {
+                    meetingType = MeetingType.OFFLINE;
+                }
+            }
+        }
+
+        if (timezone == null || timezone.isBlank()) {
             timezone = "Asia/Ho_Chi_Minh";
         }
         if (durationMinutes == null) {
             durationMinutes = 60;
         }
-        if (source == null) {
+        if (source == null || source.isBlank()) {
             source = "WEBSITE";
         }
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 }

@@ -1,5 +1,6 @@
 package com.lawfirm.brs.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -8,6 +9,7 @@ import jakarta.validation.constraints.Size;
 /**
  * Lead request DTO.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record LeadRequest(
     @NotBlank(message = "Name is required")
     @Size(max = 255, message = "Name is too long")

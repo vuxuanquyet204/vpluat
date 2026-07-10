@@ -4,6 +4,7 @@ import com.lawfirm.brs.dto.request.PostRequest;
 import com.lawfirm.brs.dto.response.ApiResponse;
 import com.lawfirm.brs.dto.response.PageResponse;
 import com.lawfirm.brs.dto.response.PostDTO;
+import com.lawfirm.brs.dto.response.PostRevisionDTO;
 import com.lawfirm.brs.service.content.PostManagementService;
 import com.lawfirm.brs.service.erp.PostErpService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -61,6 +63,46 @@ public class PostController {
     public ResponseEntity<ApiResponse<PostDTO>> archivePost(@PathVariable UUID id) {
         PostDTO post = postService.archivePost(id);
         return ResponseEntity.ok(ApiResponse.success("Post archived successfully", post));
+    }
+
+    @PatchMapping("/{id}/schedule")
+    @Operation(summary = "Schedule a post for future publication")
+    public ResponseEntity<ApiResponse<PostDTO>> schedulePost(
+            @PathVariable UUID id,
+            @RequestParam("at") String at) {
+        Instant when = Instant.parse(at);
+        PostDTO post = postService.schedulePost(id, when);
+        return ResponseEntity.ok(ApiResponse.success("Post scheduled", post));
+    }
+
+    /** Delegates to PostErpService for revisions and snapshot management. */
+    @PostMapping("/{id}/revisions")
+    @Operation(summary = "Record a revision snapshot of the post")
+    public ResponseEntity<ApiResponse<PostDTO>> recordRevision(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String note,
+            @RequestAttribute(value = "userId", required = false) UUID editorId) {
+        postErpService.snapshot(id, editorId, note);
+        return ResponseEntity.ok(ApiResponse.success("Revision recorded", null));
+    }
+
+    @GetMapping("/{id}/revisions")
+    @Operation(summary = "List revision history for a post")
+    public ResponseEntity<ApiResponse<PageResponse<PostRevisionDTO>>> listRevisions(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.success(
+            postErpService.revisions(id, page, size)));
+    }
+
+    @PostMapping("/{id}/revisions/{revisionId}/restore")
+    @Operation(summary = "Restore the post to the state captured by the given revision")
+    public ResponseEntity<ApiResponse<Void>> restoreRevision(
+            @PathVariable UUID id,
+            @PathVariable UUID revisionId) {
+        postErpService.restoreRevision(id, revisionId);
+        return ResponseEntity.ok(ApiResponse.success("Post restored", null));
     }
 
     @DeleteMapping("/{id}")

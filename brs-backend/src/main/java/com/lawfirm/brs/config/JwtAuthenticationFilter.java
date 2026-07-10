@@ -1,5 +1,7 @@
 package com.lawfirm.brs.config;
 
+import com.lawfirm.brs.entity.User;
+import com.lawfirm.brs.security.UserPrincipal;
 import com.lawfirm.brs.service.auth.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -49,9 +51,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
+                // Wrap the underlying User entity in a UserPrincipal so that
+                // controllers can inject @AuthenticationPrincipal UserPrincipal
+                // and access typed fields like getId()/getEmail()/getFullName().
+                Object principal = (userDetails instanceof User u)
+                    ? new UserPrincipal(u)
+                    : userDetails;
+
                 UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                        userDetails,
+                        principal,
                         null,
                         userDetails.getAuthorities()
                     );
@@ -72,11 +81,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String extractJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
-        
+
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
             return bearerToken.substring(BEARER_PREFIX.length());
         }
-        
+
         return null;
     }
 }

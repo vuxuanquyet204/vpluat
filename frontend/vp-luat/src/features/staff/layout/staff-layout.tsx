@@ -4,7 +4,6 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StaffSidebar } from './staff-sidebar';
 import { StaffTopbar } from './staff-topbar';
-import { MockDBProvider } from '@/features/admin/mock/provider';
 import { ErrorBoundary, SkeletonPage } from '@/features/admin/components';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
@@ -68,14 +67,12 @@ function StaffRoleGuard({ children }: { children: React.ReactNode }) {
 
 export function StaffLayout({ children }: StaffLayoutProps) {
   return (
-    <MockDBProvider>
-      <ErrorBoundary>
-        <Suspense fallback={<SkeletonPage />}>
-          <StaffRoleGuard>
-            <StaffShell>{children}</StaffShell>
-          </StaffRoleGuard>
-        </Suspense>
-      </ErrorBoundary>
-    </MockDBProvider>
+    <ErrorBoundary>
+      <Suspense fallback={<SkeletonPage />}>
+        <StaffRoleGuard>
+          <StaffShell>{children}</StaffShell>
+        </StaffRoleGuard>
+      </Suspense>
+    </ErrorBoundary>
   );
 }

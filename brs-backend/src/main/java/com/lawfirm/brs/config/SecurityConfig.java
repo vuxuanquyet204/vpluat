@@ -66,6 +66,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health/**").permitAll()
                 // Authenticated endpoints
                 .requestMatchers("/api/auth/me", "/api/auth/me/**").authenticated()
+                .requestMatchers("/api/notifications/**").authenticated()
                 .requestMatchers("/api/bookings/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "CSKH", "LAWYER")
                 // Admin/Editor endpoints
                 .requestMatchers("/api/crm/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "CSKH", "LAWYER")

@@ -67,7 +67,7 @@ export function StaffSidebar() {
   };
 
   // Get user info from session (NextAuth) - not from localStorage/MockDB
-  const userName = session?.user?.name ?? session?.user?.fullName ?? 'Nhân viên';
+  const userName = session?.user?.name ?? 'Nhân viên';
   const roleDisplayName = RoleDisplayNames[userRole] ?? 'Nhân viên';
   const initials = userName
     .split(/\s+/)

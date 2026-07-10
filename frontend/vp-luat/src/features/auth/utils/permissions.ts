@@ -4,10 +4,9 @@ export type Role =
   | 'SUPER_ADMIN'
   | 'ADMIN'
   | 'EDITOR'
+  | 'CSKH'
   | 'LAWYER'
-  | 'CRM_STAFF'
-  | 'MARKETING'
-  | 'VIEWER';
+  | 'USER';
 
 export type Permission =
   | 'dashboard:read'
@@ -79,21 +78,17 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'posts:read', 'posts:write', 'posts:publish',
     'landing_pages:read', 'landing_pages:write',
   ],
+  CSKH: [
+    'dashboard:read',
+    'bookings:read', 'bookings:write',
+    'leads:read', 'leads:write',
+  ],
   LAWYER: [
     'dashboard:read',
     'bookings:read', 'bookings:write',
     'leads:read',
   ],
-  CRM_STAFF: [
-    'dashboard:read',
-    'bookings:read', 'bookings:write',
-    'leads:read', 'leads:write',
-  ],
-  MARKETING: [
-    'posts:read', 'posts:write',
-    'landing_pages:read', 'landing_pages:write',
-  ],
-  VIEWER: [
+  USER: [
     'dashboard:read',
   ],
 };
@@ -123,10 +118,9 @@ export const RoleDisplayNames: Record<Role, string> = {
   SUPER_ADMIN: 'Quản trị viên cao cấp',
   ADMIN: 'Quản trị viên',
   EDITOR: 'Biên tập viên',
+  CSKH: 'Nhân viên CSKH',
   LAWYER: 'Luật sư',
-  CRM_STAFF: 'Nhân viên CRM',
-  MARKETING: 'Nhân viên Marketing',
-  VIEWER: 'Người xem',
+  USER: 'Khách hàng',
 };
 
 // Navigation config by role - which nav items each role can access
@@ -139,11 +133,10 @@ export const ROLE_NAV_CONFIG: Record<Role, string[]> = {
     'dashboard', 'bookings', 'crm', 'blog', 'services', 'reviews',
     'chatbot', 'newsletter', 'landing-pages', 'users', 'audit', 'settings'
   ],
-  CRM_STAFF: ['dashboard', 'crm', 'bookings', 'reviews'],
+  CSKH: ['dashboard', 'crm', 'bookings', 'reviews'],
   LAWYER: ['dashboard', 'bookings', 'crm'],
   EDITOR: ['dashboard', 'blog', 'landing-pages'],
-  MARKETING: ['dashboard', 'blog', 'landing-pages'],
-  VIEWER: ['dashboard'],
+  USER: ['dashboard'],
 };
 
 // Check if role can access a specific nav item
@@ -157,7 +150,6 @@ export function getNavByRole(role: Role): string[] {
   return ROLE_NAV_CONFIG[role] ?? [];
 }
 
-// Check if role should use staff portal (not admin portal)
 export function isStaffRole(role: Role): boolean {
   return !['SUPER_ADMIN', 'ADMIN'].includes(role);
 }
@@ -172,7 +164,7 @@ export function getDashboardPath(role: Role): string {
 
 // Valid roles set for O(1) lookup
 const VALID_ROLES = new Set<Role>([
-  'SUPER_ADMIN', 'ADMIN', 'EDITOR', 'LAWYER', 'CRM_STAFF', 'MARKETING', 'VIEWER'
+  'SUPER_ADMIN', 'ADMIN', 'EDITOR', 'CSKH', 'LAWYER', 'USER'
 ]);
 
 // Valid permissions set for O(1) lookup
@@ -183,7 +175,7 @@ export function validateRole(role: unknown): Role {
   if (typeof role === 'string' && VALID_ROLES.has(role as Role)) {
     return role as Role;
   }
-  return 'VIEWER'; // Safe default
+  return 'USER';
 }
 
 // Validate and sanitize permissions from external source

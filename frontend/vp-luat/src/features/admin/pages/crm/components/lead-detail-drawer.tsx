@@ -62,6 +62,7 @@ function toBooking(a: Appointment): Booking {
     durationMinutes: a.durationMinutes,
     status: (a.status?.toLowerCase() as BookingStatus) ?? 'pending',
     notes: a.internalNotes,
+    issueSummary: a.issueSummary,
     cancelledReason: a.cancelReason,
     createdAt: a.createdAt?.toString() ?? new Date().toISOString(),
     updatedAt: a.updatedAt?.toString() ?? new Date().toISOString(),

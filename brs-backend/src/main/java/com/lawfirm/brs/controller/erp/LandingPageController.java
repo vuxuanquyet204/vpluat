@@ -67,6 +67,29 @@ public class LandingPageController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Update only the block layout (preserving other metadata). The
+     * payload is a JSON array of block descriptors which is stored in
+     * the existing `content` column on the {@link LandingPage} entity.
+     */
+    @PutMapping("/{id}/blocks")
+    @Operation(summary = "Replace the landing page block layout")
+    public ResponseEntity<ApiResponse<LandingPage>> updateBlocks(
+            @PathVariable UUID id,
+            @RequestBody String blocksJson) {
+        // Re-use the generic update path so cache invalidation / audit
+        // stay consistent with the PATCH /{id} endpoint.
+        LandingPage lp = service.update(id, null, null, wrapAsContent(blocksJson), null);
+        return ResponseEntity.ok(ApiResponse.success("Blocks updated", lp));
+    }
+
+    private String wrapAsContent(String blocksJson) {
+        // Stash the raw array inside a { "blocks": [...] } envelope so
+        // we can later add sibling metadata (analytics, seo, ...) without
+        // breaking the storage shape.
+        return "{\"blocks\":" + (blocksJson == null || blocksJson.isBlank() ? "[]" : blocksJson) + "}";
+    }
+
     public record CreateRequest(String titleVi, String titleEn, String slug, String content) {}
     public record UpdateRequest(String titleVi, String titleEn, String content, Boolean isPublished) {}
 }

@@ -1,5 +1,6 @@
 package com.lawfirm.brs.controller.crm;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.lawfirm.brs.dto.request.LeadRequest;
 import com.lawfirm.brs.dto.response.ActivityLogResponse;
 import com.lawfirm.brs.dto.response.ApiResponse;
@@ -78,6 +79,13 @@ public class LeadController {
     public ResponseEntity<ApiResponse<LeadDTO>> getLeadById(@PathVariable UUID id) {
         LeadDTO lead = leadService.getLeadById(id);
         return ResponseEntity.ok(ApiResponse.success(lead));
+    }
+
+    @GetMapping("/leads/pipeline")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR') or hasRole('CSKH') or hasRole('MANAGER') or hasRole('LAWYER')")
+    @Operation(summary = "Get lead pipeline stats grouped by status (real counts from DB)")
+    public ResponseEntity<ApiResponse<PipelineStatsResponse>> getPipelineStats() {
+        return ResponseEntity.ok(ApiResponse.success(leadService.getPipelineStats()));
     }
 
     @GetMapping("/leads/{id}/timeline")
@@ -190,6 +198,7 @@ public class LeadController {
         return request.getRemoteAddr();
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record UpdateLeadRequest(
             String status,
             UUID assignedTo,
@@ -204,4 +213,13 @@ public class LeadController {
     ) {}
     public record AddNoteRequest(String note) {}
     public record AssignRequest(UUID assigneeId) {}
+    public record PipelineStatsResponse(
+            long total,
+            long newCount,
+            long contacted,
+            long qualified,
+            long converted,
+            long lost,
+            double conversionRate
+    ) {}
 }

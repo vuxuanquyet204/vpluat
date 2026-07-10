@@ -17,9 +17,11 @@ import com.lawfirm.brs.repository.AppointmentRepository;
 import com.lawfirm.brs.repository.AvailabilitySlotRepository;
 import com.lawfirm.brs.repository.LawyerProfileRepository;
 import com.lawfirm.brs.repository.ServiceEntityRepository;
+import com.lawfirm.brs.repository.SlotReservationRepository;
 import com.lawfirm.brs.service.auth.OtpService;
 import com.lawfirm.brs.service.crm.LeadService;
 import com.lawfirm.brs.service.notification.EmailService;
+import com.lawfirm.brs.service.notification.InAppNotificationService;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,10 +52,12 @@ public class BookingService {
     private final AvailabilitySlotRepository slotRepository;
     private final LawyerProfileRepository lawyerRepository;
     private final ServiceEntityRepository serviceRepository;
+    private final SlotReservationRepository slotReservationRepository;
     private final OtpService otpService;
     private final EmailService emailService;
     private final AppointmentMapper appointmentMapper;
     private final LeadService leadService;
+    private final InAppNotificationService notificationService;
 
     @Transactional
     public AppointmentDTO createBooking(BookingRequest request) {
@@ -60,8 +66,9 @@ public class BookingService {
         LawyerProfile lawyer = lawyerRepository.findById(request.lawyerId())
             .orElseThrow(() -> new ResourceNotFoundException("Lawyer not found: " + request.lawyerId()));
 
-        ServiceEntity service = serviceRepository.findById(request.serviceId())
-            .orElseThrow(() -> new ResourceNotFoundException("Service not found: " + request.serviceId()));
+        ServiceEntity service = resolveService(request.serviceId());
+
+        Instant scheduledAt = resolveScheduledAt(request);
 
         Appointment appointment = Appointment.builder()
             .clientName(request.clientName())
@@ -69,7 +76,7 @@ public class BookingService {
             .clientPhone(request.clientPhone())
             .lawyer(lawyer)
             .service(service)
-            .scheduledAt(request.scheduledAt())
+            .scheduledAt(scheduledAt)
             .durationMinutes(request.durationMinutes() != null ? request.durationMinutes() : 60)
             .timezone(request.timezone() != null ? request.timezone() : "Asia/Ho_Chi_Minh")
             .meetingType(request.meetingType())
@@ -77,6 +84,7 @@ public class BookingService {
             .utmSource(request.utmSource())
             .utmMedium(request.utmMedium())
             .utmCampaign(request.utmCampaign())
+            .issueSummary(request.issueSummary())
             .status(AppointmentStatus.PENDING)
             .build();
 
@@ -105,6 +113,12 @@ public class BookingService {
 
         String otp = otpService.generateOtp(appointment.getId(), request.clientPhone());
         log.info("OTP generated for appointment {}: {}", appointment.getId(), otp);
+
+        try {
+            notificationService.notifyBookingCreatedSafely(appointment.getId(), appointment.getClientName());
+        } catch (Exception ex) {
+            log.warn("Failed to create notification for new booking {}: {}", appointment.getId(), ex.getMessage());
+        }
 
         AppointmentDTO dto = appointmentMapper.toDTO(appointment);
         return dto;
@@ -272,6 +286,69 @@ public class BookingService {
         }
 
         return appointmentMapper.toDTO(appointment);
+    }
+
+    private ServiceEntity resolveService(String serviceIdOrSlug) {
+        if (serviceIdOrSlug == null || serviceIdOrSlug.isBlank()) {
+            throw new ResourceNotFoundException("Service ID or slug is required");
+        }
+        // Try by UUID first
+        try {
+            UUID id = UUID.fromString(serviceIdOrSlug);
+            return serviceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Service not found: " + serviceIdOrSlug));
+        } catch (IllegalArgumentException ignored) {
+            // Not a UUID, try by slug
+        }
+
+        // 1) Try exact slug
+        var byExactSlug = serviceRepository.findBySlugAndDeletedAtIsNull(serviceIdOrSlug);
+        if (byExactSlug.isPresent()) {
+            return byExactSlug.get();
+        }
+
+        // 2) Try stripping common prefix (e.g. "service-dat-dai" -> "dat-dai")
+        String stripped = serviceIdOrSlug;
+        if (stripped.startsWith("service-")) {
+            stripped = stripped.substring("service-".length());
+            var byStripped = serviceRepository.findBySlugAndDeletedAtIsNull(stripped);
+            if (byStripped.isPresent()) {
+                return byStripped.get();
+            }
+        }
+
+        // 3) Try adding "service-" prefix
+        if (!serviceIdOrSlug.startsWith("service-")) {
+            var withPrefix = serviceRepository.findBySlugAndDeletedAtIsNull("service-" + serviceIdOrSlug);
+            if (withPrefix.isPresent()) {
+                return withPrefix.get();
+            }
+        }
+
+        throw new ResourceNotFoundException("Service not found: " + serviceIdOrSlug);
+    }
+
+    /**
+     * Derive the scheduledAt instant from the booking request.
+     * Priority:
+     *   1. Explicit scheduledAt in the request
+     *   2. The slot referenced by reservationId (slotDate + startTime in the request's timezone)
+     * Throws BusinessException if neither is available.
+     */
+    private Instant resolveScheduledAt(BookingRequest request) {
+        if (request.scheduledAt() != null) {
+            return request.scheduledAt();
+        }
+        if (request.reservationId() == null) {
+            throw new BusinessException("MISSING_SCHEDULE",
+                "Either scheduledAt or reservationId must be provided");
+        }
+        var reservation = slotReservationRepository.findById(request.reservationId())
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Reservation not found: " + request.reservationId()));
+        ZoneId zone = ZoneId.of(request.timezone() != null ? request.timezone() : "Asia/Ho_Chi_Minh");
+        LocalDateTime ldt = LocalDateTime.of(reservation.getSlotDate(), reservation.getStartTime());
+        return ldt.atZone(zone).toInstant();
     }
 
     public List<AppointmentDTO> getBookingsByLeadId(UUID leadId) {

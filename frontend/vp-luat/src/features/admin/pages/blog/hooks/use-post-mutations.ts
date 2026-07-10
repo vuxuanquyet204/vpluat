@@ -1,172 +1,223 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { MockDB } from '../../../mock/db';
+import { useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '@/lib/api/hooks';
+import { postApi, type Post } from '@/lib/api/admin-content';
 import { ghiAudit, notifySuccess, notifyError } from '../../../lib';
-import type { BlogPost, PostRevision } from '../../../types';
 
 export function useCreatePost() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: Omit<BlogPost, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const now = new Date().toISOString();
-      const statusData: Partial<BlogPost> = { ...data };
-      if (data.status === 'published' && !data.publishedAt) {
-        statusData.publishedAt = now;
+  const mutation = useApiMutation<Post, Partial<Post>>('POST', '/admin/posts');
+
+  return useCallback(
+    async (data: Partial<Post>) => {
+      try {
+        const created = await mutation.mutateAsync(data);
+        qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
+        // Record the initial revision automatically.
+        postApi.recordRevision(created.id, 'created').catch(() => {
+          /* best-effort: revision recording is non-blocking */
+        });
+        ghiAudit({
+          action: 'create',
+          entity: 'post',
+          entityId: created.id,
+          entityLabel: created.title ?? created.slug,
+        });
+        notifySuccess('Đã tạo bài viết');
+        return created;
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể tạo');
+        throw e;
       }
-      const created = MockDB.insert<BlogPost>('posts', statusData as BlogPost);
-      // Tạo revision đầu tiên
-      MockDB.insert<PostRevision>('post_revisions', {
-        id: `rev-${Date.now()}`,
-        postId: created.id,
-        title: created.title,
-        content: created.content,
-        excerpt: created.excerpt,
-        author: created.author,
-        reason: 'created',
-        createdAt: now,
-      });
-      ghiAudit({ action: 'create', entity: 'post', entityId: created.id, entityLabel: created.title });
-      return created;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
-      qc.invalidateQueries({ queryKey: ['admin', 'post_revisions'] });
-      notifySuccess('Đã tạo bài viết');
-    },
-    onError: (e) => notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể tạo'),
-  });
+    [mutation, qc],
+  );
 }
 
 export function useUpdatePost() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (vars: { id: string; patch: Partial<BlogPost>; createRevision?: boolean }) => {
-      const before = MockDB.getById<BlogPost>('posts', vars.id);
-      const updated = MockDB.update<BlogPost>('posts', vars.id, vars.patch);
+  const mutation = useApiMutation<Post, { id: string; values: Partial<Post> }>(
+    'PATCH',
+    (vars) => `/admin/posts/${vars.id}`,
+  );
 
-      // Auto tạo revision khi content/title thay đổi
-      if (vars.createRevision !== false && before && (before.content !== vars.patch.content || before.title !== vars.patch.title)) {
-        MockDB.insert<PostRevision>('post_revisions', {
-          id: `rev-${Date.now()}`,
-          postId: vars.id,
-          title: updated?.title ?? before.title,
-          content: updated?.content ?? before.content,
-          excerpt: updated?.excerpt ?? before.excerpt,
-          author: updated?.author ?? before.author,
-          reason: 'edit',
-          createdAt: new Date().toISOString(),
+  return useCallback(
+    async (vars: { id: string; patch: Partial<Post> }) => {
+      try {
+        const updated = await mutation.mutateAsync({ id: vars.id, values: vars.patch });
+        qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
+        postApi.recordRevision(vars.id, 'edit').catch(() => undefined);
+        ghiAudit({
+          action: 'update',
+          entity: 'post',
+          entityId: vars.id,
+          entityLabel: updated.title ?? updated.slug,
         });
+        return updated;
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
+        throw e;
       }
-
-      ghiAudit({ action: 'update', entity: 'post', entityId: vars.id, entityLabel: updated?.title });
-      return updated;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
-      qc.invalidateQueries({ queryKey: ['admin', 'post_revisions'] });
-    },
-  });
+    [mutation, qc],
+  );
 }
 
 export function usePublishPost() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const before = MockDB.getById<BlogPost>('posts', id);
-      const updated = MockDB.update<BlogPost>('posts', id, {
-        status: 'published',
-        publishedAt: new Date().toISOString(),
-        scheduledAt: undefined,
-      });
-      ghiAudit({
-        action: 'publish',
-        entity: 'post',
-        entityId: id,
-        entityLabel: updated?.title,
-        diff: { before: { status: before?.status }, after: { status: 'published' } },
-      });
-      return updated;
+  const mutation = useApiMutation<Post, string>(
+    'PATCH',
+    (id) => `/admin/posts/${id}/publish`,
+  );
+
+  return useCallback(
+    async (id: string) => {
+      try {
+        const result = await mutation.mutateAsync(id);
+        qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
+        ghiAudit({
+          action: 'publish',
+          entity: 'post',
+          entityId: id,
+          entityLabel: result.title ?? result.slug,
+          diff: { before: { status: 'DRAFT' }, after: { status: 'PUBLISHED' } },
+        });
+        notifySuccess('Đã xuất bản', result.title ?? result.slug);
+        return result;
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xuất bản');
+        throw e;
+      }
     },
-    onSuccess: (p) => {
-      qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
-      notifySuccess('Đã xuất bản', p?.title);
-    },
-  });
+    [mutation, qc],
+  );
 }
 
+export function useArchivePost() {
+  const qc = useQueryClient();
+  const mutation = useApiMutation<Post, string>(
+    'PATCH',
+    (id) => `/admin/posts/${id}/archive`,
+  );
+  return useCallback(
+    async (id: string) => {
+      const result = await mutation.mutateAsync(id);
+      qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
+      notifySuccess('Đã lưu trữ', result.title ?? result.slug);
+      return result;
+    },
+    [mutation, qc],
+  );
+}
+
+/**
+ * Schedule a post for future publishing.
+ * Backend endpoint: PATCH /admin/posts/{id}/schedule?at={isoInstant}
+ */
 export function useSchedulePost() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (vars: { id: string; scheduledAt: string }) => {
-      const updated = MockDB.update<BlogPost>('posts', vars.id, {
-        status: 'scheduled',
-        scheduledAt: vars.scheduledAt,
-      });
-      ghiAudit({
-        action: 'update',
-        entity: 'post',
-        entityId: vars.id,
-        entityLabel: updated?.title,
-        diff: { before: { status: 'draft' }, after: { status: 'scheduled', scheduledAt: vars.scheduledAt } },
-      });
-      return updated;
+  const mutation = useApiMutation<Post, { id: string; at: string }>(
+    'PATCH',
+    (vars) => `/admin/posts/${vars.id}/schedule`,
+  );
+
+  return useCallback(
+    async (vars: { id: string; scheduledAt: string }) => {
+      try {
+        const updated = await mutation.mutateAsync({ id: vars.id, at: vars.scheduledAt });
+        qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
+        ghiAudit({
+          action: 'update',
+          entity: 'post',
+          entityId: vars.id,
+          entityLabel: updated.title ?? updated.slug,
+          diff: { before: { status: 'DRAFT' }, after: { status: 'SCHEDULED', scheduledAt: vars.scheduledAt } },
+        });
+        notifySuccess('Đã lên lịch xuất bản');
+        return updated;
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể lên lịch');
+        throw e;
+      }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
-      notifySuccess('Đã lên lịch xuất bản');
-    },
-  });
+    [mutation, qc],
+  );
 }
 
 export function useDeletePost() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const before = MockDB.getById<BlogPost>('posts', id);
-      const ok = MockDB.delete('posts', id);
-      if (ok) ghiAudit({ action: 'delete', entity: 'post', entityId: id, entityLabel: before?.title });
-      return ok;
+  const mutation = useApiMutation<void, string>(
+    'DELETE',
+    (id) => `/admin/posts/${id}`,
+  );
+
+  return useCallback(
+    async (id: string) => {
+      try {
+        await mutation.mutateAsync(id);
+        qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
+        ghiAudit({ action: 'delete', entity: 'post', entityId: id });
+        notifySuccess('Đã xóa bài viết');
+        return true;
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');
+        return false;
+      }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
-      notifySuccess('Đã xóa bài viết');
-    },
-  });
+    [mutation, qc],
+  );
 }
 
+/**
+ * Restore the post to a previous revision. The backend handles the
+ * actual restore logic — we just trigger it and refresh the cache.
+ */
 export function useRestoreRevision() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (vars: { postId: string; revisionId: string }) => {
-      const rev = MockDB.getById<PostRevision>('post_revisions', vars.revisionId);
-      if (!rev) throw new Error('Revision không tồn tại');
-      // Tạo revision mới ghi lại trạng thái trước khi restore
-      const before = MockDB.getById<BlogPost>('posts', vars.postId);
-      if (before) {
-        MockDB.insert<PostRevision>('post_revisions', {
-          id: `rev-${Date.now()}`,
-          postId: vars.postId,
-          title: before.title,
-          content: before.content,
-          excerpt: before.excerpt,
-          author: before.author,
-          reason: 'before-restore',
-          createdAt: new Date().toISOString(),
+  const mutation = useApiMutation<void, { postId: string; revisionId: string }>(
+    'POST',
+    (vars) => `/admin/posts/${vars.postId}/revisions/${vars.revisionId}/restore`,
+  );
+
+  return useCallback(
+    async (vars: { postId: string; revisionId: string }) => {
+      try {
+        await mutation.mutateAsync(vars);
+        qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
+        qc.invalidateQueries({ queryKey: ['admin', 'post-revisions', vars.postId] });
+        ghiAudit({
+          action: 'restore',
+          entity: 'post',
+          entityId: vars.postId,
+          entityLabel: `revision ${vars.revisionId}`,
         });
+        notifySuccess('Đã khôi phục revision');
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể khôi phục');
+        throw e;
       }
-      const updated = MockDB.update<BlogPost>('posts', vars.postId, {
-        title: rev.title,
-        content: rev.content,
-        excerpt: rev.excerpt,
-      });
-      ghiAudit({ action: 'restore', entity: 'post', entityId: vars.postId, entityLabel: updated?.title });
-      return updated;
     },
-    onSuccess: () => {
+    [mutation, qc],
+  );
+}
+
+/** Re-export so existing call sites can keep `useDeleteMany` semantics. */
+export function useDeleteManyPosts() {
+  const qc = useQueryClient();
+  return useCallback(
+    async (ids: string[]) => {
+      await Promise.all(ids.map((id) => postApi.delete(id)));
       qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
-      qc.invalidateQueries({ queryKey: ['admin', 'post_revisions'] });
-      notifySuccess('Đã khôi phục revision');
+      notifySuccess(`Đã xóa ${ids.length} bài viết`);
+      ghiAudit({
+        action: 'delete',
+        entity: 'post',
+        entityId: 'bulk',
+        entityLabel: `${ids.length} posts`,
+      });
     },
-  });
+    [qc],
+  );
 }

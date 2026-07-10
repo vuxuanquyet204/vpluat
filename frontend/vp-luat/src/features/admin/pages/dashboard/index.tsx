@@ -69,8 +69,8 @@ import {
   getInitials,
   timeAgo,
 } from '@/features/admin/lib/use-dashboard-stats';
+import { useLeadKanban, useBookingKanban, useReviewKanban } from './hooks/use-dashboard-kanban';
 import { SkeletonStats, SkeletonTable, SkeletonCard } from '@/features/admin/components';
-import { MockDB } from '@/features/admin/mock/db';
 import type { AuditLog, Lead, LeadStatus, Booking, BookingMethod, Review } from '@/features/admin/types';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -303,10 +303,7 @@ function SortableKanbanCard({ card, dotColor }: { card: KanbanCard; dotColor: st
 
 function KanbanBoard({ range }: { range: DashboardRange }) {
   const qc = useQueryClient();
-  const { data: allLeads, isLoading } = useMockQuery<Lead>('leads', undefined, {
-    by: 'createdAt',
-    dir: 'desc',
-  });
+  const { data: allLeads, isLoading } = useLeadKanban();
   const updateLead = useUpdate<Lead>('leads');
 
   const leads = useMemo(() => {
@@ -561,7 +558,7 @@ function SortableBookingCard({
 
 function BookingKanbanBoard({ range }: { range: DashboardRange }) {
   const qc = useQueryClient();
-  const { data: allBookings, isLoading } = useMockQuery<Booking>('bookings');
+  const { data: allBookings, isLoading } = useBookingKanban();
   const updateBooking = useUpdate<Booking>('bookings');
 
   const bookings = useMemo(() => {
@@ -790,7 +787,7 @@ function SortableReviewCard({
 
 function ReviewKanbanBoard({ range }: { range: DashboardRange }) {
   const qc = useQueryClient();
-  const { data: allReviews, isLoading } = useMockQuery<Review>('reviews');
+  const { data: allReviews, isLoading } = useReviewKanban();
   const updateReview = useUpdate<Review>('reviews');
 
   const reviews = useMemo(() => {
@@ -1802,4 +1799,3 @@ void MailOpen;
 void Star;
 void SkeletonStats;
 void mapBookingStatus;
-void MockDB;

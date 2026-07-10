@@ -10,6 +10,7 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
 } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { AxiosError } from 'axios';
 
 import { apiClient } from './client';
@@ -62,14 +63,41 @@ function unwrap<T>(env: ApiEnvelope<T>): T {
   return env.data as T;
 }
 
+/**
+ * Deep stable stringify used to build a deterministic query key from a params
+ * object. This is critical to prevent an infinite refetch loop: if we put the
+ * raw params object in the queryKey, React Query sees a new reference on every
+ * render, treats it as a new key, refetches, re-renders, and the cycle repeats
+ * — burning CPU and RAM.
+ */
+function stableStringify(value: unknown): string {
+  if (value === null || value === undefined) return 'null';
+  if (typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return '[' + value.map(stableStringify).join(',') + ']';
+  }
+  const keys = Object.keys(value as Record<string, unknown>).sort();
+  return (
+    '{' +
+    keys
+      .map((k) => JSON.stringify(k) + ':' + stableStringify((value as Record<string, unknown>)[k]))
+      .join(',') +
+    '}'
+  );
+}
+
 export function useApiQuery<T>(
   key: readonly unknown[],
   url: string,
   params?: Record<string, unknown>,
   options?: Omit<UseQueryOptions<T, AxiosError>, 'queryKey' | 'queryFn'>,
 ) {
+  // Memoise the stringified key so the reference is stable across renders
+  // even when the caller passes a fresh object literal.
+  const serializedParams = useMemo(() => stableStringify(params ?? {}), [params]);
+
   return useQuery<T, AxiosError>({
-    queryKey: [...key, params ?? {}],
+    queryKey: [...key, serializedParams],
     queryFn: () => get<T>(url, params),
     ...options,
   });
@@ -84,7 +112,11 @@ export function useApiMutation<T, V = unknown>(
     mutationFn: async (vars: V) => {
       const target = typeof url === 'function' ? url(vars) : url;
       if (method === 'POST') return post<T>(target, vars);
-      if (method === 'PATCH') return patch<T>(target, vars);
+      if (method === 'PATCH') {
+        // PATCH body must not include the id field (it's already in the URL).
+        const { id: _id, ...body } = vars as { id?: string } & Record<string, unknown>;
+        return patch<T>(target, body);
+      }
       if (method === 'PUT') return put<T>(target, vars);
       return del<T>(target);
     },

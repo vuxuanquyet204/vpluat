@@ -6,6 +6,21 @@ import type {
   BookingTimeSlot,
 } from '../types';
 
+export interface LawyerApiResponse {
+  id: string;
+  userId: string;
+  userEmail: string;
+  slug: string;
+  nameVi: string;
+  nameEn: string;
+  bioVi?: string;
+  bioEn?: string;
+  positionVi?: string;
+  positionEn?: string;
+  avatarUrl?: string;
+  isFeatured?: boolean;
+}
+
 export interface AvailabilitySlot {
   id: string;
   lawyerId: string;
@@ -76,8 +91,6 @@ export async function fetchAvailability(params: {
   lawyerId: string;
   date: string;
 }): Promise<AvailabilityResponse> {
-  // Backend endpoint: GET /api/bookings/availability/{lawyerId}?fromDate=...&toDate=...
-  // We fetch a single day, so fromDate === toDate === date.
   const response = await apiClient.get<{ data: AvailabilitySlot[] }>(
     `/bookings/availability/${params.lawyerId}`,
     {
@@ -85,7 +98,8 @@ export async function fetchAvailability(params: {
     },
   );
 
-  const slots = unwrap(response.data).map(toBookingTimeSlot);
+  const unwrapped = unwrap(response.data);
+  const slots = (Array.isArray(unwrapped) ? unwrapped : []).map(toBookingTimeSlot);
   return { date: params.date, lawyerId: params.lawyerId, slots };
 }
 
@@ -111,5 +125,10 @@ export async function verifyReservation(reservationId: string): Promise<BookingR
 export async function submitBooking(payload: SubmitBookingPayload): Promise<BookingConfirmation> {
   const response = await apiClient.post<{ data: BookingConfirmation }>('/bookings', payload);
   return unwrap(response.data);
+}
+
+export async function fetchLawyers(): Promise<LawyerApiResponse[]> {
+  const response = await apiClient.get<{ data: { content: LawyerApiResponse[] } }>('/public/lawyers');
+  return unwrap(response.data).content;
 }
 

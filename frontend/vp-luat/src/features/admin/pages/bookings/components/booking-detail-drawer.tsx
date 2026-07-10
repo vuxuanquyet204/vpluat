@@ -191,7 +191,15 @@ export function BookingDetailDrawer({ booking, onClose, onDeleted, onCreateLead 
             label="Hình thức"
             value={METHOD_LABELS[booking.method]}
           />
-          {booking.notes && <InfoRow icon={<FileText size={12} />} label="Ghi chú" value={booking.notes} multiline />}
+          {booking.notes && <InfoRow icon={<FileText size={12} />} label="Ghi chú admin" value={booking.notes} multiline />}
+          {booking.issueSummary && (
+            <InfoRow
+              icon={<FileText size={12} />}
+              label="Mô tả vấn đề"
+              value={booking.issueSummary}
+              multiline
+            />
+          )}
           {booking.cancelledReason && (
             <InfoRow
               icon={<X size={12} />}

@@ -109,7 +109,7 @@ export default function AuditPage() {
 
   const entities = useMemo(() => {
     const set = new Set<string>();
-    for (const l of logs) set.add(l.entity);
+    for (const l of logs) set.add(l.entity ?? l.entityType ?? '');
     return Array.from(set).sort();
   }, [logs]);
 
@@ -121,8 +121,8 @@ export default function AuditPage() {
         (l) =>
           l.actorName.toLowerCase().includes(q) ||
           (l.entityLabel?.toLowerCase().includes(q) ?? false) ||
-          l.entityId.toLowerCase().includes(q) ||
-          l.entity.toLowerCase().includes(q),
+          (l.entityId?.toLowerCase().includes(q) ?? false) ||
+          (l.entity?.toLowerCase().includes(q) ?? false),
       );
     }
     if (actorFilter !== 'all') r = r.filter((l) => l.actorName === actorFilter);
@@ -462,7 +462,7 @@ export default function AuditPage() {
                     {l.diff && Object.keys(l.diff).length > 0 ? (
                       <button
                         type="button"
-                        onClick={() => setDrawerLog(l)}
+                        onClick={() => setDrawerLog(l as unknown as AuditLog)}
                         className="action-btn action-btn--primary"
                         style={{ padding: '4px 8px', fontSize: '0.7rem' }}
                       >

@@ -33,6 +33,7 @@ public class TagService {
 
         Tag tag = Tag.builder()
             .slug(request.slug())
+            .name(request.name())
             .build();
 
         tag = tagRepository.save(tag);
@@ -46,6 +47,17 @@ public class TagService {
 
     public List<Tag> getAllTags() {
         return tagRepository.findAll();
+    }
+
+    @Transactional
+    public Tag updateTag(String slug, TagRequest request) {
+        log.info("Updating tag: {}", slug);
+        Tag tag = tagRepository.findBySlug(slug)
+            .orElseThrow(() -> new ResourceNotFoundException("Tag not found: " + slug));
+        if (request.name() != null) {
+            tag.setName(request.name());
+        }
+        return tagRepository.save(tag);
     }
 
     @Transactional

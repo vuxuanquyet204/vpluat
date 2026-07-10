@@ -1,52 +1,105 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { MockDB } from '../../../mock/db';
-import { ghiAudit, notifySuccess } from '../../../lib';
-import type { Category } from '../../../types';
+import { useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useApiMutation, useApiQuery } from '@/lib/api/hooks';
+import { categoryApi, type Category, type CategoryCreateRequest } from '@/lib/api/admin-content';
+import { ghiAudit, notifySuccess, notifyError } from '../../../lib';
+
+/** Fetch all categories (admin scope). */
+export function useCategories() {
+  const { data } = useApiQuery<Category[]>(
+    ['admin', 'categories'],
+    '/admin/categories',
+    {},
+    { retry: false },
+  );
+  return data ?? [];
+}
 
 export function useCreateCategory() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: Omit<Category, 'id' | 'createdAt' | 'postCount'>) => {
-      const created = MockDB.insert<Category>('categories', { ...data, postCount: 0 } as Category);
-      ghiAudit({ action: 'create', entity: 'category', entityId: created.id, entityLabel: created.name });
-      return created;
+  const mutation = useApiMutation<Category, CategoryCreateRequest>(
+    'POST',
+    '/admin/categories',
+  );
+
+  return useCallback(
+    async (data: { name: string; slug: string; description?: string; parentId?: string }) => {
+      try {
+        const created = await mutation.mutateAsync({
+          slug: data.slug,
+          parentId: data.parentId,
+          metaTitleVi: data.name,
+          metaDescVi: data.description,
+        });
+        qc.invalidateQueries({ queryKey: ['admin', 'categories'] });
+        ghiAudit({
+          action: 'create',
+          entity: 'category',
+          entityId: created.id,
+          entityLabel: created.metaTitleVi ?? created.slug,
+        });
+        notifySuccess('Đã tạo danh mục');
+        return created;
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể tạo');
+        throw e;
+      }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'categories'] });
-      notifySuccess('Đã tạo danh mục');
-    },
-  });
+    [mutation, qc],
+  );
 }
 
 export function useUpdateCategory() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (vars: { id: string; patch: Partial<Category> }) => {
-      const updated = MockDB.update<Category>('categories', vars.id, vars.patch);
-      ghiAudit({ action: 'update', entity: 'category', entityId: vars.id, entityLabel: updated?.name });
-      return updated;
+  const mutation = useApiMutation<Category, { id: string; values: Partial<CategoryCreateRequest> }>(
+    'PUT',
+    (vars) => `/admin/categories/${vars.id}`,
+  );
+
+  return useCallback(
+    async (vars: { id: string; patch: Partial<CategoryCreateRequest> }) => {
+      try {
+        const updated = await mutation.mutateAsync({ id: vars.id, values: vars.patch });
+        qc.invalidateQueries({ queryKey: ['admin', 'categories'] });
+        ghiAudit({
+          action: 'update',
+          entity: 'category',
+          entityId: vars.id,
+          entityLabel: updated.metaTitleVi ?? updated.slug,
+        });
+        notifySuccess('Đã cập nhật danh mục');
+        return updated;
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
+        throw e;
+      }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'categories'] });
-      notifySuccess('Đã cập nhật danh mục');
-    },
-  });
+    [mutation, qc],
+  );
 }
 
 export function useDeleteCategory() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const before = MockDB.getById<Category>('categories', id);
-      const ok = MockDB.delete('categories', id);
-      if (ok) ghiAudit({ action: 'delete', entity: 'category', entityId: id, entityLabel: before?.name });
-      return ok;
+  const mutation = useApiMutation<void, string>(
+    'DELETE',
+    (id) => `/admin/categories/${id}`,
+  );
+
+  return useCallback(
+    async (id: string) => {
+      try {
+        await mutation.mutateAsync(id);
+        qc.invalidateQueries({ queryKey: ['admin', 'categories'] });
+        ghiAudit({ action: 'delete', entity: 'category', entityId: id });
+        notifySuccess('Đã xóa danh mục');
+        return true;
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');
+        return false;
+      }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'categories'] });
-      notifySuccess('Đã xóa danh mục');
-    },
-  });
+    [mutation, qc],
+  );
 }

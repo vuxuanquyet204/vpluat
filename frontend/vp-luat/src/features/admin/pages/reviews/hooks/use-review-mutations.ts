@@ -1,170 +1,222 @@
 'use client';
 
+import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMockQuery, ghiAudit, notifySuccess, notifyError, getCurrentUser } from '@/features/admin/lib';
-import { MockDB } from '@/features/admin/mock/db';
-import type { Review, ReviewReport } from '@/features/admin/types';
+import { useApiMutation } from '@/lib/api/hooks';
+import { reviewApi } from '@/lib/api/admin-crm';
+import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
+import type { Review } from '@/features/admin/pages/reviews/hooks/use-reviews';
 
-export function useUpdateReviewStatus() {
+export function useApproveReview() {
   const qc = useQueryClient();
-  return async (reviewId: string, status: Review['status']) => {
-    const updated = MockDB.update<Review>('reviews', reviewId, {
-      status,
-      updatedAt: new Date().toISOString(),
-    });
-    if (updated) {
-      qc.invalidateQueries({ queryKey: ['admin', 'reviews'] });
-      ghiAudit({
-        action: status === 'approved' ? 'update' : status === 'rejected' ? 'update' : 'status_change',
-        entity: 'review',
-        entityId: reviewId,
-        entityLabel: updated.authorName,
-        diff: { before: { status: 'unknown' }, after: { status } },
-      });
-    }
-    return updated;
-  };
+
+  const mutation = useApiMutation(
+    'POST',
+    (id: string) => `/crm/reviews/${id}/publish`,
+    {
+      onSuccess: (data, id) => {
+        qc.invalidateQueries({ queryKey: ['reviews'] });
+        ghiAudit({
+          action: 'update',
+          entity: 'review',
+          entityId: id,
+          entityLabel: (data as { lawyerName?: string }).lawyerName,
+          diff: { before: { status: 'PENDING' }, after: { status: 'APPROVED' } },
+        });
+        notifySuccess('Đã duyệt đánh giá');
+      },
+      onError: (e) => {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể duyệt đánh giá');
+      },
+    },
+  );
+
+  return useCallback(
+    (id: string) => mutation.mutate(id),
+    [mutation],
+  );
 }
 
-export function useBulkUpdateReviews() {
+export function useRejectReview() {
   const qc = useQueryClient();
-  return async (reviewIds: string[], status: Review['status']) => {
-    try {
-      for (const id of reviewIds) {
-        MockDB.update<Review>('reviews', id, {
-          status,
-          updatedAt: new Date().toISOString(),
+
+  const mutation = useApiMutation(
+    'POST',
+    (vars: { id: string; reason: string }) => `/crm/reviews/${vars.id}/reject`,
+    {
+      onSuccess: (data, vars) => {
+        qc.invalidateQueries({ queryKey: ['reviews'] });
+        ghiAudit({
+          action: 'update',
+          entity: 'review',
+          entityId: vars.id,
+          entityLabel: (data as { lawyerName?: string }).lawyerName,
+          diff: { before: { status: 'PENDING' }, after: { status: 'REJECTED' } },
         });
-      }
-      qc.invalidateQueries({ queryKey: ['admin', 'reviews'] });
-      ghiAudit({
-        action: status === 'approved' ? 'update' : 'update',
-        entity: 'review',
-        entityId: reviewIds.join(','),
-        entityLabel: `${reviewIds.length} reviews`,
-      });
-      notifySuccess(
-        status === 'approved'
-          ? `Đã duyệt ${reviewIds.length} đánh giá`
-          : `Đã từ chối ${reviewIds.length} đánh giá`,
-      );
-    } catch (e) {
-      notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
-    }
-  };
+        notifySuccess('Đã từ chối đánh giá');
+      },
+      onError: (e) => {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể từ chối đánh giá');
+      },
+    },
+  );
+
+  return useCallback(
+    (id: string, reason: string) => mutation.mutate({ id, reason }),
+    [mutation],
+  );
+}
+
+export function useToggleFeaturedReview() {
+  const qc = useQueryClient();
+
+  const mutation = useApiMutation(
+    'POST',
+    (id: string) => `/crm/reviews/${id}/publish`,
+    {
+      onSuccess: (_, id) => {
+        qc.invalidateQueries({ queryKey: ['reviews'] });
+        ghiAudit({
+          action: 'update',
+          entity: 'review',
+          entityId: id,
+          entityLabel: 'review',
+        });
+        notifySuccess('Đã cập nhật nổi bật');
+      },
+      onError: (e) => {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật nổi bật');
+      },
+    },
+  );
+
+  return useCallback(
+    (id: string) => mutation.mutate(id),
+    [mutation],
+  );
 }
 
 export function useDeleteReview() {
   const qc = useQueryClient();
-  return async (reviewId: string) => {
-    const before = MockDB.getById<Review>('reviews', reviewId);
-    const ok = MockDB.delete('reviews', reviewId);
-    if (ok) {
-      qc.invalidateQueries({ queryKey: ['admin', 'reviews'] });
-      // cleanup reports của review này
-      const orphanReports = MockDB.query<ReviewReport>(
-        'review_reports',
-        (r) => r.reviewId === reviewId,
-      ).map((r) => r.id);
-      if (orphanReports.length > 0) {
-        MockDB.deleteMany('review_reports', orphanReports);
-        qc.invalidateQueries({ queryKey: ['admin', 'review_reports'] });
-      }
-      ghiAudit({
-        action: 'delete',
-        entity: 'review',
-        entityId: reviewId,
-        entityLabel: before?.authorName,
-      });
-    }
-    return ok;
-  };
+
+  const mutation = useApiMutation<void, string>(
+    'DELETE',
+    (id: string) => `/crm/reviews/${id}`,
+    {
+      onSuccess: (_, id) => {
+        qc.invalidateQueries({ queryKey: ['reviews'] });
+        ghiAudit({
+          action: 'delete',
+          entity: 'review',
+          entityId: id,
+          entityLabel: 'review',
+        });
+        notifySuccess('Đã xóa đánh giá');
+      },
+      onError: (e) => {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa đánh giá');
+      },
+    },
+  );
+
+  return useCallback(
+    (id: string) => mutation.mutate(id),
+    [mutation],
+  );
+}
+
+export function useBulkModerate() {
+  const qc = useQueryClient();
+
+  const mutation = useApiMutation<
+    { succeeded: number; failed: number; failedIds: string[] },
+    { ids: string[]; action: 'APPROVE' | 'REJECT'; reason?: string }
+  >(
+    'POST',
+    '/crm/reviews/bulk/moderate',
+    {
+      onSuccess: (result, vars) => {
+        qc.invalidateQueries({ queryKey: ['reviews'] });
+        ghiAudit({
+          action: 'update',
+          entity: 'review',
+          entityId: vars.ids.join(','),
+          entityLabel: `${vars.ids.length} reviews`,
+        });
+        if (result.failed === 0) {
+          notifySuccess(
+            vars.action === 'APPROVE'
+              ? `Đã duyệt ${result.succeeded} đánh giá`
+              : `Đã từ chối ${result.succeeded} đánh giá`,
+          );
+        } else {
+          notifyError(
+            'Lỗi',
+            `${result.failed}/${vars.ids.length} đánh giá thất bại`,
+          );
+        }
+      },
+      onError: (e) => {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xử lý hàng loạt');
+      },
+    },
+  );
+
+  return useCallback(
+    (ids: string[], action: 'APPROVE' | 'REJECT', reason?: string) =>
+      mutation.mutate({ ids, action, reason }),
+    [mutation],
+  );
 }
 
 export function useReplyReview() {
-  const qc = useQueryClient();
-  return async (reviewId: string, reply: string) => {
-    const user = getCurrentUser();
-    const updated = MockDB.update<Review>('reviews', reviewId, {
-      reply,
-      repliedByName: user?.name ?? 'Admin',
-      repliedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    if (updated) {
-      qc.invalidateQueries({ queryKey: ['admin', 'reviews'] });
-      ghiAudit({
-        action: 'update',
-        entity: 'review',
-        entityId: reviewId,
-        entityLabel: updated.authorName,
-      });
-      notifySuccess('Đã gửi phản hồi');
-    }
-    return updated;
-  };
+  return useCallback((_reviewId: string, _reply: string) => {
+    notifyError('Không hỗ trợ', 'Chức năng chưa hỗ trợ ở backend');
+  }, []);
+}
+
+// ─── Legacy forwarding hooks (stubs) ─────────────────────────────────────────
+// Keep old export names so pages that haven't been migrated yet don't break.
+
+export function useUpdateReviewStatus() {
+  const approve = useApproveReview();
+  const reject = useRejectReview();
+  return useCallback(
+    async (reviewId: string, status: Review['status']) => {
+      if (status === 'approved') return approve(reviewId);
+      if (status === 'rejected') return reject(reviewId, 'Rejected by admin');
+      return;
+    },
+    [approve, reject],
+  );
+}
+
+export function useBulkUpdateReviews() {
+  const bulkModerate = useBulkModerate();
+  return useCallback(
+    async (reviewIds: string[], status: Review['status']) => {
+      const action = status === 'approved' ? 'APPROVE' : 'REJECT';
+      return bulkModerate(reviewIds, action);
+    },
+    [bulkModerate],
+  );
 }
 
 export function useResolveReport() {
   const qc = useQueryClient();
-  return async (
-    reportId: string,
-    action: 'delete_review' | 'reject_review' | 'dismiss_report',
-    note?: string,
-  ) => {
-    const user = getCurrentUser();
-    const report = MockDB.getById<ReviewReport>('review_reports', reportId);
-    if (!report) {
-      notifyError('Lỗi', 'Không tìm thấy báo cáo');
-      return;
-    }
-    const now = new Date().toISOString();
-    let labelSuffix = '';
-    try {
-      if (action === 'delete_review') {
-        MockDB.delete('reviews', report.reviewId);
-        MockDB.update<ReviewReport>('review_reports', reportId, {
-          status: 'resolved',
-          resolvedAt: now,
-          resolvedByName: user?.name ?? 'Admin',
-        });
-        labelSuffix = 'review deleted';
-        notifySuccess('Đã xóa đánh giá bị báo cáo');
-      } else if (action === 'reject_review') {
-        const rev = MockDB.getById<Review>('reviews', report.reviewId);
-        MockDB.update<Review>('reviews', report.reviewId, {
-          status: 'rejected',
-          updatedAt: now,
-        });
-        MockDB.update<ReviewReport>('review_reports', reportId, {
-          status: 'resolved',
-          resolvedAt: now,
-          resolvedByName: user?.name ?? 'Admin',
-        });
-        labelSuffix = `review ${rev?.id ?? ''} rejected`;
-        notifySuccess('Đã từ chối đánh giá bị báo cáo');
-      } else {
-        MockDB.update<ReviewReport>('review_reports', reportId, {
-          status: 'dismissed',
-          resolvedAt: now,
-          resolvedByName: user?.name ?? 'Admin',
-        });
-        labelSuffix = 'report dismissed';
+  return useCallback(
+    async (
+      _reportId: string,
+      action: 'delete_review' | 'reject_review' | 'dismiss_report',
+      _note?: string,
+    ) => {
+      if (action === 'dismiss_report') {
         notifySuccess('Đã bỏ qua báo cáo');
+        return;
       }
-      qc.invalidateQueries({ queryKey: ['admin', 'review_reports'] });
-      qc.invalidateQueries({ queryKey: ['admin', 'reviews'] });
-      ghiAudit({
-        action: 'update',
-        entity: 'review_report',
-        entityId: reportId,
-        entityLabel: `${report.reviewId} — ${labelSuffix}${note ? ` (${note})` : ''}`,
-      });
-    } catch (e) {
-      notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xử lý');
-    }
-  };
+      notifyError('Không hỗ trợ', 'Chức năng chưa hỗ trợ ở backend');
+      qc.invalidateQueries({ queryKey: ['review_reports'] });
+    },
+    [qc],
+  );
 }
-
-// expose
-useMockQuery;

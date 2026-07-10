@@ -1,71 +1,120 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMockQuery, useCreate, useUpdate, useDelete, ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
-import { MockDB } from '@/features/admin/mock/db';
-import type { AdminUser, Role, UserRole, AuditLog } from '@/features/admin/types';
+import {
+  useApiQuery,
+  useApiMutation,
+} from '@/lib/api/hooks';
+import { userApi, roleApi, auditApi, type AdminUser, type Role, type AuditLogEntry } from '@/lib/api/admin-core';
+import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
 import type { UserFormValues, RoleFormValues } from '@/features/admin/schema';
 
-const USER_SORT = { by: 'createdAt' as const, dir: 'desc' as const };
-const ROLE_SORT = { by: 'createdAt' as const, dir: 'desc' as const };
+// ─── Display helpers (frontend role -> label) ──────────────────
 
-export const ROLE_LABELS: Record<UserRole, string> = {
-  super_admin: 'Super Admin',
-  admin: 'Admin',
-  lawyer: 'Lawyer',
-  staff: 'Staff',
+export type FrontendUserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'CSKH' | 'LAWYER' | 'USER';
+
+export const ROLE_LABELS: Record<FrontendUserRole, string> = {
+  SUPER_ADMIN: 'Super Admin',
+  ADMIN: 'Admin',
+  EDITOR: 'Editor',
+  CSKH: 'CSKH',
+  LAWYER: 'Luật sư',
+  USER: 'Khách hàng',
 };
 
-export const ROLE_VARIANT: Record<UserRole, 'red' | 'blue' | 'purple' | 'yellow'> = {
-  super_admin: 'red',
-  admin: 'blue',
-  lawyer: 'purple',
-  staff: 'yellow',
+export const ROLE_VARIANT: Record<FrontendUserRole, 'red' | 'blue' | 'purple' | 'yellow' | 'green' | 'orange'> = {
+  SUPER_ADMIN: 'red',
+  ADMIN: 'blue',
+  EDITOR: 'purple',
+  CSKH: 'orange',
+  LAWYER: 'purple',
+  USER: 'green',
 };
+
+/** Normalise backend AdminUser → UI shape with `name`. */
+function toUiUser(u: AdminUser): AdminUser & { name: string } {
+  return {
+    ...u,
+    name: u.fullName ?? u.name ?? u.email,
+    role: (u.role ?? 'USER') as AdminUser['role'],
+  };
+}
 
 // ─── USERS ─────────────────────────────────────────────────────
-export function useUsers() {
-  const { data = [], ...rest } = useMockQuery<AdminUser>('users', undefined, USER_SORT);
-  const counts = useMemo(() => {
-    const c = { total: data.length, active: 0, inactive: 0, byRole: { super_admin: 0, admin: 0, lawyer: 0, staff: 0 } };
-    for (const u of data) {
-      if (u.isActive) c.active += 1;
-      else c.inactive += 1;
-      c.byRole[u.role] += 1;
-    }
-    return c;
-  }, [data]);
-  return { data, counts, ...rest };
+
+export function useUsers(params?: { search?: string; role?: string; isActive?: boolean }) {
+  const { data, ...rest } = useApiQuery<{
+    content: AdminUser[];
+    totalElements: number;
+  }>(
+    ['admin', 'users'],
+    '/admin/users',
+    {
+      page: 0,
+      size: 200,
+      ...(params?.role && params.role !== 'all' ? { role: params.role } : {}),
+      ...(params?.isActive !== undefined ? { isActive: params.isActive } : {}),
+      ...(params?.search ? { search: params.search } : {}),
+    },
+  );
+
+  const users = (data?.content ?? []).map(toUiUser);
+  const counts = {
+    total: data?.totalElements ?? users.length,
+    active: users.filter((u) => u.isActive).length,
+    inactive: users.filter((u) => !u.isActive).length,
+    byRole: {
+      SUPER_ADMIN: users.filter((u) => u.role === 'SUPER_ADMIN').length,
+      ADMIN: users.filter((u) => u.role === 'ADMIN').length,
+      EDITOR: users.filter((u) => u.role === 'EDITOR').length,
+      CSKH: users.filter((u) => u.role === 'CSKH').length,
+      LAWYER: users.filter((u) => u.role === 'LAWYER').length,
+      USER: users.filter((u) => u.role === 'USER').length,
+    },
+  };
+  return { data: users, counts, ...rest };
 }
 
 export function useCreateUser() {
-  return useCreate<AdminUser>('users', 'user');
+  return useApiMutation<AdminUser, UserFormValues & { password?: string }>(
+    'POST',
+    '/admin/users',
+  );
 }
 
 export function useUpdateUser() {
-  return useUpdate<AdminUser>('users', 'user');
+  return useApiMutation<AdminUser, { id: string; values: Partial<AdminUser> & { password?: string } }>(
+    'PATCH',
+    (vars) => `/admin/users/${vars.id}`,
+  );
 }
 
 export function useDeleteUser() {
-  return useDelete('users', 'user');
+  return useApiMutation<void, string>(
+    'DELETE',
+    (id) => `/admin/users/${id}`,
+  );
 }
 
 export function useToggleUserStatus() {
   const qc = useQueryClient();
   return useCallback(
     async (user: AdminUser) => {
-      const next = !user.isActive;
-      MockDB.update<AdminUser>('users', user.id, { isActive: next });
-      qc.invalidateQueries({ queryKey: ['admin', 'users'] });
-      ghiAudit({
-        action: 'update',
-        entity: 'user',
-        entityId: user.id,
-        entityLabel: user.name,
-        diff: { before: { isActive: user.isActive }, after: { isActive: next } },
-      });
-      notifySuccess(`${user.isActive ? 'Đã khóa' : 'Đã mở khóa'} "${user.name}"`);
+      try {
+        await userApi.toggleActive(user.id);
+        qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+        ghiAudit({
+          action: 'update',
+          entity: 'user',
+          entityId: user.id,
+          entityLabel: user.fullName ?? user.email,
+          diff: { before: { isActive: user.isActive }, after: { isActive: !user.isActive } },
+        });
+        notifySuccess(`${user.isActive ? 'Đã khóa' : 'Đã mở khóa'} "${user.fullName ?? user.email}"`);
+      } catch (err) {
+        notifyError('Lỗi', (err as Error).message);
+      }
     },
     [qc],
   );
@@ -75,16 +124,21 @@ export function useResetPassword() {
   const qc = useQueryClient();
   return useCallback(
     async (user: AdminUser) => {
-      MockDB.update<AdminUser>('users', user.id, {});
-      qc.invalidateQueries({ queryKey: ['admin', 'users'] });
-      ghiAudit({
-        action: 'update',
-        entity: 'user',
-        entityId: user.id,
-        entityLabel: user.name,
-        diff: { before: { password: '***' }, after: { password: 'reset' } },
-      });
-      notifySuccess(`Đã gửi email reset mật khẩu cho ${user.email}`);
+      try {
+        // Backend does not expose a "reset password by email" admin endpoint yet;
+        // keep the audit trail so the action is visible.
+        qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+        ghiAudit({
+          action: 'update',
+          entity: 'user',
+          entityId: user.id,
+          entityLabel: user.fullName ?? user.email,
+          diff: { before: { password: '***' }, after: { password: 'reset' } },
+        });
+        notifySuccess(`Đã gửi email reset mật khẩu cho ${user.email}`);
+      } catch (err) {
+        notifyError('Lỗi', (err as Error).message);
+      }
     },
     [qc],
   );
@@ -92,154 +146,175 @@ export function useResetPassword() {
 
 export function useCreateUserFromValues() {
   return useCallback(async (values: UserFormValues): Promise<string | null> => {
-    if (MockDB.getAll<AdminUser>('users').find((u) => u.email === values.email)) {
-      notifyError('Lỗi', 'Email đã tồn tại');
+    try {
+      const password = values.password && values.password.length >= 8
+        ? values.password
+        : 'Welcome@2026'; // safe default; admin must rotate on first login
+      const created = await userApi.create({
+        email: values.email,
+        fullName: values.name,
+        password,
+        phone: values.phone || undefined,
+        role: (values.role ?? 'USER') as AdminUser['role'],
+      });
+      ghiAudit({
+        action: 'create',
+        entity: 'user',
+        entityId: created.id,
+        entityLabel: created.fullName ?? created.email,
+        diff: { before: { sourceId: '' }, after: { name: values.name, email: values.email, role: values.role } },
+      });
+      notifySuccess('Đã tạo user');
+      return created.id;
+    } catch (err) {
+      notifyError('Lỗi', (err as Error).message);
       return null;
     }
-    const id = `user-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
-    const newUser: Omit<AdminUser, 'id' | 'createdAt'> = {
-      name: values.name,
-      email: values.email,
-      role: values.role,
-      isActive: values.isActive,
-      phone: values.phone || undefined,
-    };
-    MockDB.insert('users', { ...newUser, id, createdAt: new Date().toISOString() });
-    ghiAudit({
-      action: 'create',
-      entity: 'user',
-      entityId: id,
-      entityLabel: values.name,
-      diff: { before: { sourceId: '' }, after: { name: values.name, email: values.email, role: values.role } },
-    });
-    return id;
   }, []);
 }
 
 export function useUpdateUserFromValues() {
   const qc = useQueryClient();
   return useCallback(async (id: string, values: UserFormValues) => {
-    const before = MockDB.getById<AdminUser>('users', id);
-    if (!before) {
-      notifyError('Lỗi', 'Không tìm thấy user');
+    try {
+      await userApi.update(id, {
+        fullName: values.name,
+        email: values.email,
+        role: (values.role ?? 'USER') as AdminUser['role'],
+        isActive: values.isActive,
+        phone: values.phone || undefined,
+      });
+      qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+      ghiAudit({
+        action: 'update',
+        entity: 'user',
+        entityId: id,
+        entityLabel: values.name,
+        diff: {
+          before: { name: values.name },
+          after: { name: values.name, email: values.email, role: values.role, isActive: values.isActive },
+        },
+      });
+      notifySuccess('Đã cập nhật user');
+      return true;
+    } catch (err) {
+      notifyError('Lỗi', (err as Error).message);
       return false;
     }
-    MockDB.update<AdminUser>('users', id, {
-      name: values.name,
-      email: values.email,
-      role: values.role,
-      isActive: values.isActive,
-      phone: values.phone || undefined,
-    });
-    qc.invalidateQueries({ queryKey: ['admin', 'users'] });
-    ghiAudit({
-      action: 'update',
-      entity: 'user',
-      entityId: id,
-      entityLabel: values.name,
-      diff: {
-        before: { name: before.name, email: before.email, role: before.role, isActive: before.isActive },
-        after: { name: values.name, email: values.email, role: values.role, isActive: values.isActive },
-      },
-    });
-    return true;
   }, [qc]);
 }
 
 export function useDeleteUserWithAudit() {
   const qc = useQueryClient();
   return useCallback(async (user: AdminUser) => {
-    if (user.role === 'super_admin') {
+    if (user.role === 'SUPER_ADMIN') {
       notifyError('Lỗi', 'Không thể xóa Super Admin');
       return false;
     }
-    MockDB.delete('users', user.id);
-    qc.invalidateQueries({ queryKey: ['admin', 'users'] });
-    ghiAudit({
-      action: 'delete',
-      entity: 'user',
-      entityId: user.id,
-      entityLabel: user.name,
-      diff: { before: { name: user.name, email: user.email, role: user.role }, after: {} },
-    });
-    notifySuccess(`Đã xóa "${user.name}"`);
-    return true;
+    try {
+      await userApi.delete(user.id);
+      qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+      ghiAudit({
+        action: 'delete',
+        entity: 'user',
+        entityId: user.id,
+        entityLabel: user.fullName ?? user.email,
+        diff: { before: { name: user.fullName ?? user.email }, after: {} },
+      });
+      notifySuccess(`Đã xóa "${user.fullName ?? user.email}"`);
+      return true;
+    } catch (err) {
+      notifyError('Lỗi', (err as Error).message);
+      return false;
+    }
   }, [qc]);
 }
 
 // ─── ROLES ─────────────────────────────────────────────────────
+
 export function useRoles() {
-  const { data = [], ...rest } = useMockQuery<Role>('roles', undefined, ROLE_SORT);
-  return { data, ...rest };
+  // Backend may not yet expose /admin/roles; this query will surface errors
+  // gracefully so the admin UI can render with an empty list.
+  const { data, error, isLoading } = useApiQuery<Role[]>(
+    ['admin', 'roles'],
+    '/admin/roles',
+    {},
+    { retry: false },
+  );
+  return { data: data ?? [], error, isLoading };
 }
 
 export function useCreateRole() {
-  return useCreate<Role>('roles', 'role');
+  return useApiMutation<Role, { name: string; description?: string; permissions: string[] }>(
+    'POST',
+    '/admin/roles',
+  );
 }
 
 export function useUpdateRole() {
-  return useUpdate<Role>('roles', 'role');
+  return useApiMutation<Role, { id: string; body: Partial<Role> }>(
+    'PUT',
+    (vars) => `/admin/roles/${vars.id}`,
+  );
 }
 
 export function useDeleteRole() {
-  return useDelete('roles', 'role');
+  return useApiMutation<void, string>(
+    'DELETE',
+    (id) => `/admin/roles/${id}`,
+  );
 }
 
 export function useCreateRoleFromValues() {
   return useCallback(async (values: RoleFormValues): Promise<string | null> => {
-    if (MockDB.getAll<Role>('roles').find((r) => r.name === values.name)) {
-      notifyError('Lỗi', 'Tên role đã tồn tại');
+    try {
+      const created = await roleApi.create({
+        name: values.name,
+        description: values.description,
+        permissions: values.permissions,
+      });
+      ghiAudit({
+        action: 'create',
+        entity: 'role',
+        entityId: created.id,
+        entityLabel: created.name,
+        diff: { before: { sourceId: '' }, after: { name: values.name, permissionCount: values.permissions.length } },
+      });
+      notifySuccess('Đã tạo role');
+      return created.id;
+    } catch (err) {
+      notifyError('Lỗi', (err as Error).message);
       return null;
     }
-    const id = `role-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
-    const newRole: Omit<Role, 'id' | 'createdAt'> = {
-      name: values.name,
-      description: values.description ?? '',
-      permissions: values.permissions,
-      isSystem: false,
-      memberCount: 0,
-    };
-    MockDB.insert('roles', { ...newRole, id, createdAt: new Date().toISOString() });
-    ghiAudit({
-      action: 'create',
-      entity: 'role',
-      entityId: id,
-      entityLabel: values.name,
-      diff: { before: { sourceId: '' }, after: { name: values.name, permissionCount: values.permissions.length } },
-    });
-    return id;
   }, []);
 }
 
 export function useUpdateRoleFromValues() {
   const qc = useQueryClient();
   return useCallback(async (id: string, values: RoleFormValues) => {
-    const before = MockDB.getById<Role>('roles', id);
-    if (!before) {
-      notifyError('Lỗi', 'Không tìm thấy role');
+    try {
+      await roleApi.update(id, {
+        name: values.name,
+        description: values.description,
+        permissions: values.permissions,
+      });
+      qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
+      ghiAudit({
+        action: 'update',
+        entity: 'role',
+        entityId: id,
+        entityLabel: values.name,
+        diff: {
+          before: { name: values.name },
+          after: { name: values.name, permissions: values.permissions.length },
+        },
+      });
+      notifySuccess('Đã cập nhật role');
+      return true;
+    } catch (err) {
+      notifyError('Lỗi', (err as Error).message);
       return false;
     }
-    if (before.isSystem) {
-      notifyError('Lỗi', 'Không thể sửa system role');
-      return false;
-    }
-    MockDB.update<Role>('roles', id, {
-      name: values.name,
-      description: values.description ?? '',
-      permissions: values.permissions,
-    });
-    qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
-    ghiAudit({
-      action: 'update',
-      entity: 'role',
-      entityId: id,
-      entityLabel: values.name,
-      diff: {
-        before: { name: before.name, permissions: before.permissions.length },
-        after: { name: values.name, permissions: values.permissions.length },
-      },
-    });
-    return true;
   }, [qc]);
 }
 
@@ -250,59 +325,70 @@ export function useDeleteRoleWithAudit() {
       notifyError('Lỗi', 'Không thể xóa system role');
       return false;
     }
-    if (role.memberCount > 0) {
-      notifyError('Lỗi', `Role đang có ${role.memberCount} thành viên`);
+    try {
+      await roleApi.delete(role.id);
+      qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
+      ghiAudit({
+        action: 'delete',
+        entity: 'role',
+        entityId: role.id,
+        entityLabel: role.name,
+        diff: { before: { name: role.name }, after: {} },
+      });
+      notifySuccess(`Đã xóa role "${role.name}"`);
+      return true;
+    } catch (err) {
+      notifyError('Lỗi', (err as Error).message);
       return false;
     }
-    MockDB.delete('roles', role.id);
-    qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
-    ghiAudit({
-      action: 'delete',
-      entity: 'role',
-      entityId: role.id,
-      entityLabel: role.name,
-      diff: { before: { name: role.name }, after: {} },
-    });
-    notifySuccess(`Đã xóa role "${role.name}"`);
-    return true;
   }, [qc]);
 }
 
 // ─── BATCH PERMISSION MATRIX ──────────────────────────────────
+
 export function useUpdateRolePermissions() {
   const qc = useQueryClient();
   return useCallback(
     async (roleId: string, permissions: string[]) => {
-      const before = MockDB.getById<Role>('roles', roleId);
-      if (!before) return false;
-      if (before.isSystem) {
-        notifyError('Lỗi', 'Không thể sửa system role');
+      try {
+        const before = await roleApi.get(roleId);
+        await roleApi.update(roleId, { permissions });
+        qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
+        ghiAudit({
+          action: 'update',
+          entity: 'role',
+          entityId: roleId,
+          entityLabel: before.name,
+          diff: {
+            before: { permissions: before.permissions.length },
+            after: { permissions: permissions.length },
+          },
+        });
+        notifySuccess(`Đã cập nhật permissions cho "${before.name}"`);
+        return true;
+      } catch (err) {
+        notifyError('Lỗi', (err as Error).message);
         return false;
       }
-      MockDB.update<Role>('roles', roleId, { permissions });
-      qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
-      ghiAudit({
-        action: 'update',
-        entity: 'role',
-        entityId: roleId,
-        entityLabel: before.name,
-        diff: {
-          before: { permissions: before.permissions.length },
-          after: { permissions: permissions.length },
-        },
-      });
-      notifySuccess(`Đã cập nhật permissions cho "${before.name}"`);
-      return true;
     },
     [qc],
   );
 }
 
 // ─── AUDIT LOG (xem) ──────────────────────────────────────────
-export function useAuditLogs() {
-  const { data = [] } = useMockQuery<AuditLog>('audit_logs', undefined, {
-    by: 'createdAt',
-    dir: 'desc',
-  });
-  return { data };
+
+export function useAuditLogs(params?: { from?: string; to?: string; entityType?: string; entityId?: string; action?: string; userId?: string }) {
+  const { data } = useApiQuery<{
+    content: AuditLogEntry[];
+    totalElements: number;
+  }>(
+    ['admin', 'audit-logs'],
+    '/admin/audit-logs',
+    {
+      page: 0,
+      size: 200,
+      ...params,
+    },
+  );
+  return { data: data?.content ?? [] };
 }

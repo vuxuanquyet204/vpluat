@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react';
 import { Save, RotateCcw, Plus, X } from 'lucide-react';
 import { DAYS_OF_WEEK, DAY_LABELS, useLawyerSchedule, type DaySchedule } from '../hooks/use-schedule';
-import type { Lawyer } from '@/features/admin/types';
+import type { SlotUpdate } from '@/lib/api/admin-booking';
+import type { Lawyer } from '../hooks/use-services';
 
 interface LawyerScheduleEditorProps {
   lawyer: Lawyer | null;
@@ -29,7 +30,7 @@ export function LawyerScheduleEditor({
   lawyers,
   onSelectLawyer,
 }: LawyerScheduleEditorProps) {
-  const { scheduleByDay, saveSchedule } = useLawyerSchedule(lawyer?.id ?? null);
+  const { scheduleByDay, isLoading, saveSchedule } = useLawyerSchedule(lawyer?.id ?? null);
   const [local, setLocal] = useState<Record<number, DaySchedule>>(() =>
     DAYS_OF_WEEK.reduce(
       (acc, _, idx) => ({ ...acc, [idx]: scheduleByDay[idx] ?? emptyDay() }),
@@ -88,7 +89,11 @@ export function LawyerScheduleEditor({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await saveSchedule(local);
+      const updates: SlotUpdate[] = DAYS_OF_WEEK.map((_, dow) => {
+        const day = local[dow];
+        return { dayOfWeek: dow, isOff: day.isOff, slots: day.slots };
+      });
+      await saveSchedule(updates);
     } finally {
       setSaving(false);
     }

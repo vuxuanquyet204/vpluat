@@ -93,7 +93,10 @@ export interface Booking {
   time: string;
   durationMinutes?: number;
   status: BookingStatus;
+  /** Free-form notes from admin (internal). */
   notes?: string;
+  /** Client's description of their legal issue, populated from the booking form. */
+  issueSummary?: string;
   reminders?: Array<{ type: '24h' | '2h' | '30m'; scheduledAt: string; sent: boolean; channel: 'email' | 'sms' }>;
   cancelledReason?: string;
   createdAt: string;
@@ -512,7 +515,7 @@ export interface LandingPage {
   updatedAt: string;
 }
 
-export type UserRole = 'super_admin' | 'admin' | 'lawyer' | 'staff';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'CSKH' | 'LAWYER' | 'USER';
 
 export interface AdminUser {
   id: string;

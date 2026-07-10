@@ -7,9 +7,12 @@ import com.lawfirm.brs.entity.*;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
 import com.lawfirm.brs.mapper.PostMapper;
 import com.lawfirm.brs.repository.*;
+import com.lawfirm.brs.service.erp.PostErpService;
 import com.lawfirm.brs.util.SlugUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +38,7 @@ public class PostManagementService {
     private final TagRepository tagRepository;
     private final UserRepository userRepository;
     private final PostMapper postMapper;
+    private final PostErpService postErpService;
 
     @Transactional
     public PostDTO createPost(PostRequest request, UUID authorId) {
@@ -111,6 +115,10 @@ public class PostManagementService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "posts", allEntries = true),
+        @CacheEvict(value = "search", allEntries = true)
+    })
     public PostDTO publishPost(UUID id) {
         log.info("Publishing post: {}", id);
         Post post = postRepository.findById(id)
@@ -121,6 +129,10 @@ public class PostManagementService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "posts", allEntries = true),
+        @CacheEvict(value = "search", allEntries = true)
+    })
     public PostDTO archivePost(UUID id) {
         log.info("Archiving post: {}", id);
         Post post = postRepository.findById(id)
@@ -131,10 +143,30 @@ public class PostManagementService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "posts", allEntries = true),
+        @CacheEvict(value = "search", allEntries = true)
+    })
+    public PostDTO schedulePost(UUID id, Instant scheduledAt) {
+        log.info("Scheduling post {} for {}", id, scheduledAt);
+        Post post = postRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + id));
+        post.schedule(scheduledAt);
+        post = postRepository.save(post);
+        return postMapper.toDTO(post);
+    }
+
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "posts", allEntries = true),
+        @CacheEvict(value = "search", allEntries = true)
+    })
     public void deletePost(UUID id) {
         log.info("Deleting post: {}", id);
         Post post = postRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + id));
+        // Cascade revisions first to avoid orphan rows in post_revisions.
+        postErpService.deleteRevisionsForPost(id);
         post.softDelete();
         postRepository.save(post);
     }

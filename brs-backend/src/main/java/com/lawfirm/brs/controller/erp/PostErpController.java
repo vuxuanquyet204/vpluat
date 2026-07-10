@@ -15,6 +15,8 @@ import java.util.UUID;
 
 /**
  * Post admin extensions: revisions and duplicate-as-draft.
+ * Note: GET /{id}/revisions lives in PostController to avoid ambiguous
+ * mapping. This controller only holds snapshot and duplicate.
  */
 @RestController
 @RequestMapping("/api/admin/posts")
@@ -25,22 +27,16 @@ public class PostErpController {
 
     private final PostErpService service;
 
-    @GetMapping("/{id}/revisions")
-    @Operation(summary = "List version history for a post")
-    public ResponseEntity<ApiResponse<PageResponse<PostDTO>>> revisions(
-            @PathVariable UUID id,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.success(service.revisions(id, page, size)));
-    }
-
+    /** Manual snapshot — prefer the auto-snapshot that PostManagementService
+     *  calls on create/update/publish. This is for admin-triggered snapshots. */
     @PostMapping("/{id}/snapshot")
     @Operation(summary = "Manually snapshot the post into a new revision")
     public ResponseEntity<ApiResponse<Object>> snapshot(
             @PathVariable UUID id,
             @RequestParam(required = false) UUID editorId,
             @RequestParam(required = false) String note) {
-        return ResponseEntity.ok(ApiResponse.success(service.snapshot(id, editorId, note)));
+        service.snapshot(id, editorId, note);
+        return ResponseEntity.ok(ApiResponse.success("Snapshot created", null));
     }
 
     @PostMapping("/{id}/duplicate")

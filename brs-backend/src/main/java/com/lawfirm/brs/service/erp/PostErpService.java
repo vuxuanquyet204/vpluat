@@ -3,6 +3,7 @@ package com.lawfirm.brs.service.erp;
 import com.lawfirm.brs.constants.PostStatus;
 import com.lawfirm.brs.dto.response.PageResponse;
 import com.lawfirm.brs.dto.response.PostDTO;
+import com.lawfirm.brs.dto.response.PostRevisionDTO;
 import com.lawfirm.brs.entity.Post;
 import com.lawfirm.brs.entity.PostRevision;
 import com.lawfirm.brs.entity.User;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,17 +43,25 @@ public class PostErpService {
      * Return version history for a post (most recent first).
      */
     @Transactional(readOnly = true)
-    public PageResponse<PostDTO> revisions(UUID postId, int page, int size) {
+    public PageResponse<PostRevisionDTO> revisions(UUID postId, int page, int size) {
         if (!postRepository.existsById(postId)) {
             throw new ResourceNotFoundException("Post not found: " + postId);
         }
         Page<PostRevision> result = revisionRepository
             .findByPostIdOrderByRevisionNumberDesc(postId,
                 PageRequest.of(page, size));
-        List<PostDTO> dtos = result.getContent().stream()
+        List<PostRevisionDTO> dtos = result.getContent().stream()
             .map(this::revisionToDto)
             .toList();
         return PageResponse.of(dtos, page, size, result.getTotalElements());
+    }
+
+    /**
+     * Delete all revisions for a given post (used when cascading post deletion).
+     */
+    public void deleteRevisionsForPost(UUID postId) {
+        revisionRepository.findByPostIdOrderByRevisionNumberDesc(postId, PageRequest.of(0, Integer.MAX_VALUE))
+            .forEach(revisionRepository::delete);
     }
 
     /**
@@ -71,6 +81,24 @@ public class PostErpService {
             .changeNote(changeNote)
             .build();
         return revisionRepository.save(rev);
+    }
+
+    /**
+     * Restore a post to the state captured by the given revision.
+     */
+    public void restoreRevision(UUID postId, UUID revisionId) {
+        PostRevision revision = revisionRepository.findById(revisionId)
+            .orElseThrow(() -> new ResourceNotFoundException("Revision not found: " + revisionId));
+        if (!revision.getPost().getId().equals(postId)) {
+            throw new ResourceNotFoundException("Revision does not belong to post " + postId);
+        }
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));
+        applySnapshot(post, revision.getSnapshot());
+        postRepository.save(post);
+        // Record the restore as a new revision so the timeline stays accurate.
+        snapshot(postId, null, "restore:" + revision.getRevisionNumber());
+        log.info("Restored post {} from revision {}", postId, revision.getRevisionNumber());
     }
 
     /**
@@ -105,12 +133,15 @@ public class PostErpService {
         return candidate;
     }
 
-    private PostDTO revisionToDto(PostRevision rev) {
-        // Render revisions as lightweight DTOs with metadata
-        PostDTO dto = new PostDTO();
-        dto.setId(rev.getId());
-        dto.setSlug("revision-" + rev.getRevisionNumber());
-        return dto;
+    private PostRevisionDTO revisionToDto(PostRevision rev) {
+        return new PostRevisionDTO(
+            rev.getId(),
+            rev.getPost().getId(),
+            rev.getRevisionNumber(),
+            rev.getSnapshot(),
+            rev.getChangeNote(),
+            rev.getCreatedAt()
+        );
     }
 
     private String toJson(Post post) {
@@ -119,6 +150,27 @@ public class PostErpService {
         } catch (Exception e) {
             log.warn("Snapshot serialization failed", e);
             return "{}";
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void applySnapshot(Post post, String snapshot) {
+        try {
+            java.util.Map<String, Object> data = objectMapper.readValue(snapshot, java.util.Map.class);
+            if (data.get("slug") != null) post.setSlug((String) data.get("slug"));
+            if (data.get("thumbnailUrl") != null) post.setThumbnailUrl((String) data.get("thumbnailUrl"));
+            if (data.get("ogImageUrl") != null) post.setOgImageUrl((String) data.get("ogImageUrl"));
+            if (data.get("status") != null) {
+                post.setStatus(com.lawfirm.brs.constants.PostStatus.valueOf((String) data.get("status")));
+            }
+            if (data.get("scheduledAt") != null) {
+                post.setScheduledAt(Instant.parse((String) data.get("scheduledAt")));
+            }
+            if (data.get("publishedAt") != null) {
+                post.setPublishedAt(Instant.parse((String) data.get("publishedAt")));
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to apply post revision snapshot", e);
         }
     }
 

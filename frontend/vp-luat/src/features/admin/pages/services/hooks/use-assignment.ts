@@ -1,18 +1,70 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useMockQuery, ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
-import { MockDB } from '@/features/admin/mock/db';
-import type { Service, Lawyer } from '@/features/admin/types';
+import { useQueryClient } from '@tanstack/react-query';
+import { useApiQuery, useApiMutation } from '@/lib/api/hooks';
+import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
+
+// Share types with the other hooks files
+export type { Service, Lawyer } from './use-services';
+import type { Service, Lawyer } from './use-services';
 
 export function useAssignment() {
-  const { data: services = [], refetch: refetchServices } = useMockQuery<Service>('services');
-  const { data: lawyers = [], refetch: refetchLawyers } = useMockQuery<Lawyer>('lawyers');
+  const { data: services = [], refetch: refetchServices } = useApiQuery<Service[]>(
+    ['services'],
+    '/admin/services',
+    undefined,
+  );
+  const { data: lawyers = [], refetch: refetchLawyers } = useApiQuery<Lawyer[]>(
+    ['lawyers'],
+    '/admin/lawyers',
+    undefined,
+  );
+
+  const qc = useQueryClient();
+
+  const updateServiceMutation = useApiMutation<Service, { id: string; body: Partial<Service> }>(
+    'PUT',
+    (vars) => `/admin/services/${vars.id}`,
+    {
+      onSuccess: (data) => {
+        qc.invalidateQueries({ queryKey: ['services'] });
+        ghiAudit({
+          action: 'assign',
+          entity: 'service_assignment',
+          entityId: data.id,
+          entityLabel: data.name,
+        });
+      },
+      onError: (e) => {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật phân công');
+      },
+    },
+  );
+
+  const updateLawyerMutation = useApiMutation<Lawyer, { id: string; body: Partial<Lawyer> }>(
+    'PATCH',
+    (vars) => `/admin/lawyers/${vars.id}`,
+    {
+      onSuccess: (data) => {
+        qc.invalidateQueries({ queryKey: ['lawyers'] });
+        ghiAudit({
+          action: 'assign',
+          entity: 'service_assignment',
+          entityId: data.id,
+          entityLabel: data.name,
+        });
+      },
+      onError: (e) => {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật phân công');
+      },
+    },
+  );
 
   const isAssigned = useCallback(
     (serviceId: string, lawyerId: string): boolean => {
       const svc = services.find((s) => s.id === serviceId);
-      return Boolean(svc?.lawyerIds.includes(lawyerId));
+      return Boolean(svc?.lawyerIds?.includes(lawyerId));
     },
     [services],
   );
@@ -23,16 +75,16 @@ export function useAssignment() {
       const lwy = lawyers.find((l) => l.id === lawyerId);
       if (!svc || !lwy) return;
 
-      const isOn = svc.lawyerIds.includes(lawyerId);
+      const isOn = svc.lawyerIds?.includes(lawyerId) ?? false;
       const newServiceLawyerIds = isOn
-        ? svc.lawyerIds.filter((id) => id !== lawyerId)
-        : [...svc.lawyerIds, lawyerId];
+        ? (svc.lawyerIds ?? []).filter((id) => id !== lawyerId)
+        : [...(svc.lawyerIds ?? []), lawyerId];
       const newLawyerServiceIds = isOn
-        ? lwy.serviceIds.filter((id) => id !== serviceId)
-        : [...lwy.serviceIds, serviceId];
+        ? (lwy.serviceIds ?? []).filter((id) => id !== serviceId)
+        : [...(lwy.serviceIds ?? []), serviceId];
 
-      MockDB.update<Service>('services', serviceId, { lawyerIds: newServiceLawyerIds });
-      MockDB.update<Lawyer>('lawyers', lawyerId, { serviceIds: newLawyerServiceIds });
+      updateServiceMutation.mutate({ id: serviceId, body: { lawyerIds: newServiceLawyerIds } });
+      updateLawyerMutation.mutate({ id: lawyerId, body: { serviceIds: newLawyerServiceIds } });
 
       ghiAudit({
         action: 'assign',
@@ -41,7 +93,7 @@ export function useAssignment() {
         entityLabel: `${svc.name} ↔ ${lwy.name}`,
       });
     },
-    [services, lawyers],
+    [services, lawyers, updateServiceMutation, updateLawyerMutation],
   );
 
   const saveBatch = useCallback(
@@ -51,7 +103,7 @@ export function useAssignment() {
         for (const [serviceId, lawyerIds] of Object.entries(matrix)) {
           const svc = services.find((s) => s.id === serviceId);
           if (!svc) continue;
-          const oldSet = new Set(svc.lawyerIds);
+          const oldSet = new Set(svc.lawyerIds ?? []);
           const newSet = new Set(lawyerIds);
           if (
             oldSet.size === newSet.size &&
@@ -59,13 +111,13 @@ export function useAssignment() {
           ) {
             continue;
           }
-          MockDB.update<Service>('services', serviceId, { lawyerIds });
-          // sync lawyer.serviceIds
+          updateServiceMutation.mutate({ id: serviceId, body: { lawyerIds } });
           for (const lid of lawyerIds) {
             const lwy = lawyers.find((l) => l.id === lid);
-            if (lwy && !lwy.serviceIds.includes(serviceId)) {
-              MockDB.update<Lawyer>('lawyers', lid, {
-                serviceIds: [...lwy.serviceIds, serviceId],
+            if (lwy && !(lwy.serviceIds ?? []).includes(serviceId)) {
+              updateLawyerMutation.mutate({
+                id: lid,
+                body: { serviceIds: [...(lwy.serviceIds ?? []), serviceId] },
               });
             }
           }
@@ -73,8 +125,9 @@ export function useAssignment() {
             if (!newSet.has(oldLid)) {
               const lwy = lawyers.find((l) => l.id === oldLid);
               if (lwy) {
-                MockDB.update<Lawyer>('lawyers', oldLid, {
-                  serviceIds: lwy.serviceIds.filter((id) => id !== serviceId),
+                updateLawyerMutation.mutate({
+                  id: oldLid,
+                  body: { serviceIds: (lwy.serviceIds ?? []).filter((id) => id !== serviceId) },
                 });
               }
             }
@@ -98,7 +151,7 @@ export function useAssignment() {
         notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể lưu');
       }
     },
-    [services, lawyers, refetchServices, refetchLawyers],
+    [services, lawyers, refetchServices, refetchLawyers, updateServiceMutation, updateLawyerMutation],
   );
 
   return {

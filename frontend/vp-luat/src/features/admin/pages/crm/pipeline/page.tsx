@@ -12,21 +12,32 @@ import {
   DragOverlay,
   closestCenter,
 } from '@dnd-kit/core';
-import { useDroppable } from '@dnd-kit/core';
-import { useDraggable } from '@dnd-kit/core';
-import { ArrowLeft, MoreVertical, User, Phone } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { AdminPageHeader } from '@/features/admin/shared';
-import {
-  useMockQuery,
-  useUpdate,
-  notifySuccess,
-  notifyError,
-  ghiAudit,
-} from '@/features/admin/lib';
-import { MockDB } from '@/features/admin/mock/db';
-import type { Lead, LeadStatus, LeadTimelineEntry } from '@/features/admin/types';
+import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
+import { useLeads } from '../hooks/use-leads';
+import { useUpdateLeadStatus } from '../hooks/use-lead-mutations';
+import type { Lead } from '@/lib/api';
 
-const COLUMNS: Array<{ id: LeadStatus; label: string; color: string; bg: string }> = [
+// Backend uses uppercase status; frontend UI used lowercase.
+const UI_TO_API: Record<string, string> = {
+  new: 'NEW',
+  contacted: 'CONTACTED',
+  progress: 'PROGRESS',
+  converted: 'CONVERTED',
+  lost: 'LOST',
+};
+const API_TO_UI: Record<string, string> = {
+  NEW: 'new',
+  CONTACTED: 'contacted',
+  PROGRESS: 'progress',
+  CONVERTED: 'converted',
+  LOST: 'lost',
+};
+
+type UiStatus = keyof typeof API_TO_UI;
+
+const COLUMNS: Array<{ id: UiStatus; label: string; color: string; bg: string }> = [
   { id: 'new', label: 'Mới', color: '#2563EB', bg: '#EFF6FF' },
   { id: 'contacted', label: 'Đã liên hệ', color: '#D97706', bg: '#FFFBEB' },
   { id: 'progress', label: 'Đang xử lý', color: '#7C3AED', bg: '#F5F3FF' },
@@ -34,20 +45,31 @@ const COLUMNS: Array<{ id: LeadStatus; label: string; color: string; bg: string 
   { id: 'lost', label: 'Mất lead', color: '#DC2626', bg: '#FEF2F2' },
 ];
 
+/** Group leads by their UI-level status key. */
+function groupByColumn(leads: Lead[]): Record<UiStatus, Lead[]> {
+  const map: Record<UiStatus, Lead[]> = {
+    new: [],
+    contacted: [],
+    progress: [],
+    converted: [],
+    lost: [],
+  };
+  for (const l of leads) {
+    const key = (API_TO_UI[l.status] ?? 'new') as UiStatus;
+    if (key in map) map[key].push(l);
+  }
+  return map;
+}
+
 export default function LeadPipelinePage() {
   const qc = useQueryClient();
-  const { data: leads = [], isLoading } = useMockQuery<Lead>('leads');
-  const updateMutation = useUpdate<Lead>('leads', 'lead');
+  const { data: leads = [], isLoading } = useLeads();
+  const updateStatus = useUpdateLeadStatus();
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const byColumn = useMemo(() => {
-    const map: Record<LeadStatus, Lead[]> = { new: [], contacted: [], progress: [], converted: [], lost: [] };
-    for (const l of leads) map[l.status].push(l);
-    return map;
-  }, [leads]);
-
-  const activeLead = activeId ? leads.find((l) => l.id === activeId) : null;
+  const byColumn = useMemo(() => groupByColumn(leads), [leads]);
+  const activeLead = activeId ? leads.find((l) => l.id === activeId) ?? null : null;
 
   const handleDragStart = useCallback((e: DragStartEvent) => {
     setActiveId(String(e.active.id));
@@ -58,36 +80,28 @@ export default function LeadPipelinePage() {
       setActiveId(null);
       if (!e.over) return;
       const leadId = String(e.active.id);
-      const newStatus = String(e.over.id) as LeadStatus;
+      const newUiStatus = String(e.over.id) as UiStatus;
       const lead = leads.find((l) => l.id === leadId);
-      if (!lead || lead.status === newStatus) return;
+      if (!lead) return;
 
-      const before = lead.status;
-      // Optimistic: write directly then notify
-      const beforeStatus = before;
-      MockDB.update<Lead>('leads', leadId, { status: newStatus });
-      // Timeline entry
-      MockDB.insert<LeadTimelineEntry>('lead_timeline', {
-        id: `tl-${Date.now()}`,
-        leadId,
-        type: 'status_change',
-        content: `Trạng thái: ${beforeStatus} → ${newStatus}`,
-        authorId: 'system',
-        authorName: 'System',
-        createdAt: new Date().toISOString(),
-      });
-      ghiAudit({
-        action: 'status_change',
-        entity: 'lead',
-        entityId: leadId,
-        entityLabel: lead.name,
-        diff: { before: { status: beforeStatus }, after: { status: newStatus } },
-      });
-      qc.invalidateQueries({ queryKey: ['admin', 'leads'] });
-      qc.invalidateQueries({ queryKey: ['admin', 'lead_timeline'] });
-      notifySuccess(`Đã chuyển "${lead.name}" → ${COLUMNS.find((c) => c.id === newStatus)?.label}`);
+      const oldUiStatus = (API_TO_UI[lead.status] ?? 'new') as UiStatus;
+      if (oldUiStatus === newUiStatus) return;
+
+      try {
+        await updateStatus(leadId, UI_TO_API[newUiStatus], UI_TO_API[oldUiStatus]);
+        ghiAudit({
+          action: 'status_change',
+          entity: 'lead',
+          entityId: leadId,
+          entityLabel: lead.name,
+          diff: { before: { status: oldUiStatus }, after: { status: newUiStatus } },
+        });
+        notifySuccess(`Đã chuyển "${lead.name}" → ${COLUMNS.find((c) => c.id === newUiStatus)?.label}`);
+      } catch {
+        notifyError('Lỗi', 'Không thể cập nhật trạng thái lead');
+      }
     },
-    [leads, qc],
+    [leads, updateStatus],
   );
 
   return (
@@ -135,147 +149,108 @@ export default function LeadPipelinePage() {
               />
             ))}
           </div>
-          <DragOverlay dropAnimation={null}>
-            {activeLead ? <KanbanCard lead={activeLead} isDragging /> : null}
-          </DragOverlay>
         </DndContext>
       )}
     </div>
   );
 }
 
-function Column({
-  column,
-  leads,
-  onCardClick,
-}: {
-  column: { id: LeadStatus; label: string; color: string; bg: string };
+// ─── Column & Card (kept inline so no extra file needed) ──────────────────
+
+import { useDroppable } from '@dnd-kit/core';
+import { useDraggable } from '@dnd-kit/core';
+import { MoreVertical, User, Phone } from 'lucide-react';
+
+interface ColumnProps {
+  column: { id: string; label: string; color: string; bg: string };
   leads: Lead[];
   onCardClick: (id: string) => void;
-}) {
-  const { setNodeRef, isOver } = useDroppable({ id: column.id });
+}
+
+function Column({ column, leads, onCardClick }: ColumnProps) {
+  const { setNodeRef } = useDroppable({ id: column.id });
   return (
     <div
       ref={setNodeRef}
       style={{
-        background: isOver ? column.bg : 'var(--gray-50)',
-        border: isOver ? `2px dashed ${column.color}` : '2px solid transparent',
-        borderRadius: 'var(--radius-md, 8px)',
-        padding: 12,
+        background: column.bg,
+        borderRadius: 8,
+        padding: 8,
         minHeight: 400,
-        transition: 'background 0.15s, border 0.15s',
+        border: '1.5px dashed ' + column.color + '33',
       }}
     >
       <div
         style={{
+          fontWeight: 600,
+          fontSize: '0.8rem',
+          color: column.color,
+          marginBottom: 8,
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 10,
+          alignItems: 'center',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: '50%',
-              background: column.color,
-            }}
-          />
-          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--gray-700)' }}>
-            {column.label}
-          </span>
-        </div>
+        {column.label}
         <span
           style={{
-            padding: '2px 8px',
-            background: column.bg,
-            color: column.color,
-            borderRadius: 999,
-            fontSize: '0.7rem',
-            fontWeight: 700,
+            background: column.color + '22',
+            borderRadius: 10,
+            padding: '1px 7px',
+            fontSize: '0.75rem',
           }}
         >
           {leads.length}
         </span>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {leads.map((l) => (
-          <DraggableCard key={l.id} lead={l} onClick={() => onCardClick(l.id)} />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {leads.map((lead) => (
+          <Card key={lead.id} lead={lead} onClick={() => onCardClick(lead.id)} />
         ))}
       </div>
     </div>
   );
 }
 
-function DraggableCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
-  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: lead.id });
+interface CardProps {
+  lead: Lead;
+  onClick: () => void;
+}
+
+function Card({ lead, onClick }: CardProps) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: lead.id,
+  });
   return (
     <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      onClick={(e) => {
-        if (isDragging) return;
-        e.stopPropagation();
-        onClick();
-      }}
-    >
-      <KanbanCard lead={lead} isDragging={isDragging} />
-    </div>
-  );
-}
-
-function KanbanCard({ lead, isDragging }: { lead: Lead; isDragging?: boolean }) {
-  return (
-    <div
+      onClick={onClick}
       style={{
-        background: 'var(--white)',
-        border: '1px solid var(--gray-200)',
-        borderRadius: 'var(--radius-md, 8px)',
-        padding: '10px 12px',
+        background: '#fff',
+        borderRadius: 6,
+        padding: '8px 10px',
         cursor: 'grab',
-        boxShadow: isDragging ? '0 10px 25px rgb(15 23 42 / 0.18)' : '0 1px 2px rgb(15 23 42 / 0.04)',
-        opacity: isDragging ? 0.85 : 1,
-        transform: isDragging ? 'rotate(2deg)' : undefined,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        opacity: isDragging ? 0.5 : 1,
+        userSelect: 'none',
       }}
     >
-      <div
-        style={{
-          fontSize: '0.82rem',
-          fontWeight: 700,
-          color: 'var(--primary)',
-          marginBottom: 4,
-        }}
-      >
+      <div style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: 3 }}>
         {lead.name}
       </div>
-      <div
-        style={{
-          fontSize: '0.72rem',
-          color: 'var(--gray-500)',
-          marginBottom: 6,
-        }}
-      >
-        {lead.service}
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '0.7rem',
-          color: 'var(--gray-400)',
-        }}
-      >
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <User size={10} /> {lead.assignedTo}
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <Phone size={10} /> {lead.phone.slice(-4)}
-        </span>
-      </div>
+      {lead.phone && (
+        <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', display: 'flex', alignItems: 'center', gap: 3 }}>
+          <Phone size={10} /> {lead.phone}
+        </div>
+      )}
+      {lead.assignedToName && (
+        <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
+          <User size={10} /> {lead.assignedToName}
+        </div>
+      )}
     </div>
   );
 }

@@ -15,6 +15,7 @@ import com.lawfirm.brs.repository.LeadNoteRepository;
 import com.lawfirm.brs.repository.LeadRepository;
 import com.lawfirm.brs.repository.ServiceEntityRepository;
 import com.lawfirm.brs.repository.UserRepository;
+import com.lawfirm.brs.service.notification.InAppNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -50,6 +51,7 @@ public class LeadService {
     private final ServiceEntityRepository serviceRepository;
     private final UserRepository userRepository;
     private final LeadMapper leadMapper;
+    private final InAppNotificationService notificationService;
 
     @Transactional
     public LeadDTO createLead(LeadRequest request) {
@@ -94,7 +96,13 @@ public class LeadService {
         lead.setFirstContactAt(Instant.now());
         lead.setLastContactAt(Instant.now());
 
-        return leadMapper.toDTO(leadRepository.save(lead));
+        Lead saved = leadRepository.save(lead);
+        try {
+            notificationService.notifyLeadCreated(saved.getId(), saved.getName());
+        } catch (Exception ex) {
+            log.warn("Failed to create notification for new lead {}: {}", saved.getId(), ex.getMessage());
+        }
+        return leadMapper.toDTO(saved);
     }
 
     /**
@@ -337,5 +345,22 @@ public class LeadService {
         lead.setNotes((lead.getNotes() != null ? lead.getNotes() + "\n" : "")
             + "[" + Instant.now() + "] deleted");
         leadRepository.save(lead);
+    }
+
+    /**
+     * Returns real lead pipeline counts grouped by status.
+     * Used by the staff dashboard to replace fake math calculations.
+     */
+    @Transactional(readOnly = true)
+    public com.lawfirm.brs.controller.crm.LeadController.PipelineStatsResponse getPipelineStats() {
+        long total = leadRepository.count();
+        long newCount = leadRepository.countByStatus(com.lawfirm.brs.constants.LeadStatus.NEW);
+        long contacted = leadRepository.countByStatus(com.lawfirm.brs.constants.LeadStatus.CONTACTED);
+        long qualified = leadRepository.countByStatus(com.lawfirm.brs.constants.LeadStatus.QUALIFIED);
+        long converted = leadRepository.countByStatus(com.lawfirm.brs.constants.LeadStatus.WON);
+        long lost = leadRepository.countByStatus(com.lawfirm.brs.constants.LeadStatus.LOST);
+        double conversionRate = total > 0 ? (double) converted / total * 100 : 0;
+        return new com.lawfirm.brs.controller.crm.LeadController.PipelineStatsResponse(
+            total, newCount, contacted, qualified, converted, lost, Math.round(conversionRate * 10.0) / 10.0);
     }
 }

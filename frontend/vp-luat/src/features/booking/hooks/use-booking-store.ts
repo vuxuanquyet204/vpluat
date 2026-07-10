@@ -10,6 +10,7 @@ import type {
   BookingStep,
   BookingTimeSlot,
 } from '../types';
+import { BOOKING_SERVICES } from '../lib';
 
 export interface BookingStoreState {
   step: BookingStep;
@@ -157,8 +158,16 @@ export const useBookingStore = create<BookingStoreState>()(
       }),
       onRehydrateStorage: () => (_state, _error) => {
         return (_persistedState: unknown) => {
-          const ps = _persistedState as Partial<BookingStoreState> & { setHydrated?: (v: boolean) => void } | undefined;
+          const ps = _persistedState as Partial<BookingStoreState> & { setHydrated?: (v: boolean) => void; service?: BookingServiceOption | null } | undefined;
           if (ps) {
+            // Drop stale service object whose slug no longer exists in BOOKING_SERVICES
+            // (handles cache from before slug renames like dat-dai -> nha-dat)
+            if (ps.service) {
+              const validSlugs = new Set(BOOKING_SERVICES.map((s) => s.slug));
+              if (!validSlugs.has(ps.service.slug)) {
+                ps.service = null;
+              }
+            }
             ps.setHydrated?.(true);
           }
         };

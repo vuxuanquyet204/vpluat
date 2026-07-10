@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { Pencil, Trash2, Eye, Briefcase, CheckSquare, Square } from 'lucide-react';
 import { DataTableV2, type DataTableColumn } from '@/features/admin/components';
 import { StatusBadge, type StatusVariant } from '@/features/admin/shared';
-import type { Service, Lawyer } from '@/features/admin/types';
+import type { Service, Lawyer } from '../hooks/use-services';
 
 const ACTIVE_VARIANT: StatusVariant = 'green';
 

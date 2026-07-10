@@ -15,12 +15,46 @@ export interface Lead {
   source: string;
   status: string;
   assignedTo?: { id: string; fullName: string };
+  /** Flat denormalised name for UI convenience. */
+  assignedToName?: string;
   score?: number;
   company?: string;
   budgetRange?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface LeadTimelineEntry {
+  id: string;
+  leadId: string;
+  type: string;
+  content: string;
+  authorId?: string;
+  authorName?: string;
+  createdAt: string;
+  /** Legacy shape consumed by lead-detail-drawer. */
+  entityId?: string;
+  action?: string;
+  summary?: string;
+  actorName?: string;
+}
+
+export interface Booking {
+  leadId?: string;
+  leadName?: string;
+  serviceId?: string;
+  serviceName?: string;
+  lawyerId?: string;
+  lawyerName?: string;
+  scheduledAt: string;
+  durationMinutes?: number;
+  status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+  method: 'OFFLINE' | 'ONLINE' | 'PHONE';
+  notes?: string;
+  meetingUrl?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Review {
@@ -57,10 +91,13 @@ export const leadApi = {
   get: (id: string) => api.get<Lead>(`/crm/leads/${id}`),
 
   timeline: (id: string) =>
-    api.get<import('./admin-dashboard').ActivityLog[]>(`/crm/leads/${id}/timeline`),
+    api.get<LeadTimelineEntry[]>(`/crm/leads/${id}/timeline`),
 
   notes: (id: string) =>
     api.get<Array<{ createdAt: string; content: string }>>(`/crm/leads/${id}/notes`),
+
+  addNote: (id: string, note: string) =>
+    api.post<unknown>(`/crm/leads/${id}/notes`, { content: note }),
 
   bookings: (id: string) =>
     api.get<import('./admin-booking').Appointment[]>(`/crm/leads/${id}/bookings`),
@@ -114,4 +151,139 @@ export const reviewApi = {
   bulkModerate: (ids: string[], action: 'APPROVE' | 'REJECT', reason?: string) =>
     api.post<{ succeeded: number; failed: number; failedIds: string[] }>(
       `/crm/reviews/bulk/moderate`, { ids, action, reason }),
+};
+
+// ============================================================
+// Services
+// ============================================================
+
+export interface Service {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  price?: number;
+  isActive?: boolean;
+  lawyerIds?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const serviceApi = {
+  list: () => api.get<Service[]>(`/admin/services`),
+  get: (id: string) => api.get<Service>(`/admin/services/${id}`),
+  create: (body: Omit<Service, 'id'>) => api.post<Service>(`/admin/services`, body),
+  update: (id: string, body: Partial<Service>) => api.put<Service>(`/admin/services/${id}`, body),
+  delete: (id: string) => api.del<void>(`/admin/services/${id}`),
+};
+
+// ============================================================
+// Lawyers
+// ============================================================
+
+export interface Lawyer {
+  id: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  specializations?: string[];
+  serviceIds?: string[];
+  isActive?: boolean;
+  bio?: string;
+  avatarUrl?: string;
+  createdAt?: string;
+}
+
+export const lawyerApi = {
+  list: () => api.get<Lawyer[]>(`/admin/lawyers`),
+  get: (id: string) => api.get<Lawyer>(`/admin/lawyers/${id}`),
+  create: (body: Omit<Lawyer, 'id'>) => api.post<Lawyer>(`/admin/lawyers`, body),
+  update: (id: string, body: Partial<Lawyer>) => api.patch<Lawyer>(`/admin/lawyers/${id}`, body),
+  delete: (id: string) => api.del<void>(`/admin/lawyers/${id}`),
+};
+
+// ============================================================
+// Chatbot Sessions
+// ============================================================
+
+export interface ChatbotSession {
+  id: string;
+  visitorId?: string;
+  status: 'ACTIVE' | 'CLOSED' | 'HANDOFF';
+  startedAt: string;
+  endedAt?: string;
+  messages?: unknown[];
+}
+
+// ============================================================
+// Newsletter
+// ============================================================
+
+export interface Subscriber {
+  id: string;
+  email: string;
+  name?: string;
+  status: 'ACTIVE' | 'UNSUBSCRIBED' | 'BOUNCED';
+  subscribedAt: string;
+}
+
+export interface Campaign {
+  id: string;
+  subject: string;
+  status: 'DRAFT' | 'SENDING' | 'SENT' | 'FAILED';
+  sentAt?: string;
+  openRate?: number;
+  clickRate?: number;
+}
+
+// ============================================================
+// Chatbot Sessions
+// ============================================================
+
+export interface ChatbotSession {
+  id: string;
+  visitorId?: string;
+  status: 'ACTIVE' | 'CLOSED' | 'HANDOFF';
+  startedAt: string;
+  endedAt?: string;
+  messages?: unknown[];
+}
+
+export const chatbotApi = {
+  sessions: (params?: { page?: number; size?: number; escalated?: boolean }) =>
+    api.get<PageResponse<ChatbotSession>>(`/admin/chatbot/sessions`, params),
+
+  session: (id: string) => api.get<ChatbotSession>(`/admin/chatbot/sessions/${id}`),
+
+  unresolved: (page = 0, size = 20) =>
+    api.get<PageResponse<ChatbotSession>>(`/admin/chatbot/unresolved`, { page, size }),
+
+  reply: (id: string, content: string) =>
+    api.post<void>(`/admin/chatbot/sessions/${id}/reply`, { content }),
+
+  intents: (params?: { from?: string; to?: string }) =>
+    api.get<unknown[]>(`/admin/chatbot/intents`, params),
+
+  analytics: (params?: { from?: string; to?: string }) =>
+    api.get<unknown>(`/admin/chatbot/stats`, params),
+
+  closeSession: (id: string) =>
+    api.patch<ChatbotSession>(`/admin/chatbot/sessions/${id}/close`, {}),
+};
+
+// ============================================================
+// Newsletter
+// ============================================================
+
+export const newsletterApi = {
+  listSubscribers: (params?: { page?: number; size?: number; status?: string }) =>
+    api.get<PageResponse<Subscriber>>(`/admin/newsletter/subscribers`, params),
+
+  unsubscribe: (email: string) =>
+    api.patch<Subscriber>(`/admin/newsletter/subscribers/unsubscribe`, { email }),
+
+  listCampaigns: () => api.get<Campaign[]>(`/admin/newsletter/campaigns`),
+
+  sendCampaign: (id: string) =>
+    api.post<Campaign>(`/admin/newsletter/campaigns/${id}/send`, {}),
 };

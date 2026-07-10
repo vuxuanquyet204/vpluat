@@ -1,83 +1,180 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { MockDB } from '@/features/admin/mock/db';
+import { useApiQuery, useApiMutation } from '@/lib/api/hooks';
+import { settingsApi, auditApi, type SystemSettings, type AuditLogEntry } from '@/lib/api/admin-core';
 import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
-import type { AuditLog } from '@/features/admin/types';
 
-const MAX_AUDIT_LOGS = 1000;
-
-interface SettingsRecord {
-  id: string;
-  key: string;
-  value: unknown;
-  updatedAt: string;
-  updatedBy: string;
-}
+const DEFAULT_SETTINGS: SystemSettings = {
+  siteName: 'Văn Phòng Luật',
+  siteEmail: 'contact@lawfirm.vn',
+  defaultLanguage: 'vi',
+  maintenanceMode: false,
+  allowRegistration: true,
+  emailNotifications: true,
+  smsNotifications: false,
+};
 
 // ─── SETTINGS ─────────────────────────────────────────────────
-function loadOrInit<T extends object>(key: string, defaults: T): T {
-  const existing = MockDB.getAll<SettingsRecord>('settings').find((r) => r.key === key);
-  if (existing) return (existing.value as T) ?? defaults;
-  MockDB.insert('settings', {
-    id: `st-${key}`,
-    key,
-    value: defaults,
-    updatedAt: new Date().toISOString(),
-    updatedBy: 'system',
-  });
-  return defaults;
+
+// Local "namespace" types kept so existing settings sub-tabs can compile
+// while the backend lands a real /admin/settings/<namespace> endpoint.
+export interface GeneralSettings {
+  siteName: string;
+  hotline: string;
+  email: string;
+  address: string;
+  timezone: string;
+  defaultLanguage: 'vi' | 'en';
+  maintenanceMode: boolean;
 }
 
-function saveSetting<T extends object>(key: string, value: T, actor: { id: string; name: string }) {
-  const arr = MockDB.getAll<SettingsRecord>('settings');
-  const idx = arr.findIndex((r) => r.key === key);
-  if (idx === -1) {
-    MockDB.insert('settings', {
-      id: `st-${key}`,
-      key,
-      value,
-      updatedAt: new Date().toISOString(),
-      updatedBy: actor.id,
-    });
-  } else {
-    MockDB.update<SettingsRecord>('settings', arr[idx].id, {
-      value,
-      updatedAt: new Date().toISOString(),
-      updatedBy: actor.id,
-    });
-  }
+export interface BookingSettings {
+  slotDuration: number;
+  bookingLeadTime: number;
+  maxBookingsPerDay: number;
+  allowOnline: boolean;
+  autoConfirm: boolean;
+  cancellationPolicy: string;
 }
 
-export function useSetting<T extends object>(key: string, defaults: T) {
-  const [value, setValue] = useState<T>(defaults);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    setValue(loadOrInit(key, defaults));
-    setLoaded(true);
-  }, [key, defaults]);
-
-  return { value, loaded, setValue };
+export interface SmtpSettings {
+  fromName: string;
+  fromEmail: string;
+  replyTo: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPassword: string;
+  useTls: boolean;
 }
 
-export function useUpdateSetting<T extends object>(key: string) {
+export interface ThemeSettings {
+  primaryColor: string;
+  accentColor: string;
+  fontFamily: string;
+  logoUrl: string;
+  faviconUrl: string;
+}
+
+export interface IntegrationsSettings {
+  sentryDsn: string;
+  posthogKey: string;
+  googleAnalyticsId: string;
+  chatbotWebhookUrl: string;
+}
+
+export type SettingsNamespace =
+  | 'settings.general'
+  | 'settings.booking'
+  | 'settings.smtp'
+  | 'settings.theme'
+  | 'settings.integrations';
+
+const NS_DEFAULTS: Record<SettingsNamespace, unknown> = {
+  'settings.general': {
+    siteName: 'Văn Phòng Luật',
+    hotline: '',
+    email: 'contact@lawfirm.vn',
+    address: '',
+    timezone: 'Asia/Ho_Chi_Minh',
+    defaultLanguage: 'vi',
+    maintenanceMode: false,
+  },
+  'settings.booking': {
+    slotDuration: 60,
+    bookingLeadTime: 24,
+    maxBookingsPerDay: 30,
+    allowOnline: true,
+    autoConfirm: false,
+    cancellationPolicy: '24h',
+  },
+  'settings.smtp': {
+    fromName: '',
+    fromEmail: '',
+    replyTo: '',
+    smtpHost: '',
+    smtpPort: 587,
+    smtpUser: '',
+    smtpPassword: '',
+    useTls: true,
+  },
+  'settings.theme': {
+    primaryColor: '#1E3A5F',
+    accentColor: '#C9A84C',
+    fontFamily: 'Inter',
+    logoUrl: '',
+    faviconUrl: '',
+  },
+  'settings.integrations': {
+    sentryDsn: '',
+    posthogKey: '',
+    googleAnalyticsId: '',
+    chatbotWebhookUrl: '',
+  },
+};
+
+/**
+ * Fetch a settings sub-document by namespace.
+ * Returns the namespace default until the backend provides a real endpoint.
+ */
+export function useSetting<T extends object>(key: SettingsNamespace, defaults: T) {
+  const fallback = (NS_DEFAULTS[key] as T) ?? defaults;
+  const { value, loaded } = useFullSettings();
+  const ns = (value as unknown as Record<string, unknown>)[key];
+  return {
+    value: (ns && typeof ns === 'object' ? (ns as T) : fallback),
+    loaded,
+    refetch: () => undefined,
+  };
+}
+
+/**
+ * Fetch the full settings document from the backend.
+ * Falls back to DEFAULT_SETTINGS if the backend is unreachable so the
+ * admin UI never renders blank while we wait.
+ */
+function useFullSettings() {
+  const { data, isLoading, error, refetch } = useApiQuery<SystemSettings>(
+    ['admin', 'settings'],
+    '/admin/settings',
+    {},
+    { retry: false },
+  );
+
+  return {
+    value: data ?? DEFAULT_SETTINGS,
+    loaded: !isLoading,
+    error,
+    refetch,
+  };
+}
+
+/**
+ * Generic typed setter for the singleton settings document. Records
+ * before/after diffs to the audit trail.
+ */
+function useUpdateSettingRaw() {
   const qc = useQueryClient();
+  const mutation = useApiMutation<SystemSettings, Partial<SystemSettings>>(
+    'PUT',
+    '/admin/settings',
+  );
+
   return useCallback(
-    (newValue: T, label = 'Cài đặt hệ thống') => {
+    async (newValue: Partial<SystemSettings>, label = 'Cài đặt hệ thống') => {
       try {
-        // Lấy trước-sau để ghi audit
-        const before = MockDB.getAll<SettingsRecord>('settings').find((r) => r.key === key);
-        saveSetting(key, newValue, { id: 'current', name: 'Current User' });
+        const before = qc.getQueryData<SystemSettings>(['admin', 'settings']) ?? DEFAULT_SETTINGS;
+        await mutation.mutateAsync(newValue);
         qc.invalidateQueries({ queryKey: ['admin', 'settings'] });
         ghiAudit({
           action: 'update',
           entity: 'settings',
-          entityId: key,
+          entityId: 'singleton',
           entityLabel: label,
           diff: {
-            before: { value: before?.value as Record<string, unknown> },
+            before: { value: before as unknown as Record<string, unknown> },
             after: { value: newValue as unknown as Record<string, unknown> },
           },
         });
@@ -88,7 +185,28 @@ export function useUpdateSetting<T extends object>(key: string) {
         return false;
       }
     },
-    [key, qc],
+    [mutation, qc],
+  );
+}
+
+// ─── RESET (no-op in real backend) ────────────────────────────
+
+/**
+ * Reset to seed is meaningless once we use a real backend. Keep the
+ * function but make it a no-op that logs the action so any leftover
+ * UI button still works.
+ */
+/**
+ * Generic namespaced settings setter used by the sub-tab forms.
+ * Each top-level settings form passes its own key + payload type.
+ */
+export function useUpdateSetting<T extends object>(key: SettingsNamespace) {
+  const update = useUpdateSettingRaw();
+  return useCallback(
+    async (newValue: Partial<T>, label = 'Cài đặt hệ thống') => {
+      return update({ [key]: newValue } as Partial<SystemSettings>, label);
+    },
+    [update, key],
   );
 }
 
@@ -96,99 +214,88 @@ export function useResetAllToSeed() {
   const qc = useQueryClient();
   return useCallback(() => {
     if (typeof window === 'undefined') return;
-    if (!window.confirm('Reset toàn bộ DB về seed? Hành động không thể hoàn tác.')) return;
+    if (!window.confirm('Reset toàn bộ cache về mặc định? Hành động không thể hoàn tác.')) return;
     try {
-      const sizeBefore = MockDB.sizeInBytes();
-      MockDB.reset();
-      qc.invalidateQueries({ queryKey: ['admin'] });
+      qc.invalidateQueries();
       ghiAudit({
         action: 'restore',
         entity: 'system',
-        entityId: 'reset-seed',
-        entityLabel: `Reset DB (${(sizeBefore / 1024).toFixed(1)} KB)`,
+        entityId: 'reset-cache',
+        entityLabel: 'Invalidated React Query cache',
       });
-      notifySuccess('Đã reset toàn bộ DB về seed. Vui lòng refresh trang.');
+      notifySuccess('Đã reset cache. Vui lòng refresh trang.');
     } catch {
       notifyError('Lỗi', 'Không thể reset');
     }
   }, [qc]);
 }
 
+/**
+ * Storage info is meaningless against a real API. Return a stub.
+ */
 export function useStorageInfo() {
-  const [size, setSize] = useState(0);
-  useEffect(() => {
-    const handler = () => setSize(MockDB.sizeInBytes());
-    handler();
-    const interval = setInterval(handler, 3000);
-    return () => clearInterval(interval);
-  }, []);
-  return { sizeBytes: size, sizeKb: (size / 1024).toFixed(1) };
+  return { sizeBytes: 0, sizeKb: '0.0' };
 }
 
 // ─── AUDIT LOGS ───────────────────────────────────────────────
-function trimAuditLogs() {
-  const logs = MockDB.getAll<AuditLog>('audit_logs');
-  if (logs.length <= MAX_AUDIT_LOGS) return;
-  const sorted = [...logs].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-  const toKeep = sorted.slice(0, MAX_AUDIT_LOGS);
-  const toKeepIds = new Set(toKeep.map((l) => l.id));
-  for (const log of logs) {
-    if (!toKeepIds.has(log.id)) MockDB.delete('audit_logs', log.id);
-  }
-}
 
-// Hook ghi audit có auto-trim
 export function useGhiAuditWithTrim() {
   const qc = useQueryClient();
   return useCallback(
     (input: Parameters<typeof ghiAudit>[0]) => {
       ghiAudit(input);
-      trimAuditLogs();
-      qc.invalidateQueries({ queryKey: ['admin', 'audit_logs'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'audit-logs'] });
     },
     [qc],
   );
 }
 
-export function useAuditLogs() {
-  const { data = [] } = (() => {
-    // wrap query
-    return { data: MockDB.getAll<AuditLog>('audit_logs') };
-  })();
+export function useAuditLogs(params?: { from?: string; to?: string; entityType?: string; entityId?: string; action?: string; userId?: string }) {
+  const { data } = useApiQuery<{
+    content: AuditLogEntry[];
+    totalElements: number;
+  }>(
+    ['admin', 'audit-logs'],
+    '/admin/audit-logs',
+    {
+      page: 0,
+      size: 200,
+      ...params,
+    },
+  );
+
   return {
-    data: [...data].sort(
+    data: (data?.content ?? []).slice().sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     ),
   };
 }
 
+/** Clear audit logs is a privileged op — surface a confirmation, then call backend. */
 export function useClearAuditLogs() {
   const qc = useQueryClient();
-  return useCallback(() => {
+  return useCallback(async () => {
     if (typeof window === 'undefined') return;
     if (!window.confirm('Xóa toàn bộ audit log? Hành động không thể hoàn tác.')) return;
-    const logs = MockDB.getAll<AuditLog>('audit_logs');
-    for (const log of logs) MockDB.delete('audit_logs', log.id);
-    qc.invalidateQueries({ queryKey: ['admin', 'audit_logs'] });
+    // Backend does not expose a "clear" endpoint yet; record intent.
+    qc.invalidateQueries({ queryKey: ['admin', 'audit-logs'] });
     ghiAudit({
       action: 'delete',
       entity: 'audit_logs',
       entityId: 'all',
-      entityLabel: `Đã xóa ${logs.length} log cũ`,
+      entityLabel: 'Yêu cầu xóa toàn bộ audit log',
     });
-    notifySuccess(`Đã xóa ${logs.length} audit log`);
+    notifySuccess('Đã ghi nhận yêu cầu xóa audit log');
   }, [qc]);
 }
 
 export function useExportAuditLogs() {
-  return useCallback((format: 'csv' | 'json', logs: AuditLog[]) => {
+  return useCallback((format: 'csv' | 'json', logs: AuditLogEntry[]) => {
     if (typeof window === 'undefined') return;
     const fileName = `audit-log-${new Date().toISOString().slice(0, 10)}.${format}`;
     let blob: Blob;
     if (format === 'csv') {
-      const header = 'id,createdAt,actorName,action,entity,entityId,entityLabel\n';
+      const header = 'id,createdAt,actorName,action,entityType,entityId,summary\n';
       const rows = logs
         .map((l) =>
           [
@@ -196,9 +303,9 @@ export function useExportAuditLogs() {
             l.createdAt,
             l.actorName,
             l.action,
-            l.entity,
-            l.entityId,
-            l.entityLabel ?? '',
+            l.entityType ?? '',
+            l.entityId ?? '',
+            l.summary ?? '',
           ]
             .map((v) => `"${String(v).replace(/"/g, '""')}"`)
             .join(','),
@@ -223,3 +330,11 @@ export function useExportAuditLogs() {
     notifySuccess(`Đã export ${logs.length} audit log (${format.toUpperCase()})`);
   }, []);
 }
+
+/** CSV download URL (backend-served, avoids the localStorage-based path). */
+export function auditLogsCsvUrl(params?: { from?: string; to?: string }): string {
+  return auditApi.exportCsvUrl(params);
+}
+
+/** Re-export so consumers don't need a second import. */
+export type { SystemSettings, AuditLogEntry };

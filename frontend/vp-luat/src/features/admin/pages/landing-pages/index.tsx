@@ -139,7 +139,8 @@ function ListView({
   canPublish: boolean;
   onEdit: (id: string) => void;
 }) {
-  const { data: pages, counts } = useLandingPages();
+  const { data: pagesApi, counts } = useLandingPages();
+  const pages = (pagesApi ?? []) as unknown as import('@/features/admin/types').LandingPage[];
   const removePage = useDeleteLandingPage();
   const publishPage = usePublishLandingPage();
   const unpublishPage = useUnpublishLandingPage();
@@ -168,7 +169,7 @@ function ListView({
     if (search) {
       const q = search.toLowerCase();
       r = r.filter(
-        (p) => p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q),
+        (p) => (p.title ?? '').toLowerCase().includes(q) || p.slug.toLowerCase().includes(q),
       );
     }
     if (statusFilter !== 'all') r = r.filter((p) => p.status === statusFilter);
@@ -357,7 +358,7 @@ function ListView({
         onConfirm={async () => {
           if (!confirmDelete) return;
           try {
-            await removePage.mutateAsync(confirmDelete.id);
+            await removePage(confirmDelete.id);
             notifySuccess('Đã xóa landing page');
           } catch (e) {
             notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');
@@ -384,7 +385,8 @@ function EditorView({
   canPublish: boolean;
   onBack: () => void;
 }) {
-  const { data: pages = [] } = useLandingPages();
+  const { data: pagesApi = [] } = useLandingPages();
+  const pages = pagesApi as unknown as import('@/features/admin/types').LandingPage[];
   const updateBlocks = useUpdateLandingBlocks();
   const publishPage = usePublishLandingPage();
   const unpublishPage = useUnpublishLandingPage();

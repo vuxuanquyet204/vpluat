@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { Save, RotateCcw, Check } from 'lucide-react';
-import type { Service, Lawyer } from '@/features/admin/types';
+import type { Service, Lawyer } from '../hooks/use-services';
 
 interface AssignmentMatrixProps {
   services: Service[];

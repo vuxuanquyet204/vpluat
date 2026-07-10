@@ -58,6 +58,7 @@ export function useBookings(options: UseBookingsOptions = {}): Booking[] {
         time: formatToTimeString(scheduledDate),
         status: appt.status?.toLowerCase() as BookingStatus,
         notes: appt.internalNotes,
+        issueSummary: appt.issueSummary,
         cancelledReason: appt.cancelReason,
         createdAt: appt.createdAt ?? '',
         updatedAt: appt.updatedAt ?? '',

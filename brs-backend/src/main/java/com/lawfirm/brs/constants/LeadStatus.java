@@ -9,6 +9,7 @@ public enum LeadStatus {
     QUALIFIED,     // Lead qualified
     PROPOSAL,      // Proposal sent
     NEGOTIATION,   // In negotiation
+    PROGRESS,      // In progress / working
     WON,           // Converted to customer
     LOST,          // Lead lost
     DUPLICATE      // Duplicate lead

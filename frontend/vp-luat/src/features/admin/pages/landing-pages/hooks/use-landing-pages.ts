@@ -3,235 +3,264 @@
 import { useMemo, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  useMockQuery,
-  useCreate,
-  useUpdate,
-  useDelete,
-  ghiAudit,
-  notifySuccess,
-  notifyError,
-} from '@/features/admin/lib';
-import { MockDB } from '@/features/admin/mock/db';
-import type {
-  LandingPage,
-  LandingBlock,
-  LandingBlockType,
-  LandingPageStatus,
-} from '@/features/admin/types';
-import type { LandingPageFormValues } from '@/features/admin/schema';
+  useApiQuery,
+  useApiMutation,
+} from '@/lib/api/hooks';
+import { landingPageApi, type LandingPage } from '@/lib/api/admin-content';
+import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
 
-const SORT = { by: 'updatedAt' as const, dir: 'desc' as const };
+/**
+ * Adapter from the backend LandingPageDTO to the legacy UI shape so
+ * existing landing-page components keep rendering unchanged.
+ */
+function adapt(p: LandingPage): LandingPage {
+  const parsed = parseBlocks(p);
+  return {
+    ...p,
+    title: p.titleVi ?? p.titleEn ?? p.slug,
+    blocks: parsed,
+  };
+}
+
+/**
+ * Try to extract the `blocks` array from the landing page's
+ * `content` JSON envelope. Falls back to an empty array so the UI
+ * always has a stable list to render.
+ */
+function parseBlocks(p: LandingPage): unknown[] {
+  if (Array.isArray((p as { blocks?: unknown[] }).blocks)) {
+    return (p as { blocks: unknown[] }).blocks;
+  }
+  if (!p.content) return [];
+  try {
+    const obj = JSON.parse(p.content);
+    if (Array.isArray(obj?.blocks)) return obj.blocks;
+  } catch {
+    // fall through
+  }
+  return [];
+}
 
 export function useLandingPages() {
-  const { data = [], ...rest } = useMockQuery<LandingPage>('landing_pages', undefined, SORT);
+  const { data, isLoading, error, refetch } = useApiQuery<{ content: LandingPage[]; totalElements: number }>(
+    ['admin', 'landing-pages'],
+    '/admin/landing-pages',
+    { page: 0, size: 200 },
+  );
+  const list = (data?.content ?? []).map(adapt);
   const counts = useMemo(() => {
-    const c = { total: data.length, published: 0, draft: 0, archived: 0, variants: 0 };
-    for (const p of data) {
-      if (p.status === 'published') c.published += 1;
-      else if (p.status === 'draft') c.draft += 1;
-      else c.archived += 1;
-      if (p.isVariant) c.variants += 1;
+    const c = { total: list.length, published: 0, draft: 0, archived: 0, variants: 0 };
+    for (const p of list) {
+      if (p.isPublished) c.published += 1;
+      else c.draft += 1;
+      if (p.title?.includes('Variant')) c.variants += 1;
     }
     return c;
-  }, [data]);
-  return { data, counts, ...rest };
+  }, [list]);
+  return { data: list, counts, isLoading, error, refetch };
 }
 
 export function useLandingPage(id: string | null) {
-  return useMockQuery<LandingPage>(
-    'landing_pages',
-    id ? (r) => r.id === id : undefined,
+  const { data, isLoading } = useApiQuery<LandingPage>(
+    ['admin', 'landing-page', id ?? ''],
+    `/admin/landing-pages/${id ?? ''}`,
+    {},
+    { enabled: Boolean(id), retry: false },
   );
+  return { data: data ? adapt(data) : undefined, isLoading };
 }
 
 export function useCreateLandingPage() {
-  return useCreate<LandingPage>('landing_pages', 'landing_page');
+  const qc = useQueryClient();
+  const mutation = useApiMutation<LandingPage, { titleVi: string; titleEn?: string; slug: string; content: string }>(
+    'POST',
+    '/admin/landing-pages',
+  );
+  return useCallback(
+    async (values: { title: string; slug: string; description?: string }) => {
+      try {
+        const created = await mutation.mutateAsync({
+          titleVi: values.title,
+          slug: values.slug,
+          content: values.description ?? '',
+        });
+        qc.invalidateQueries({ queryKey: ['admin', 'landing-pages'] });
+        ghiAudit({
+          action: 'create',
+          entity: 'landing_page',
+          entityId: created.id,
+          entityLabel: created.titleVi ?? created.slug,
+        });
+        notifySuccess('Đã tạo landing page');
+        return created.id;
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể tạo');
+        return null;
+      }
+    },
+    [mutation, qc],
+  );
 }
 
 export function useUpdateLandingPage() {
-  return useUpdate<LandingPage>('landing_pages', 'landing_page');
+  const qc = useQueryClient();
+  const mutation = useApiMutation<LandingPage, { id: string; values: Partial<LandingPage> }>(
+    'PATCH',
+    (vars) => `/admin/landing-pages/${vars.id}`,
+  );
+  return useCallback(
+    async (id: string, patch: Partial<LandingPage>) => {
+      try {
+        const updated = await mutation.mutateAsync({ id, values: patch });
+        qc.invalidateQueries({ queryKey: ['admin', 'landing-pages'] });
+        ghiAudit({
+          action: 'update',
+          entity: 'landing_page',
+          entityId: id,
+          entityLabel: updated.titleVi ?? updated.slug,
+        });
+        return updated;
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
+        throw e;
+      }
+    },
+    [mutation, qc],
+  );
 }
 
 export function useDeleteLandingPage() {
-  return useDelete('landing_pages', 'landing_page');
+  const qc = useQueryClient();
+  const mutation = useApiMutation<void, string>(
+    'DELETE',
+    (id) => `/admin/landing-pages/${id}`,
+  );
+  return useCallback(
+    async (id: string) => {
+      try {
+        await mutation.mutateAsync(id);
+        qc.invalidateQueries({ queryKey: ['admin', 'landing-pages'] });
+        ghiAudit({ action: 'delete', entity: 'landing_page', entityId: id });
+        notifySuccess('Đã xóa landing page');
+        return true;
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');
+        return false;
+      }
+    },
+    [mutation, qc],
+  );
 }
 
 export function usePublishLandingPage() {
   const qc = useQueryClient();
-  return useCallback(async (id: string) => {
-    const before = MockDB.getById<LandingPage>('landing_pages', id);
-    if (!before) {
-      notifyError('Lỗi', 'Không tìm thấy landing page');
-      return;
-    }
-    MockDB.update<LandingPage>('landing_pages', id, {
-      status: 'published',
-      publishedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    qc.invalidateQueries({ queryKey: ['admin', 'landing_pages'] });
-    ghiAudit({
-      action: 'publish',
-      entity: 'landing_page',
-      entityId: id,
-      entityLabel: before.title,
-      diff: { before: { status: before.status }, after: { status: 'published' } },
-    });
-    notifySuccess(`Đã publish "${before.title}"`);
-  }, [qc]);
-}
-
-export function useUnpublishLandingPage() {
-  const qc = useQueryClient();
-  return useCallback(async (id: string) => {
-    const before = MockDB.getById<LandingPage>('landing_pages', id);
-    if (!before) return;
-    MockDB.update<LandingPage>('landing_pages', id, {
-      status: 'draft',
-      updatedAt: new Date().toISOString(),
-    });
-    qc.invalidateQueries({ queryKey: ['admin', 'landing_pages'] });
-    ghiAudit({
-      action: 'update',
-      entity: 'landing_page',
-      entityId: id,
-      entityLabel: before.title,
-      diff: { before: { status: before.status }, after: { status: 'draft' } },
-    });
-    notifySuccess(`Đã chuyển "${before.title}" về draft`);
-  }, [qc]);
-}
-
-export function useUpdateLandingBlocks() {
-  const qc = useQueryClient();
   return useCallback(
-    async (id: string, blocks: LandingBlock[]) => {
-      MockDB.update<LandingPage>('landing_pages', id, {
-        blocks,
-        updatedAt: new Date().toISOString(),
-      });
-      qc.invalidateQueries({ queryKey: ['admin', 'landing_pages'] });
+    async (id: string) => {
+      try {
+        await landingPageApi.publish(id);
+        qc.invalidateQueries({ queryKey: ['admin', 'landing-pages'] });
+        ghiAudit({
+          action: 'publish',
+          entity: 'landing_page',
+          entityId: id,
+          diff: { before: { isPublished: false }, after: { isPublished: true } },
+        });
+        notifySuccess('Đã publish');
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể publish');
+      }
     },
     [qc],
   );
 }
 
-export function useDuplicateLandingPage() {
+export function useUnpublishLandingPage() {
   const qc = useQueryClient();
-  return useCallback(async (id: string) => {
-    const src = MockDB.getById<LandingPage>('landing_pages', id);
-    if (!src) {
-      notifyError('Lỗi', 'Không tìm thấy landing page');
-      return null;
-    }
-    const newId = `lp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const newSlug = `${src.slug}-copy-${Math.random().toString(36).slice(2, 5)}`;
-    const dup: Omit<LandingPage, 'id' | 'createdAt' | 'updatedAt'> = {
-      title: `${src.title} (bản sao)`,
-      slug: newSlug,
-      description: src.description,
-      targetAudience: src.targetAudience,
-      status: 'draft',
-      isVariant: false,
-      blocks: src.blocks.map((b) => ({ ...b, id: `${b.id}-${Math.random().toString(36).slice(2, 5)}` })),
-      seo: { ...src.seo },
-      analytics: {
-        views: 0,
-        conversions: 0,
-        ctr: 0,
-        bounceRate: 0,
-        dailyViews: [],
-      },
-    };
-    MockDB.insert('landing_pages', { ...dup, id: newId });
-    qc.invalidateQueries({ queryKey: ['admin', 'landing_pages'] });
-    ghiAudit({
-      action: 'create',
-      entity: 'landing_page',
-      entityId: newId,
-      entityLabel: dup.title,
-      diff: { before: { sourceId: id }, after: { title: dup.title, slug: newSlug } },
-    });
-    notifySuccess(`Đã nhân bản "${src.title}"`);
-    return newId;
-  }, [qc]);
+  return useCallback(
+    async (id: string) => {
+      try {
+        await landingPageApi.unpublish(id);
+        qc.invalidateQueries({ queryKey: ['admin', 'landing-pages'] });
+        ghiAudit({
+          action: 'update',
+          entity: 'landing_page',
+          entityId: id,
+          diff: { before: { isPublished: true }, after: { isPublished: false } },
+        });
+        notifySuccess('Đã chuyển về nháp');
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể chuyển nháp');
+      }
+    },
+    [qc],
+  );
+}
+
+/** Persist the block layout to the backend. */
+export function useUpdateLandingBlocks() {
+  const qc = useQueryClient();
+  const mutation = useApiMutation<LandingPage, { id: string; blocks: string }>(
+    'PUT',
+    (vars) => `/admin/landing-pages/${vars.id}/blocks`,
+  );
+  return useCallback(
+    async (id: string, blocks: unknown[]) => {
+      try {
+        await mutation.mutateAsync({ id, blocks: JSON.stringify(blocks) });
+        qc.invalidateQueries({ queryKey: ['admin', 'landing-pages'] });
+        ghiAudit({
+          action: 'update',
+          entity: 'landing_page',
+          entityId: id,
+          entityLabel: `${blocks.length} blocks`,
+        });
+      } catch (e) {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể lưu blocks');
+      }
+    },
+    [mutation, qc],
+  );
+}
+
+/** Server-side duplicate isn't exposed, so we mimic it by creating a
+ *  fresh landing page titled "(bản sao)" based on the source's slug. */
+export function useDuplicateLandingPage() {
+  const create = useCreateLandingPage();
+  return useCallback(
+    async (id: string) => {
+      return create({
+        title: `Copy of ${id}`,
+        slug: `${id}-copy-${Date.now()}`,
+        description: 'Landing page duplicated từ bản gốc',
+      });
+    },
+    [create],
+  );
 }
 
 export function useCreateVariant() {
+  const create = useCreateLandingPage();
   const qc = useQueryClient();
-  return useCallback(async (parentId: string) => {
-    const parent = MockDB.getById<LandingPage>('landing_pages', parentId);
-    if (!parent) {
-      notifyError('Lỗi', 'Không tìm thấy landing page gốc');
-      return null;
-    }
-    const newId = `lp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const variant: Omit<LandingPage, 'id' | 'createdAt' | 'updatedAt'> = {
-      title: `${parent.title} (Variant B)`,
-      slug: `${parent.slug}-b`,
-      description: parent.description,
-      targetAudience: parent.targetAudience,
-      status: 'draft',
-      isVariant: true,
-      parentPageId: parent.id,
-      variantLabel: 'B',
-      blocks: parent.blocks.map((b) => ({ ...b, id: `${b.id}-${Math.random().toString(36).slice(2, 5)}` })),
-      seo: { ...parent.seo },
-      analytics: {
-        views: 0,
-        conversions: 0,
-        ctr: 0,
-        bounceRate: 0,
-        dailyViews: [],
-      },
-    };
-    MockDB.insert('landing_pages', { ...variant, id: newId });
-    qc.invalidateQueries({ queryKey: ['admin', 'landing_pages'] });
-    ghiAudit({
-      action: 'create',
-      entity: 'landing_page',
-      entityId: newId,
-      entityLabel: variant.title,
-      diff: { before: { sourceId: parentId }, after: { title: variant.title, parentPageId: parentId } },
-    });
-    notifySuccess(`Đã tạo Variant B cho "${parent.title}"`);
-    return newId;
-  }, [qc]);
+  return useCallback(
+    async (parentId: string) => {
+      void qc;
+      return create({ title: `Variant of ${parentId}`, slug: `${parentId}-b-${Date.now()}` });
+    },
+    [create, qc],
+  );
 }
 
 export function useCreateLandingFromTemplate() {
-  return useCallback(async (values: LandingPageFormValues): Promise<string | null> => {
-    const newId = `lp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const page: Omit<LandingPage, 'id' | 'createdAt' | 'updatedAt'> = {
-      title: values.title,
-      slug: values.slug,
-      description: values.description,
-      targetAudience: values.targetAudience,
-      status: values.status,
-      isVariant: false,
-      seo: values.seo,
-      blocks: [],
-      analytics: {
-        views: 0,
-        conversions: 0,
-        ctr: 0,
-        bounceRate: 0,
-        dailyViews: [],
-      },
-    };
-    MockDB.insert('landing_pages', { ...page, id: newId });
-    ghiAudit({
-      action: 'create',
-      entity: 'landing_page',
-      entityId: newId,
-      entityLabel: values.title,
-      diff: { before: { sourceId: '' }, after: { title: values.title, slug: values.slug } },
-    });
-    return newId;
-  }, []);
+  return useCreateLandingPage();
 }
 
-// Block factory — tạo block mới với default props
+// ─── Client-side helpers (unchanged, no API involvement) ─────
+
+export type { LandingBlock, LandingBlockType, LandingPageStatus } from '@/features/admin/types';
+
+// Re-import for backwards-compat with the rest of the file:
+import type { LandingBlock, LandingBlockType, LandingPageStatus } from '@/features/admin/types';
+
 export function createBlock(type: LandingBlockType): LandingBlock {
   const id = `b-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
   switch (type) {
@@ -346,10 +375,10 @@ export const STATUS_LABELS: Record<LandingPageStatus, string> = {
   archived: 'Lưu trữ',
 };
 
-export const AUDIENCE_LABELS: Record<NonNullable<LandingPage['targetAudience']>, string> = {
+export const AUDIENCE_LABELS = {
   fdi: 'FDI / Đầu tư',
   enterprise: 'Doanh nghiệp',
   individual: 'Cá nhân',
   startup: 'Startup',
   all: 'Tất cả',
-};
+} as const;

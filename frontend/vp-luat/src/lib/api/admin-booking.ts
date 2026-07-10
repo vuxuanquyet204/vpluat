@@ -23,6 +23,8 @@ export interface Appointment {
   status: string;
   cancelReason?: string;
   internalNotes?: string;
+  /** Client's description of their legal issue from the booking form. */
+  issueSummary?: string;
   source?: string;
   createdAt: string;
   updatedAt?: string;
@@ -203,4 +205,53 @@ export const lawyerScheduleApi = {
   // Delete schedule override
   deleteOverride: (lawyerId: string, date: string) =>
     api.del<void>(`/admin/lawyers/${lawyerId}/schedule/override?date=${date}`),
+};
+
+// ============================================================
+// Services
+// ============================================================
+
+export interface Service {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  price?: number;
+  isActive?: boolean;
+  lawyerIds?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const serviceApi = {
+  list: () => api.get<Service[]>(`/admin/services`),
+  get: (id: string) => api.get<Service>(`/admin/services/${id}`),
+  create: (body: Omit<Service, 'id'>) => api.post<Service>(`/admin/services`, body),
+  update: (id: string, body: Partial<Service>) => api.put<Service>(`/admin/services/${id}`, body),
+  delete: (id: string) => api.del<void>(`/admin/services/${id}`),
+};
+
+// ============================================================
+// Lawyers
+// ============================================================
+
+export interface Lawyer {
+  id: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  specializations?: string[];
+  serviceIds?: string[];
+  isActive?: boolean;
+  bio?: string;
+  avatarUrl?: string;
+  createdAt?: string;
+}
+
+export const lawyerApi = {
+  list: () => api.get<Lawyer[]>(`/admin/lawyers`),
+  get: (id: string) => api.get<Lawyer>(`/admin/lawyers/${id}`),
+  create: (body: Omit<Lawyer, 'id'>) => api.post<Lawyer>(`/admin/lawyers`, body),
+  update: (id: string, body: Partial<Lawyer>) => api.patch<Lawyer>(`/admin/lawyers/${id}`, body),
+  delete: (id: string) => api.del<void>(`/admin/lawyers/${id}`),
 };

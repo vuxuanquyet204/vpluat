@@ -4,6 +4,7 @@ import { useCallback, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchAvailability,
+  fetchLawyers,
   releaseReservation,
   reserveSlot,
   submitBooking,
@@ -11,6 +12,14 @@ import {
   type ReserveSlotPayload,
   type SubmitBookingPayload,
 } from '../api';
+
+export function useLawyersQuery() {
+  return useQuery({
+    queryKey: ['booking-lawyers'],
+    queryFn: fetchLawyers,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
 
 export function useAvailabilityQuery(params: { lawyerId: string | null; date: string | null }) {
   return useQuery({

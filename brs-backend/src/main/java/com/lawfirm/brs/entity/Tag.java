@@ -25,6 +25,9 @@ public class Tag {
     @Column(name = "slug", nullable = false, unique = true)
     private String slug;
 
+    @Column(name = "name", length = 100)
+    private String name;
+
     @Version
     @Column(name = "version")
     private Long version;

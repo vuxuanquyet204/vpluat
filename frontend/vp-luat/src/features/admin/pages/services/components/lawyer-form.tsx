@@ -7,7 +7,7 @@ import { Save, X, Camera } from 'lucide-react';
 import { Modal } from '@/features/admin/shared';
 import { FormFieldInput, FormFieldTextarea } from '@/features/admin/components';
 import { lawyerSchema, type LawyerFormValues } from '@/features/admin/schema';
-import type { Lawyer, Service } from '@/features/admin/types';
+import type { Service, Lawyer } from '../hooks/use-services';
 
 interface LawyerFormProps {
   isOpen: boolean;

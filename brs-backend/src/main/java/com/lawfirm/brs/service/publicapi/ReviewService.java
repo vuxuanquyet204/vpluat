@@ -6,7 +6,9 @@ import com.lawfirm.brs.mapper.ReviewMapper;
 import com.lawfirm.brs.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -49,6 +51,9 @@ public class ReviewService {
      * Publish a review (approve)
      */
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "reviews", allEntries = true)
+    })
     public ReviewDTO publishReview(UUID id) {
         log.debug("Publishing review: {}", id);
         Review review = reviewRepository.findById(id)
@@ -61,6 +66,9 @@ public class ReviewService {
      * Toggle feature status
      */
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "reviews", allEntries = true)
+    })
     public ReviewDTO toggleFeature(UUID id) {
         log.debug("Toggling feature for review: {}", id);
         Review review = reviewRepository.findById(id)
@@ -77,6 +85,9 @@ public class ReviewService {
      * Delete a review
      */
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "reviews", allEntries = true)
+    })
     public void deleteReview(UUID id) {
         log.debug("Deleting review: {}", id);
         reviewRepository.deleteById(id);
@@ -105,7 +116,7 @@ public class ReviewService {
     }
 
     public List<ReviewDTO> getRecentReviews(int limit) {
-        log.debug("Fetching {} recent reviews", limit);
+        log.debug("Fetching recent reviews");
         Pageable pageable = PageRequest.of(0, limit);
         return reviewMapper.toDTOList(reviewRepository.findRecentPublishedReviews(pageable));
     }

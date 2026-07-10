@@ -98,6 +98,10 @@ public class Appointment {
     @Column(name = "admin_notes", columnDefinition = "TEXT")
     private String adminNotes;
 
+    /** Client's description of their legal issue, collected from the booking form. */
+    @Column(name = "issue_summary", columnDefinition = "TEXT")
+    private String issueSummary;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lead_id")
     private Lead lead;

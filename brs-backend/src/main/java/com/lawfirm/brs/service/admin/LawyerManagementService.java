@@ -7,6 +7,8 @@ import com.lawfirm.brs.mapper.LawyerMapper;
 import com.lawfirm.brs.repository.LawyerProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,10 @@ public class LawyerManagementService {
     private final LawyerProfileRepository lawyerRepository;
     private final LawyerMapper lawyerMapper;
 
+    @Caching(evict = {
+        @CacheEvict(value = "lawyers", allEntries = true),
+        @CacheEvict(value = "search", allEntries = true)
+    })
     public LawyerDTO createLawyer(LawyerRequest request) {
         log.debug("Creating lawyer: {}", request.slug());
         LawyerProfile lawyer = LawyerProfile.builder()
@@ -46,11 +52,15 @@ public class LawyerManagementService {
         return lawyerMapper.toDTO(lawyerRepository.save(lawyer));
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "lawyers", allEntries = true),
+        @CacheEvict(value = "search", allEntries = true)
+    })
     public LawyerDTO updateLawyer(UUID id, LawyerRequest request) {
         log.debug("Updating lawyer: {}", id);
         LawyerProfile lawyer = lawyerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lawyer not found: " + id));
-        
+
         lawyer.setSlug(request.slug());
         lawyer.setNameVi(request.nameVi());
         lawyer.setNameEn(request.nameEn());
@@ -66,7 +76,7 @@ public class LawyerManagementService {
             lawyer.setIsFeatured(request.isFeatured());
         }
         lawyer.setWorkingHours(request.workingHours());
-        
+
         return lawyerMapper.toDTO(lawyerRepository.save(lawyer));
     }
 
@@ -90,15 +100,23 @@ public class LawyerManagementService {
         return lawyerMapper.toDTOList(lawyerRepository.findByIsFeaturedTrue());
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "lawyers", allEntries = true),
+        @CacheEvict(value = "search", allEntries = true)
+    })
     public LawyerDTO toggleFeature(UUID id) {
         log.debug("Toggling lawyer feature: {}", id);
         LawyerProfile lawyer = lawyerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lawyer not found: " + id));
-        
+
         lawyer.setIsFeatured(!Boolean.TRUE.equals(lawyer.getIsFeatured()));
         return lawyerMapper.toDTO(lawyerRepository.save(lawyer));
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "lawyers", allEntries = true),
+        @CacheEvict(value = "search", allEntries = true)
+    })
     public void deleteLawyer(UUID id) {
         log.debug("Deleting lawyer: {}", id);
         lawyerRepository.deleteById(id);

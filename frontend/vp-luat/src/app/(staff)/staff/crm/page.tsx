@@ -2,32 +2,66 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { RoleDisplayNames, canAccessNav } from '@/features/auth/utils/permissions';
+import { canAccessNav } from '@/features/auth/utils/permissions';
 import type { Role } from '@/features/auth/utils/permissions';
-import { Users, Search, Filter, Plus, Phone, Mail, Eye, Clock, UserPlus } from 'lucide-react';
+import { Users, Search, Plus, Phone, Mail, Eye, Clock } from 'lucide-react';
+import { leadApi, type Lead } from '@/lib/api/admin-crm';
+import { useApiQuery } from '@/lib/api/hooks';
+import { LeadCreateModal, LeadDetailDrawer } from '@/features/shared/forms/lead-forms';
 
-const MOCK_LEADS = [
-  { id: '1', name: 'Nguyễn Văn A', phone: '0901234567', email: 'nva@email.com', service: 'Tư vấn pháp lý', status: 'new', assignedTo: 'CSKH 1', createdAt: '09/07/2026 10:30' },
-  { id: '2', name: 'Trần Thị B', phone: '0912345678', email: 'ttb@email.com', service: 'Luật hôn nhân', status: 'contacted', assignedTo: 'CSKH 1', createdAt: '09/07/2026 09:15' },
-  { id: '3', name: 'Lê Văn C', phone: '0923456789', email: 'lvc@email.com', service: 'Thủ tục đất đai', status: 'progress', assignedTo: 'CSKH 2', createdAt: '08/07/2026 16:45' },
-  { id: '4', name: 'Phạm Thị D', phone: '0934567890', email: 'ptd@email.com', service: 'Hợp đồng', status: 'converted', assignedTo: 'CSKH 1', createdAt: '07/07/2026 11:20' },
-  { id: '5', name: 'Hoàng Văn E', phone: '0945678901', email: 'hve@email.com', service: 'Tư vấn pháp lý', status: 'new', assignedTo: 'CSKH 2', createdAt: '09/07/2026 08:00' },
-];
-
-const STATUS_CONFIG = {
-  new: { label: 'Mới', color: '#2563EB', bg: '#EFF6FF' },
-  contacted: { label: 'Đã liên hệ', color: '#D97706', bg: '#FEF9EF' },
-  progress: { label: 'Đang tư vấn', color: '#7C3AED', bg: '#F3E8FF' },
-  converted: { label: 'Đã chuyển đổi', color: '#059669', bg: '#ECFDF5' },
-  lost: { label: 'Mất lead', color: '#DC2626', bg: '#FEE2E2' },
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  NEW: { label: 'Mới', color: '#2563EB', bg: '#EFF6FF' },
+  CONTACTED: { label: 'Đã liên hệ', color: '#D97706', bg: '#FEF9EF' },
+  QUALIFIED: { label: 'Đang tư vấn', color: '#7C3AED', bg: '#F3E8FF' },
+  PROPOSAL: { label: 'Đã gửi báo giá', color: '#0891B2', bg: '#ECFEFF' },
+  NEGOTIATION: { label: 'Đang đàm phán', color: '#DB2777', bg: '#FCE7F3' },
+  WON: { label: 'Đã chuyển đổi', color: '#059669', bg: '#ECFDF5' },
+  LOST: { label: 'Mất lead', color: '#DC2626', bg: '#FEE2E2' },
+  DUPLICATE: { label: 'Trùng lặp', color: '#6B7280', bg: '#F3F4F6' },
 };
+
+function formatDate(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return iso;
+  }
+}
 
 export default function StaffCrmPage() {
   const { data: session } = useSession();
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
   const userRole = (session?.user?.role as Role) ?? 'VIEWER';
+
+  const { data, isLoading, error, refetch } = useApiQuery<{
+    content: Lead[];
+    totalElements: number;
+  }>(
+    ['staff-leads'],
+    '/crm/leads',
+    {
+      page: 0,
+      size: 100,
+      status: filter === 'all' ? undefined : filter,
+      search: search || undefined,
+    },
+    {
+      enabled: canAccessNav(userRole, 'crm'),
+    }
+  );
+
+  const leads = data?.content ?? [];
 
   if (!canAccessNav(userRole, 'crm')) {
     return (
@@ -39,21 +73,21 @@ export default function StaffCrmPage() {
     );
   }
 
-  const filteredLeads = MOCK_LEADS.filter(l => {
-    if (filter !== 'all' && l.status !== filter) return false;
-    if (search && !l.name.toLowerCase().includes(search.toLowerCase()) && !l.phone.includes(search)) return false;
-    return true;
-  });
-
   return (
     <div className="admin-view">
       <div className="admin-page-header">
         <div className="admin-page-header__left">
           <h1 className="admin-page-header__title">Quản lý Lead / CRM</h1>
-          <p className="admin-page-header__sub">Theo dõi và quản lý khách hàng tiềm năng</p>
+          <p className="admin-page-header__sub">
+            Tổng cộng {data?.totalElements ?? 0} lead trong hệ thống
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="action-btn action-btn--primary">
+          <button
+            type="button"
+            className="action-btn action-btn--primary"
+            onClick={() => setCreateOpen(true)}
+          >
             <Plus size={14} />
             Thêm Lead mới
           </button>
@@ -92,17 +126,15 @@ export default function StaffCrmPage() {
           }}
         >
           <option value="all">Tất cả trạng thái</option>
-          <option value="new">Mới</option>
-          <option value="contacted">Đã liên hệ</option>
-          <option value="progress">Đang tư vấn</option>
-          <option value="converted">Đã chuyển đổi</option>
+          {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+            <option key={key} value={key}>{cfg.label}</option>
+          ))}
         </select>
       </div>
 
-      {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
         {Object.entries(STATUS_CONFIG).map(([key, config]) => {
-          const count = MOCK_LEADS.filter(l => l.status === key).length;
+          const count = leads.filter((l) => l.status === key).length;
           return (
             <div key={key} style={{
               padding: 16,
@@ -122,80 +154,119 @@ export default function StaffCrmPage() {
         })}
       </div>
 
-      {/* Leads Table */}
       <div className="admin-card">
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Khách hàng</th>
-                <th>Liên hệ</th>
-                <th>Dịch vụ</th>
-                <th>Trạng thái</th>
-                <th>Người phụ trách</th>
-                <th>Ngày tạo</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLeads.map((lead) => {
-                const status = STATUS_CONFIG[lead.status as keyof typeof STATUS_CONFIG];
-                return (
-                  <tr key={lead.id}>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{lead.name}</div>
-                    </td>
-                    <td>
-                      <div style={{ fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Phone size={12} />{lead.phone}
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: 40, color: 'var(--gray-500)' }}>
+            Đang tải dữ liệu...
+          </div>
+        ) : error ? (
+          <div style={{ textAlign: 'center', padding: 40, color: 'var(--danger, #DC2626)' }}>
+            Lỗi tải dữ liệu: {error.message}
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Khách hàng</th>
+                  <th>Liên hệ</th>
+                  <th>Dịch vụ</th>
+                  <th>Trạng thái</th>
+                  <th>Người phụ trách</th>
+                  <th>Ngày tạo</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leads.map((lead) => {
+                  const status = STATUS_CONFIG[lead.status] ?? {
+                    label: lead.status,
+                    color: '#6B7280',
+                    bg: '#F3F4F6',
+                  };
+                  return (
+                    <tr key={lead.id}>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{lead.name}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          {lead.phone && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Phone size={12} />{lead.phone}
+                            </span>
+                          )}
+                          {lead.email && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--gray-500)' }}>
+                              <Mail size={12} />{lead.email}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ fontSize: '0.82rem' }}>{lead.serviceName ?? '—'}</td>
+                      <td>
+                        <span style={{
+                          padding: '4px 10px',
+                          background: status.bg,
+                          color: status.color,
+                          borderRadius: 20,
+                          fontSize: '0.72rem',
+                          fontWeight: 600
+                        }}>
+                          {status.label}
                         </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--gray-500)' }}>
-                          <Mail size={12} />{lead.email}
-                        </span>
-                      </div>
-                    </td>
-                    <td style={{ fontSize: '0.82rem' }}>{lead.service}</td>
-                    <td>
-                      <span style={{
-                        padding: '4px 10px',
-                        background: status.bg,
-                        color: status.color,
-                        borderRadius: 20,
-                        fontSize: '0.72rem',
-                        fontWeight: 600
-                      }}>
-                        {status.label}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: '0.82rem' }}>{lead.assignedTo}</td>
-                    <td style={{ fontSize: '0.82rem', color: 'var(--gray-500)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Clock size={12} />
-                        {lead.createdAt}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="action-btns">
-                        <button className="action-btn" style={{ fontSize: '0.72rem' }}>
-                          <Eye size={11} /> Xem
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td style={{ fontSize: '0.82rem' }}>
+                        {lead.assignedTo?.fullName ?? '—'}
+                      </td>
+                      <td style={{ fontSize: '0.82rem', color: 'var(--gray-500)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Clock size={12} />
+                          {formatDate(lead.createdAt)}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="action-btns">
+                          <button
+                            type="button"
+                            className="action-btn"
+                            style={{ fontSize: '0.72rem' }}
+                            onClick={() => setSelectedLeadId(lead.id)}
+                          >
+                            <Eye size={11} /> Xem
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
 
-        {filteredLeads.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>
-            <Users size={48} style={{ opacity: 0.3, marginBottom: 12 }} />
-            <div>Không có lead nào</div>
+            {leads.length === 0 && (
+              <div style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>
+                <Users size={48} style={{ opacity: 0.3, marginBottom: 12 }} />
+                <div>Không có lead nào</div>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      <LeadCreateModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={() => refetch()}
+      />
+
+      <LeadDetailDrawer
+        open={!!selectedLeadId}
+        onClose={() => setSelectedLeadId(null)}
+        leadId={selectedLeadId}
+        onUpdated={() => refetch()}
+      />
     </div>
   );
 }
+
+void leadApi;

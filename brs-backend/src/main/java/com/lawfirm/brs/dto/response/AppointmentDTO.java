@@ -40,4 +40,6 @@ public class AppointmentDTO {
     private Instant createdAt;
     private Instant updatedAt;
     private Boolean includeOtpDetails;
+    /** Client's free-form description of their legal issue (from booking form). */
+    private String issueSummary;
 }

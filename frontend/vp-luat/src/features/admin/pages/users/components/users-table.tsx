@@ -4,7 +4,7 @@ import { Edit3, Trash2, KeyRound, Lock, Unlock, LogIn, CheckSquare, Square } fro
 import { DataTableV2, type DataTableColumn } from '@/features/admin/components';
 import { StatusBadge, type StatusVariant } from '@/features/admin/shared';
 import type { AdminUser } from '@/features/admin/types';
-import { ROLE_LABELS, ROLE_VARIANT } from '../hooks/use-users';
+import { ROLE_LABELS, ROLE_VARIANT, type FrontendUserRole } from '../hooks/use-users';
 
 interface UsersTableProps {
   data: AdminUser[];
@@ -135,9 +135,10 @@ export function UsersTable({
       key: 'role',
       header: 'Vai trò',
       width: 130,
-      cell: (u) => (
-        <StatusBadge variant={ROLE_VARIANT[u.role] as StatusVariant} label={ROLE_LABELS[u.role]} />
-      ),
+      cell: (u) => {
+        const roleKey = (u.role ?? 'USER') as FrontendUserRole;
+        return <StatusBadge variant={ROLE_VARIANT[roleKey] as StatusVariant} label={ROLE_LABELS[roleKey] ?? u.role} />;
+      },
     },
     {
       key: 'isActive',
@@ -176,7 +177,7 @@ export function UsersTable({
       width: 240,
       cell: (u) => (
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          {canImpersonate && u.isActive && u.id !== currentUserId && u.role !== 'super_admin' && (
+          {canImpersonate && u.isActive && u.id !== currentUserId && u.role !== 'SUPER_ADMIN' && (
             <button
               type="button"
               className="action-btn"
@@ -224,7 +225,7 @@ export function UsersTable({
               )}
             </button>
           )}
-          {canDelete && u.id !== currentUserId && u.role !== 'super_admin' && (
+          {canDelete && u.id !== currentUserId && u.role !== 'SUPER_ADMIN' && (
             <button
               type="button"
               className="action-btn"

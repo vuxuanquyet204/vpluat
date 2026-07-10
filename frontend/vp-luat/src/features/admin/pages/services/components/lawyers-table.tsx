@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { Pencil, Trash2, Briefcase, Mail, Phone, CheckSquare, Square } from 'lucide-react';
 import { DataTableV2, type DataTableColumn } from '@/features/admin/components';
 import { StatusBadge, type StatusVariant } from '@/features/admin/shared';
-import type { Lawyer, Service } from '@/features/admin/types';
+import type { Service, Lawyer } from '../hooks/use-services';
 
 interface LawyersTableProps {
   data: Lawyer[];

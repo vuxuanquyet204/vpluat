@@ -6,6 +6,7 @@ export interface BookingServiceOption {
 }
 
 export interface BookingLawyerOption {
+  /** UUID from backend (used for API calls) */
   id: string;
   name: string;
   initials: string;

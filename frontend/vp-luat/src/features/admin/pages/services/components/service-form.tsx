@@ -7,7 +7,7 @@ import { Save, X } from 'lucide-react';
 import { Modal } from '@/features/admin/shared';
 import { FormFieldInput, FormFieldTextarea, FormFieldSelect } from '@/features/admin/components';
 import { serviceSchema, type ServiceFormValues } from '@/features/admin/schema';
-import type { Service, Lawyer } from '@/features/admin/types';
+import type { Service, Lawyer } from '../hooks/use-services';
 import { SERVICE_CATEGORIES } from '../hooks/use-services';
 
 interface ServiceFormProps {

@@ -28,11 +28,10 @@ function pickColor(name: string): string {
 const ROLE_COLOR: Record<Role, string> = {
   SUPER_ADMIN: '#DC2626',
   ADMIN: '#2563EB',
-  LAWYER: '#10B981',
-  CRM_STAFF: '#F59E0B',
   EDITOR: '#8B5CF6',
-  MARKETING: '#EC4899',
-  VIEWER: '#6B7280',
+  CSKH: '#F59E0B',
+  LAWYER: '#10B981',
+  USER: '#6B7280',
 };
 
 export function StaffUserMenu() {
@@ -55,7 +54,7 @@ export function StaffUserMenu() {
   // Don't render if not authenticated
   if (status !== 'authenticated' || !session?.user) return null;
 
-  const userName = session.user.name ?? session.user.fullName ?? 'Nhân viên';
+  const userName = session.user.name ?? 'Nhân viên';
   const userEmail = session.user.email ?? '';
   const userRole = (session.user.role as Role) ?? 'VIEWER';
   const roleDisplayName = RoleDisplayNames[userRole] ?? 'Nhân viên';

@@ -2,79 +2,146 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { MockDB } from '@/features/admin/mock/db';
+import { useSession } from 'next-auth/react';
+import { meApi, userApi, type AdminUser } from '@/lib/api/admin-core';
 import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
-import type { AdminUser } from '@/features/admin/types';
 
 const LS_KEY = 'admin-impersonated-user';
 
+interface RoleLite {
+  id: string;
+  name: string;
+  permissions: string[];
+}
+
+const ROLE_PERMS: Record<string, string[]> = {
+  SUPER_ADMIN: [
+    'crm.read', 'crm.write', 'crm.delete',
+    'booking.read', 'booking.write', 'booking.delete',
+    'blog.read', 'blog.write', 'blog.publish', 'blog.delete',
+    'services.read', 'services.write',
+    'lawyers.read', 'lawyers.write',
+    'reviews.read', 'reviews.moderate', 'reviews.reply',
+    'chatbot.read', 'chatbot.train', 'chatbot.handoff',
+    'newsletter.read', 'newsletter.write', 'newsletter.send',
+    'landing.read', 'landing.write', 'landing.publish',
+    'users.read', 'users.write', 'users.impersonate',
+    'settings.read', 'settings.write',
+    'audit.read',
+  ],
+  ADMIN: [
+    'crm.read', 'crm.write', 'crm.delete',
+    'booking.read', 'booking.write', 'booking.delete',
+    'blog.read', 'blog.write', 'blog.publish', 'blog.delete',
+    'services.read', 'services.write',
+    'lawyers.read', 'lawyers.write',
+    'reviews.read', 'reviews.moderate', 'reviews.reply',
+    'chatbot.read', 'newsletter.read',
+    'landing.read', 'landing.write',
+    'users.read', 'users.write',
+    'settings.read', 'settings.write',
+    'audit.read',
+  ],
+};
+
+function permissionsForRole(role: string | undefined): string[] {
+  if (!role) return [];
+  return ROLE_PERMS[role] ?? [];
+}
+
+function normalizeUser(u: AdminUser | null): AdminUser | null {
+  if (!u) return null;
+  return {
+    ...u,
+    name: u.fullName ?? u.name ?? u.email,
+  };
+}
+
 export function useAdminAuth() {
+  const { status } = useSession();
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
   const [impersonatedUser, setImpersonatedUser] = useState<AdminUser | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
-  // Load current user (mặc định user-7 = Super Admin) + persisted impersonated user
   useEffect(() => {
-    const me = MockDB.getById<AdminUser>('users', 'user-7') ?? null;
-    setCurrentUser(me);
+    let cancelled = false;
+    if (status !== 'authenticated') {
+      setCurrentUser(null);
+      return () => { cancelled = true; };
+    }
+    meApi.get()
+      .then((u) => {
+        if (cancelled) return;
+        setCurrentUser(normalizeUser(u));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCurrentUser(null);
+      });
+
     try {
-      const raw = typeof window !== 'undefined' ? window.localStorage.getItem(LS_KEY) : null;
+      const raw = window.localStorage.getItem(LS_KEY);
       if (raw) {
         const id = JSON.parse(raw) as string;
-        if (id && id !== me?.id) {
-          const u = MockDB.getById<AdminUser>('users', id);
-          if (u && u.isActive) setImpersonatedUser(u);
+        if (id) {
+          userApi.get(id)
+            .then((u) => {
+              if (!cancelled && u.isActive) setImpersonatedUser(normalizeUser(u));
+            })
+            .catch(() => {
+              // impersonated user no longer exists; clear
+              window.localStorage.removeItem(LS_KEY);
+            });
         }
       }
     } catch {
       // ignore
     }
     setHydrated(true);
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
 
   const startImpersonate = useCallback(
-    (userId: string) => {
-      const target = MockDB.getById<AdminUser>('users', userId);
-      if (!target) {
-        notifyError('Lỗi', 'Không tìm thấy người dùng');
-        return;
-      }
+    async (userId: string) => {
       if (!currentUser) return;
-      if (target.id === currentUser.id) {
-        notifyError('Lỗi', 'Không thể đăng nhập thay chính mình');
-        return;
-      }
       try {
+        const target = normalizeUser(await userApi.get(userId));
+        if (!target) {
+          notifyError('Lỗi', 'Không tìm thấy người dùng');
+          return;
+        }
+        if (target.id === currentUser.id) {
+          notifyError('Lỗi', 'Không thể đăng nhập thay chính mình');
+          return;
+        }
         window.localStorage.setItem(LS_KEY, JSON.stringify(target.id));
+        setImpersonatedUser(target);
+        ghiAudit({
+          action: 'impersonate',
+          entity: 'user',
+          entityId: target.id,
+          entityLabel: target.name ?? target.email,
+          diff: { before: { actorId: currentUser.id }, after: { impersonatedAs: target.id } },
+        });
+        notifySuccess(`Đang đăng nhập thay "${target.name ?? target.email}"`);
       } catch {
-        // ignore
+        notifyError('Lỗi', 'Không thể đăng nhập thay người dùng này');
       }
-      setImpersonatedUser(target);
-      ghiAudit({
-        action: 'impersonate',
-        entity: 'user',
-        entityId: target.id,
-        entityLabel: target.name,
-        diff: { before: { actorId: currentUser.id }, after: { impersonatedAs: target.id } },
-      });
-      notifySuccess(`Đang đăng nhập thay "${target.name}"`);
     },
     [currentUser],
   );
 
   const stopImpersonate = useCallback(() => {
     if (!impersonatedUser) return;
-    try {
-      window.localStorage.removeItem(LS_KEY);
-    } catch {
-      // ignore
-    }
+    window.localStorage.removeItem(LS_KEY);
     if (currentUser) {
       ghiAudit({
         action: 'logout',
         entity: 'user',
         entityId: impersonatedUser.id,
-        entityLabel: impersonatedUser.name,
+        entityLabel: impersonatedUser.name ?? impersonatedUser.email,
         diff: { before: { impersonated: true }, after: { impersonated: false } },
       });
     }
@@ -83,7 +150,6 @@ export function useAdminAuth() {
   }, [impersonatedUser, currentUser]);
 
   const effectiveUser = impersonatedUser ?? currentUser;
-
   const isImpersonating = Boolean(impersonatedUser);
 
   return {
@@ -97,63 +163,47 @@ export function useAdminAuth() {
   };
 }
 
-export function getCurrentPermissions(
+function getCurrentPermissions(
   currentUser: AdminUser | null,
-  roles: Array<{ id: string; name: string; permissions: string[] }>,
+  _roles: RoleLite[],
 ): string[] {
   if (!currentUser) return [];
-  // Super Admin luôn có tất cả
-  if (currentUser.role === 'super_admin') {
-    return roles.find((r) => r.name === 'Super Admin')?.permissions ?? [];
+  if (currentUser.role === 'SUPER_ADMIN') {
+    return ROLE_PERMS.SUPER_ADMIN;
   }
-  const role = roles.find((r) => r.name === currentUser.role);
-  return role?.permissions ?? [];
+  return permissionsForRole(currentUser.role);
 }
 
 export function useCan(permission: string) {
   const { currentUser, effectiveUser, isImpersonating, hydrated } = useAdminAuth();
-  const [roles, setRoles] = useState<
-    Array<{ id: string; name: string; permissions: string[] }>
-  >([]);
-
-  useEffect(() => {
-    setRoles(MockDB.getAll<{ id: string; name: string; permissions: string[] }>('roles'));
-  }, [currentUser, effectiveUser]);
 
   return useMemo(() => {
     if (!hydrated) return false;
     const perms = getCurrentPermissions(
       isImpersonating ? currentUser : effectiveUser,
-      roles,
+      [],
     );
     return perms.includes(permission);
-  }, [hydrated, isImpersonating, currentUser, effectiveUser, roles, permission]);
+  }, [hydrated, isImpersonating, currentUser, effectiveUser, permission]);
 }
 
 export function useCurrentPermissions() {
   const { effectiveUser, isImpersonating, currentUser, hydrated } = useAdminAuth();
-  const [roles, setRoles] = useState<
-    Array<{ id: string; name: string; permissions: string[] }>
-  >([]);
-
-  useEffect(() => {
-    setRoles(MockDB.getAll<{ id: string; name: string; permissions: string[] }>('roles'));
-  }, [effectiveUser, currentUser]);
 
   return useMemo(() => {
     if (!hydrated) return new Set<string>();
     const perms = getCurrentPermissions(
       isImpersonating ? currentUser : effectiveUser,
-      roles,
+      [],
     );
     return new Set(perms);
-  }, [hydrated, isImpersonating, currentUser, effectiveUser, roles]);
+  }, [hydrated, isImpersonating, currentUser, effectiveUser]);
 }
 
-// Hook refresh auth + role nội bộ khi CRUD role
 export function useInvalidateAuth() {
   const qc = useQueryClient();
   return useCallback(() => {
     qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
+    qc.invalidateQueries({ queryKey: ['admin', 'users'] });
   }, [qc]);
 }

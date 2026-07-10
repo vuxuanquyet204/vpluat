@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Flag, CheckCircle, XCircle, Eye, Clock } from 'lucide-react';
 import { DataTableV2, type DataTableColumn } from '@/features/admin/components';
 import { StatusBadge, type StatusVariant, Modal } from '@/features/admin/shared';
-import type { ReviewReport, ReviewReport as _RR, Review, ReportStatus } from '@/features/admin/types';
+import type { ReviewReport, Review } from '../hooks/use-reviews';
 import { REPORT_REASON_LABELS, REPORT_STATUS_LABELS } from '../hooks/use-reviews';
 
 interface ReportsQueueProps {
@@ -17,6 +17,8 @@ interface ReportsQueueProps {
     note?: string,
   ) => void;
 }
+
+type ReportStatus = 'pending' | 'resolved' | 'dismissed';
 
 const STATUS_VARIANT: Record<ReportStatus, StatusVariant> = {
   pending: 'yellow',
@@ -164,7 +166,7 @@ export function ReportsQueue({
       header: 'Người báo cáo',
       cell: (r) => (
         <span style={{ fontSize: '0.78rem', color: 'var(--gray-600)' }}>
-          {r.reportedByName}
+          {r.reportedByName ?? 'Ẩn danh'}
         </span>
       ),
     },

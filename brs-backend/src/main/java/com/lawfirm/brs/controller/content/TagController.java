@@ -42,6 +42,15 @@ public class TagController {
         return ResponseEntity.ok(ApiResponse.success(tag));
     }
 
+    @PutMapping("/{slug}")
+    @Operation(summary = "Update a tag (display name only)")
+    public ResponseEntity<ApiResponse<Tag>> updateTag(
+            @PathVariable String slug,
+            @Valid @RequestBody TagRequest request) {
+        Tag tag = tagService.updateTag(slug, request);
+        return ResponseEntity.ok(ApiResponse.success("Tag updated", tag));
+    }
+
     @DeleteMapping("/{slug}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Delete a tag")

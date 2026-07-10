@@ -1,11 +1,9 @@
 'use client';
 
 import { useState, useMemo, Fragment } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { addDays, startOfWeek } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar as CalIcon, Phone, Video, MapPin } from 'lucide-react';
-import { format, addDays, startOfWeek } from 'date-fns';
-import { bookingApi } from '@/lib/api/admin-booking';
-import { useMockQuery } from '@/features/admin/lib';
+import { useBookingsCalendar } from '../hooks/use-bookings-calendar';
 import { StatusBadge, type StatusVariant } from '@/features/admin/shared';
 import type { Booking, BookingStatus } from '@/features/admin/types';
 
@@ -28,17 +26,6 @@ function fmtTime(t: string): number {
   return h * 60 + m;
 }
 
-function instantToLocalDate(isoString: string): string {
-  // Parse as UTC then convert to local timezone for display
-  const date = new Date(isoString);
-  return format(date, 'yyyy-MM-dd');
-}
-
-function instantToLocalTime(isoString: string): string {
-  const date = new Date(isoString);
-  return format(date, 'HH:mm');
-}
-
 interface BookingsCalendarProps {
   onSelectBooking: (b: Booking) => void;
   onCreateAt: (date: string, time: string) => void;
@@ -49,45 +36,14 @@ export function BookingsCalendar({ onSelectBooking, onCreateAt, lawyerFilter = '
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const [view, setView] = useState<'week' | 'day'>('week');
 
-  const weekStartStr = fmtDate(weekStart);
-  const weekEndStr = fmtDate(addDays(weekStart, view === 'day' ? 0 : 6));
-
-  // Fetch bookings from API for the calendar view
-  const { data: appointments = [], isLoading } = useQuery({
-    queryKey: ['bookings-calendar', weekStartStr, weekEndStr, lawyerFilter],
-    queryFn: () =>
-      bookingApi.calendar({
-        from: weekStartStr,
-        to: weekEndStr,
-        ...(lawyerFilter !== 'all' ? { lawyerId: lawyerFilter } : {}),
-      }),
-    staleTime: 30 * 1000,
+  const { bookings, isLoading } = useBookingsCalendar({
+    date: weekStart,
+    view,
+    lawyerFilter,
   });
 
-  // Convert Appointment[] → Booking[]
-  const bookings: Booking[] = useMemo(
-    () =>
-      appointments.map((appt) => ({
-        id: appt.id,
-        customerName: appt.clientName,
-        customerEmail: appt.clientEmail,
-        customerPhone: appt.clientPhone,
-        lawyer: appt.lawyerName ?? '',
-        service: appt.serviceName ?? '',
-        method: (appt.meetingType ?? 'OFFICE').toLowerCase() as Booking['method'],
-        date: appt.scheduledAt ? instantToLocalDate(appt.scheduledAt) : '',
-        time: appt.scheduledAt ? instantToLocalTime(appt.scheduledAt) : '',
-        status: appt.status?.toLowerCase() as BookingStatus,
-        notes: appt.internalNotes,
-        cancelledReason: appt.cancelReason,
-        createdAt: appt.createdAt ?? '',
-        updatedAt: appt.updatedAt ?? '',
-      })),
-    [appointments],
-  );
-
   const dates = useMemo(() => {
-    if (view === 'day') return [weekStartStr];
+    if (view === 'day') return [fmtDate(weekStart)];
     return Array.from({ length: 7 }, (_, i) => fmtDate(addDays(weekStart, i)));
   }, [weekStart, view]);
 
@@ -383,4 +339,13 @@ function formatRange(start: Date, view: 'week' | 'day'): string {
   }
   const end = addDays(start, 6);
   return `${start.getDate()}/${start.getMonth() + 1} - ${end.getDate()}/${end.getMonth() + 1}/${end.getFullYear()}`;
+}
+
+function format(d: Date, pattern: string): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return pattern
+    .replace('EEEE', ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][d.getDay()])
+    .replace('dd', pad(d.getDate()))
+    .replace('MM', pad(d.getMonth() + 1))
+    .replace('yyyy', String(d.getFullYear()));
 }

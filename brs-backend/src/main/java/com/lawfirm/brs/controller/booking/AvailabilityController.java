@@ -1,6 +1,7 @@
 package com.lawfirm.brs.controller.booking;
 
 import com.lawfirm.brs.dto.request.AvailabilitySlotRequest;
+import com.lawfirm.brs.dto.request.BatchCreateSlotsRequest;
 import com.lawfirm.brs.dto.request.ReleaseReservationRequest;
 import com.lawfirm.brs.dto.request.ReserveSlotRequest;
 import com.lawfirm.brs.dto.response.ApiResponse;
@@ -50,6 +51,26 @@ public class AvailabilityController {
             @Valid @RequestBody AvailabilitySlotRequest request) {
         AvailabilitySlotDTO slot = availabilityService.createSlot(request);
         return ResponseEntity.ok(ApiResponse.success("Slot created successfully.", slot));
+    }
+
+    @PostMapping("/batch")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
+    @Operation(summary = "Create availability slots in batch for one lawyer")
+    public ResponseEntity<ApiResponse<List<AvailabilitySlotDTO>>> createSlotsBatch(
+            @Valid @RequestBody BatchCreateSlotsRequest request) {
+        List<AvailabilitySlotDTO> slots = availabilityService.createSlotsFromWorkingHours(
+                request.lawyerId(), request.startDate(), request.endDate());
+        return ResponseEntity.ok(ApiResponse.success("Slots created successfully.", slots));
+    }
+
+    @PostMapping("/batch/all")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CSKH')")
+    @Operation(summary = "Create availability slots in batch for all lawyers")
+    public ResponseEntity<ApiResponse<List<AvailabilitySlotDTO>>> createSlotsBatchAll(
+            @Valid @RequestBody BatchCreateSlotsRequest request) {
+        List<AvailabilitySlotDTO> slots = availabilityService.createSlotsForAllLawyers(
+                request.startDate(), request.endDate());
+        return ResponseEntity.ok(ApiResponse.success("Slots created for all lawyers.", slots));
     }
 
     @DeleteMapping("/{id}")

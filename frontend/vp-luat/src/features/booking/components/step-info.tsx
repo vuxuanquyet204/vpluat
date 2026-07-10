@@ -76,7 +76,7 @@ export function StepInfo({
     try {
       const confirmation = await submitBookingMutation.mutateAsync({
         reservationId: reservation.reservationId,
-        serviceId: service.id,
+        serviceId: service.slug ?? service.id,
         lawyerId: lawyer.id,
         consultationType,
         customer: {

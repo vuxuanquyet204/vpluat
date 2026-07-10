@@ -7,7 +7,8 @@ import { Modal } from '@/features/admin/shared';
 import { FormFieldInput, FormFieldSelect, FormFieldTextarea } from '@/features/admin/components';
 import { bookingSchema, type BookingFormValues } from '@/features/admin/schema';
 import { ReminderConfig } from './booking-reminder-config';
-import type { Booking, Lead, Lawyer } from '@/features/admin/types';
+import type { Booking, Lawyer } from '@/features/admin/types';
+import type { Lead as CrmLead } from '@/lib/api/admin-crm';
 
 const SERVICE_OPTIONS = [
   { slug: 'tu-van-phap-ly', label: 'Tư Vấn Pháp Lý' },
@@ -38,7 +39,7 @@ interface BookingFormProps {
   onClose: () => void;
   onSubmit: (values: BookingFormValues) => Promise<void> | void;
   initial?: Partial<Booking> | null;
-  leads: Lead[];
+  leads: CrmLead[];
   lawyers: Lawyer[];
   isLoading?: boolean;
   /** Slot prefilled khi click từ calendar */
@@ -95,16 +96,16 @@ export function BookingForm({
     if (!leadSearch) return leads.slice(0, 6);
     const q = leadSearch.toLowerCase();
     return leads
-      .filter((l) => l.name.toLowerCase().includes(q) || l.phone.includes(q) || l.email.toLowerCase().includes(q))
+      .filter((l) => l.name.toLowerCase().includes(q) || l.phone?.includes(q) || (l.email ?? '').toLowerCase().includes(q))
       .slice(0, 6);
   }, [leadSearch, leads]);
 
-  const selectLead = (lead: Lead) => {
+  const selectLead = (lead: CrmLead) => {
     setValue('leadId', lead.id);
     setValue('customerName', lead.name);
-    setValue('customerPhone', lead.phone);
-    setValue('customerEmail', lead.email);
-    setValue('service', lead.service);
+    setValue('customerPhone', lead.phone ?? '');
+    setValue('customerEmail', lead.email ?? '');
+    setValue('service', lead.serviceName ?? lead.serviceId ?? '');
     setShowLeadMenu(false);
     setLeadSearch('');
   };
@@ -196,7 +197,7 @@ export function BookingForm({
                   >
                     <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{l.name}</div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--gray-400)' }}>
-                      {l.phone} · {l.service}
+                      {l.phone} · {l.serviceName ?? l.serviceId ?? ''}
                     </div>
                   </button>
                 </li>

@@ -454,16 +454,16 @@ const landingPages = [
 ];
 
 // ─── USERS (8 records) ──────────────────────────────────────────────────────
-const userRoles = ['super_admin', 'admin', 'lawyer', 'staff'];
+const userRoles = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'CSKH', 'LAWYER', 'USER'];
 const users = [
-  { id: 'user-1', name: 'Lan (Admin)', email: 'lan@vpluat.vn', role: 'admin', isActive: true, lastLoginAt: isoDaysAgo(0), createdAt: isoDaysAgo(180) },
-  { id: 'user-2', name: 'Minh (CSKH)', email: 'minh@vpluat.vn', role: 'staff', isActive: true, lastLoginAt: isoDaysAgo(1), createdAt: isoDaysAgo(120) },
-  { id: 'user-3', name: 'LS. Hùng', email: 'hung@vpluat.vn', role: 'lawyer', isActive: true, lastLoginAt: isoDaysAgo(0), createdAt: isoDaysAgo(150) },
-  { id: 'user-4', name: 'LS. Mai', email: 'mai@vpluat.vn', role: 'lawyer', isActive: true, lastLoginAt: isoDaysAgo(2), createdAt: isoDaysAgo(150) },
-  { id: 'user-5', name: 'LS. Sơn', email: 'son@vpluat.vn', role: 'lawyer', isActive: true, lastLoginAt: isoDaysAgo(3), createdAt: isoDaysAgo(150) },
-  { id: 'user-6', name: 'LS. Hương', email: 'huong@vpluat.vn', role: 'lawyer', isActive: true, lastLoginAt: isoDaysAgo(5), createdAt: isoDaysAgo(150) },
-  { id: 'user-7', name: 'Super Admin', email: 'admin@vpluat.vn', role: 'super_admin', isActive: true, lastLoginAt: isoDaysAgo(0), createdAt: isoDaysAgo(365) },
-  { id: 'user-8', name: 'Cựu Staff', email: 'old@vpluat.vn', role: 'staff', isActive: false, lastLoginAt: isoDaysAgo(60), createdAt: isoDaysAgo(200) },
+  { id: 'user-1', name: 'Lan (Admin)', email: 'lan@vpluat.vn', role: 'ADMIN', isActive: true, lastLoginAt: isoDaysAgo(0), createdAt: isoDaysAgo(180) },
+  { id: 'user-2', name: 'Minh (CSKH)', email: 'minh@vpluat.vn', role: 'CSKH', isActive: true, lastLoginAt: isoDaysAgo(1), createdAt: isoDaysAgo(120) },
+  { id: 'user-3', name: 'LS. Hùng', email: 'hung@vpluat.vn', role: 'LAWYER', isActive: true, lastLoginAt: isoDaysAgo(0), createdAt: isoDaysAgo(150) },
+  { id: 'user-4', name: 'LS. Mai', email: 'mai@vpluat.vn', role: 'LAWYER', isActive: true, lastLoginAt: isoDaysAgo(2), createdAt: isoDaysAgo(150) },
+  { id: 'user-5', name: 'LS. Sơn', email: 'son@vpluat.vn', role: 'LAWYER', isActive: true, lastLoginAt: isoDaysAgo(3), createdAt: isoDaysAgo(150) },
+  { id: 'user-6', name: 'LS. Hương', email: 'huong@vpluat.vn', role: 'LAWYER', isActive: true, lastLoginAt: isoDaysAgo(5), createdAt: isoDaysAgo(150) },
+  { id: 'user-7', name: 'Super Admin', email: 'admin@vpluat.vn', role: 'SUPER_ADMIN', isActive: true, lastLoginAt: isoDaysAgo(0), createdAt: isoDaysAgo(365) },
+  { id: 'user-8', name: 'Cựu Editor', email: 'old@vpluat.vn', role: 'EDITOR', isActive: false, lastLoginAt: isoDaysAgo(60), createdAt: isoDaysAgo(200) },
 ];
 
 // ─── ROLES (4 records) ──────────────────────────────────────────────────────

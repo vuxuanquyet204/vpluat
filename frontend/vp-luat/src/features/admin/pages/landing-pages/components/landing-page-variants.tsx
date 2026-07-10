@@ -30,7 +30,7 @@ export function LandingPageVariants({
   const removePage = useDeleteLandingPage();
   const [confirmDelete, setConfirmDelete] = useState<LandingPage | null>(null);
 
-  const variants = allPages.filter(
+  const variants = (allPages as unknown as import('@/features/admin/types').LandingPage[]).filter(
     (p) => p.parentPageId === parentPage.id || p.id === parentPage.id,
   );
 
@@ -144,7 +144,7 @@ export function LandingPageVariants({
                         )}
                       </div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--gray-500)' }}>
-                        /{v.slug} · {v.blocks.length} blocks
+                        /{v.slug} · {(v.blocks ?? []).length} blocks
                       </div>
                     </div>
                     <div style={{ fontSize: '0.72rem', textAlign: 'center' }}>
@@ -162,7 +162,7 @@ export function LandingPageVariants({
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 4 }}>
-                      <StatusBadge variant={STATUS_VARIANT[v.status]} label={v.status} />
+                      <StatusBadge variant={STATUS_VARIANT[v.status ?? 'draft']} label={v.status ?? 'draft'} />
                       <button
                         type="button"
                         className="action-btn"
@@ -218,7 +218,7 @@ export function LandingPageVariants({
         onConfirm={async () => {
           if (!confirmDelete) return;
           try {
-            await removePage.mutateAsync(confirmDelete.id);
+            await removePage(confirmDelete.id);
           } finally {
             setConfirmDelete(null);
           }

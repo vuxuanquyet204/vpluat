@@ -33,6 +33,9 @@ import {
   useRatingBreakdown,
   useReviewReports,
   REVIEW_STATUS_LABELS,
+  type Review,
+  type ReviewStatus,
+  type ReviewReport,
 } from './hooks/use-reviews';
 import {
   useUpdateReviewStatus,
@@ -41,7 +44,6 @@ import {
   useReplyReview,
   useResolveReport,
 } from './hooks/use-review-mutations';
-import type { Review, ReviewStatus } from '@/features/admin/types';
 import type { ReplyFormValues } from '@/features/admin/schema';
 
 type Tab = 'reviews' | 'reports';
@@ -148,11 +150,11 @@ function ReviewsTab({
   const tabsWithCounts = STATUS_TABS.map((t) => ({
     value: t.value,
     label: t.label,
-    count: t.value === 'all' ? counts.total : counts[t.value],
+    count: t.value === 'all' ? counts.total : counts[t.value as keyof typeof counts],
   }));
 
   const serviceList = useMemo(
-    () => Array.from(new Set(reviews.map((r) => r.service))).sort(),
+    () => Array.from(new Set(reviews.map((r) => r.service).filter(Boolean) as string[])).sort(),
     [reviews],
   );
 
@@ -163,8 +165,8 @@ function ReviewsTab({
       r = r.filter(
         (rev) =>
           rev.authorName.toLowerCase().includes(q) ||
-          rev.authorEmail.toLowerCase().includes(q) ||
-          rev.service.toLowerCase().includes(q) ||
+          (rev.authorEmail ?? '').toLowerCase().includes(q) ||
+          (rev.service ?? '').toLowerCase().includes(q) ||
           rev.content.toLowerCase().includes(q),
       );
     }

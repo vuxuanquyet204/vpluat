@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo, useCallback } from 'react';
-import { useMockQuery } from '@/features/admin/lib';
-import { MockDB } from '@/features/admin/mock/db';
+import { useQueryClient } from '@tanstack/react-query';
+import { useApiQuery, useApiMutation } from '@/lib/api/hooks';
+import { lawyerScheduleApi, type TimeSlot, type SlotUpdate } from '@/lib/api/admin-booking';
 import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
-import type { LawyerSchedule } from '@/features/admin/types';
 
 export const DAYS_OF_WEEK = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'] as const;
 export const DAY_LABELS = [
@@ -19,7 +19,7 @@ export const DAY_LABELS = [
 
 export interface DaySchedule {
   isOff: boolean;
-  slots: Array<{ start: string; end: string }>;
+  slots: TimeSlot[];
 }
 
 const DEFAULT_SCHEDULE: Record<number, DaySchedule> = {
@@ -33,54 +33,165 @@ const DEFAULT_SCHEDULE: Record<number, DaySchedule> = {
 };
 
 export function useLawyerSchedule(lawyerId: string | null | undefined) {
-  const { data: allSchedules = [] } = useMockQuery<LawyerSchedule>('lawyer_schedules');
+  const qc = useQueryClient();
+
+  const queryResult = useApiQuery<
+    Awaited<ReturnType<typeof lawyerScheduleApi.getSchedule>>
+  >(
+    ['lawyer-schedule', lawyerId],
+    lawyerId ? `/admin/lawyers/${lawyerId}/schedule` : '/admin/lawyers',
+    undefined,
+    { enabled: Boolean(lawyerId) },
+  );
 
   const scheduleByDay = useMemo(() => {
     const map: Record<number, DaySchedule> = { ...DEFAULT_SCHEDULE };
     if (!lawyerId) return map;
-    const mine = allSchedules.filter((s) => s.lawyerId === lawyerId);
-    for (const s of mine) {
+    for (const s of queryResult.data ?? []) {
       map[s.dayOfWeek] = { isOff: s.isOff, slots: s.slots };
     }
     return map;
-  }, [lawyerId, allSchedules]);
+  }, [lawyerId, queryResult.data]);
 
-  const saveSchedule = useCallback(
-    async (next: Record<number, DaySchedule>) => {
-      if (!lawyerId) return;
-      try {
-        const existing = allSchedules.filter((s) => s.lawyerId === lawyerId);
-        for (const day of DAYS_OF_WEEK) {
-          const dow = DAYS_OF_WEEK.indexOf(day);
-          const daySched = next[dow];
-          const found = existing.find((s) => s.dayOfWeek === dow);
-          if (found) {
-            MockDB.update<LawyerSchedule>('lawyer_schedules', found.id, {
-              isOff: daySched.isOff,
-              slots: daySched.slots,
-            });
-          } else {
-            MockDB.insert<LawyerSchedule>('lawyer_schedules', {
-              lawyerId,
-              dayOfWeek: dow,
-              isOff: daySched.isOff,
-              slots: daySched.slots,
-            } as unknown as LawyerSchedule);
-          }
-        }
+  // Bound saveSchedule — closes over lawyerId so callers only pass updates
+  const saveScheduleMutation = useApiMutation<unknown, { lawyerId: string; updates: SlotUpdate[] }>(
+    'PUT',
+    (vars) => `/admin/lawyers/${vars.lawyerId}/schedule`,
+    {
+      onSuccess: (_, vars) => {
+        qc.invalidateQueries({ queryKey: ['lawyer-schedule', vars.lawyerId] });
         ghiAudit({
           action: 'update',
           entity: 'lawyer_schedule',
-          entityId: lawyerId,
+          entityId: vars.lawyerId,
           entityLabel: 'lịch làm việc',
         });
         notifySuccess('Đã lưu lịch làm việc');
-      } catch (e) {
+      },
+      onError: (e) => {
         notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể lưu lịch');
-      }
+      },
     },
-    [lawyerId, allSchedules],
   );
 
-  return { scheduleByDay, saveSchedule };
+  const saveSchedule = useCallback(
+    (updates: Record<number, DaySchedule>): Promise<void> => {
+      if (!lawyerId) return Promise.resolve();
+      const slotUpdates: SlotUpdate[] = Object.entries(updates).map(([dayOfWeek, day]) => ({
+        dayOfWeek: Number(dayOfWeek),
+        isOff: day.isOff,
+        slots: day.slots,
+      }));
+      return new Promise<void>((resolve, reject) => {
+        saveScheduleMutation.mutate(
+          { lawyerId, updates: slotUpdates },
+          {
+            onSuccess: () => resolve(),
+            onError: (e) => reject(e),
+          },
+        );
+      });
+    },
+    [lawyerId, saveScheduleMutation],
+  );
+
+  return {
+    scheduleByDay,
+    saveSchedule,
+    isLoading: queryResult.isLoading,
+    isError: queryResult.isError,
+  };
+}
+
+export function useSaveSchedule() {
+  const qc = useQueryClient();
+
+  const mutation = useApiMutation<unknown, { lawyerId: string; updates: SlotUpdate[] }>(
+    'PUT',
+    (vars) => `/admin/lawyers/${vars.lawyerId}/schedule`,
+    {
+      onSuccess: (_, vars) => {
+        qc.invalidateQueries({ queryKey: ['lawyer-schedule', vars.lawyerId] });
+        ghiAudit({
+          action: 'update',
+          entity: 'lawyer_schedule',
+          entityId: vars.lawyerId,
+          entityLabel: 'lịch làm việc',
+        });
+        notifySuccess('Đã lưu lịch làm việc');
+      },
+      onError: (e) => {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể lưu lịch');
+      },
+    },
+  );
+
+  return useCallback(
+    (lawyerId: string, updates: SlotUpdate[]) =>
+      mutation.mutate({ lawyerId, updates }),
+    [mutation],
+  );
+}
+
+export function useCreateScheduleOverride() {
+  const qc = useQueryClient();
+
+  const mutation = useApiMutation<
+    Awaited<ReturnType<typeof lawyerScheduleApi.createOverride>>,
+    { lawyerId: string; request: Parameters<typeof lawyerScheduleApi.createOverride>[1] }
+  >(
+    'POST',
+    (vars) => `/admin/lawyers/${vars.lawyerId}/schedule/override`,
+    {
+      onSuccess: (_, vars) => {
+        qc.invalidateQueries({ queryKey: ['lawyer-schedule', vars.lawyerId] });
+        ghiAudit({
+          action: 'create',
+          entity: 'lawyer_schedule_override',
+          entityId: vars.lawyerId,
+          entityLabel: 'ghi đè lịch',
+        });
+        notifySuccess('Đã tạo ghi đè lịch');
+      },
+      onError: (e) => {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể tạo ghi đè');
+      },
+    },
+  );
+
+  return useCallback(
+    (lawyerId: string, request: Parameters<typeof lawyerScheduleApi.createOverride>[1]) =>
+      mutation.mutate({ lawyerId, request }),
+    [mutation],
+  );
+}
+
+export function useDeleteScheduleOverride() {
+  const qc = useQueryClient();
+
+  const mutation = useApiMutation<void, { lawyerId: string; date: string }>(
+    'DELETE',
+    (vars) =>
+      `/admin/lawyers/${vars.lawyerId}/schedule/override?date=${encodeURIComponent(vars.date)}`,
+    {
+      onSuccess: (_, vars) => {
+        qc.invalidateQueries({ queryKey: ['lawyer-schedule', vars.lawyerId] });
+        ghiAudit({
+          action: 'delete',
+          entity: 'lawyer_schedule_override',
+          entityId: vars.lawyerId,
+          entityLabel: `ngày ${vars.date}`,
+        });
+        notifySuccess('Đã xóa ghi đè lịch');
+      },
+      onError: (e) => {
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa ghi đè');
+      },
+    },
+  );
+
+  return useCallback(
+    (lawyerId: string, date: string) => mutation.mutate({ lawyerId, date }),
+    [mutation],
+  );
 }

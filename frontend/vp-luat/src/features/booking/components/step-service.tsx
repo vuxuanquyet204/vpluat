@@ -1,17 +1,50 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
-import { BOOKING_LAWYERS, BOOKING_SERVICES } from '../lib';
+import { BOOKING_SERVICES } from '../lib';
 import { trackBookingLawyerSelected, trackBookingServiceSelected } from '../analytics';
-import { useBookingStore } from '../hooks';
+import { useBookingStore, useLawyersQuery } from '../hooks';
 import { ServiceGrid } from './service-grid';
 import { LawyerSection } from './lawyer-section';
+import type { BookingLawyerOption } from '../types';
+
+function toBookingLawyerOption(lawyer: { id: string; nameVi?: string; nameEn?: string; positionVi?: string; avatarUrl?: string; isFeatured?: boolean }): BookingLawyerOption {
+  const name = lawyer.nameVi || lawyer.nameEn || 'Luật sư';
+  const initials = name
+    .split(' ')
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+  const gradients = [
+    'linear-gradient(135deg, #1E3A5F, #2A4F7A)',
+    'linear-gradient(135deg, #2A4F7A, #C9A84C)',
+    'linear-gradient(135deg, #152A45, #1E3A5F)',
+    'linear-gradient(135deg, #3B2F7A, #6B4FA0)',
+    'linear-gradient(135deg, #1A4A3A, #2E7D5E)',
+  ];
+  const gradientIndex = parseInt(lawyer.id.replace(/-/g, '').slice(0, 8), 16) % gradients.length;
+
+  return {
+    id: lawyer.id,
+    name,
+    initials,
+    specialty: lawyer.positionVi || '',
+    rating: 5.0,
+    availabilityLabel: 'Còn lịch hôm nay',
+    avatarGradient: gradients[gradientIndex],
+  };
+}
 
 export function StepService({ onNext }: { onNext: () => void }) {
   const service = useBookingStore((state) => state.service);
   const lawyer = useBookingStore((state) => state.lawyer);
   const setService = useBookingStore((state) => state.setService);
   const setLawyer = useBookingStore((state) => state.setLawyer);
+
+  const { data: rawLawyers = [] } = useLawyersQuery();
+  const bookingLawyers: BookingLawyerOption[] = rawLawyers.map(toBookingLawyerOption);
 
   const canProceed = Boolean(service && lawyer);
 
@@ -22,7 +55,7 @@ export function StepService({ onNext }: { onNext: () => void }) {
     }
   };
 
-  const handleSelectLawyer = (l: typeof lawyer) => {
+  const handleSelectLawyer = (l: BookingLawyerOption) => {
     if (l) {
       setLawyer(l);
       trackBookingLawyerSelected(l.id, l.name);
@@ -45,7 +78,7 @@ export function StepService({ onNext }: { onNext: () => void }) {
       />
 
       <LawyerSection
-        lawyers={BOOKING_LAWYERS}
+        lawyers={bookingLawyers}
         visible={Boolean(service)}
         selectedLawyerId={lawyer?.id ?? null}
         onSelect={handleSelectLawyer}

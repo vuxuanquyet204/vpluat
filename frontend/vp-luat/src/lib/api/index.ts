@@ -12,13 +12,44 @@ export type {
   DistributionSlice,
   LeadFunnel,
   ActivityLog,
+  AppointmentSummary,
 } from './admin-dashboard';
 
-export { leadApi, reviewApi } from './admin-crm';
-export type { Lead, Review } from './admin-crm';
+export { leadApi, reviewApi, serviceApi, lawyerApi, chatbotApi, newsletterApi } from './admin-crm';
+export type {
+  Lead,
+  Review,
+  LeadTimelineEntry,
+  Service,
+  Lawyer,
+  ChatbotSession,
+  Subscriber,
+  Campaign,
+  Booking,
+} from './admin-crm';
 
 export { bookingApi, lawyerScheduleApi } from './admin-booking';
-export type { Appointment, LawyerSchedule } from './admin-booking';
+export type {
+  Appointment,
+  BookingStats,
+  LawyerSchedule,
+} from './admin-booking';
 
-export { postApi, documentApi, auditLogApi, chatbotApi, reportsApi } from './admin-content';
-export type { Post } from './admin-content';
+export { postApi, documentApi, auditLogApi, reportsApi, landingPageApi, notificationApi, leadPipelineApi, categoryApi, tagApi } from './admin-content';
+export type {
+  Post,
+  LandingPage,
+  Notification,
+  LeadPipelineStats,
+  Category,
+  CategoryCreateRequest,
+  Tag,
+} from './admin-content';
+
+export { userApi, roleApi, settingsApi, meApi, auditApi } from './admin-core';
+export type {
+  AdminUser,
+  Role,
+  SystemSettings,
+  AuditLogEntry,
+} from './admin-core';

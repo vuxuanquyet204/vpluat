@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Star, Check, X as XIcon, Trash2, MessageCircle, User, Mail, Calendar, Briefcase } from 'lucide-react';
 import { Drawer, StatusBadge, type StatusVariant } from '@/features/admin/shared';
 import { ReviewReplyForm } from './review-reply-form';
-import type { Review, ReviewStatus } from '@/features/admin/types';
+import type { Review, ReviewStatus } from '../hooks/use-reviews';
 import type { ReplyFormValues } from '@/features/admin/schema';
 import { REVIEW_STATUS_LABELS } from '../hooks/use-reviews';
 
@@ -25,6 +25,7 @@ const STATUS_VARIANT: Record<ReviewStatus, StatusVariant> = {
   pending: 'yellow',
   approved: 'green',
   rejected: 'red',
+  spam: 'gray',
 };
 
 function StarRating({ rating, size = 14 }: { rating: number; size?: number }) {
@@ -118,7 +119,7 @@ export function ReviewDetailDrawer({
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--gray-600)' }}>
             <Briefcase size={12} color="var(--gray-500)" /> {review.service}
-            {review.lawyer && <span style={{ color: 'var(--gray-400)' }}> · LS. {review.lawyer}</span>}
+            {review.lawyerName && <span style={{ color: 'var(--gray-400)' }}> · LS. {review.lawyerName}</span>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--gray-500)' }}>
             <Calendar size={12} color="var(--gray-500)" />

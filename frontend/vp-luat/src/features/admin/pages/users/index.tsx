@@ -44,6 +44,35 @@ import {
 } from './hooks/use-users';
 import type { AdminUser, Role, UserRole } from '@/features/admin/types';
 import type { UserFormValues, RoleFormValues } from '@/features/admin/schema';
+import type { AdminUser as ApiAdminUser, Role as ApiRole } from '@/lib/api/admin-core';
+
+/** Normalise the API AdminUser (fullName) into the legacy UI AdminUser (name). */
+function toUiUser(u: ApiAdminUser): AdminUser {
+  return {
+    ...(u as unknown as AdminUser),
+    id: u.id,
+    name: u.fullName ?? u.name ?? u.email,
+    email: u.email,
+    role: (u.role ?? 'USER') as UserRole,
+    isActive: u.isActive,
+    phone: u.phone,
+    avatar: u.avatarUrl,
+    createdAt: u.createdAt ?? new Date().toISOString(),
+  };
+}
+
+function toUiRole(r: ApiRole): Role {
+  return {
+    ...(r as unknown as Role),
+    id: r.id,
+    name: r.name,
+    description: r.description ?? '',
+    permissions: r.permissions ?? [],
+    isSystem: r.isSystem ?? false,
+    memberCount: 0,
+    createdAt: new Date().toISOString(),
+  };
+}
 
 type Tab = 'users' | 'roles' | 'matrix' | 'audit';
 
@@ -111,7 +140,7 @@ export default function UsersPage() {
         >
           <AlertTriangle size={16} />
           Bạn đang đăng nhập thay <strong>{effectiveUser?.name}</strong> ({effectiveUser?.email})
-          dưới quyền <strong>{ROLE_LABELS[(effectiveUser?.role as UserRole) ?? 'staff']}</strong>.
+          dưới quyền <strong>{ROLE_LABELS[(effectiveUser?.role as UserRole) ?? 'USER']}</strong>.
           Mọi thao tác sẽ được ghi audit log.
         </div>
       )}
@@ -158,8 +187,10 @@ function UsersTab() {
   const canWrite = useCan('users.write');
   const canDelete = useCan('users.write');
   const canImpersonate = useCan('users.impersonate');
-  const { data: users, counts } = useUsers();
-  const { data: roles } = useRoles();
+  const { data: apiUsers, counts } = useUsers();
+  const users = useMemo(() => (apiUsers ?? []).map(toUiUser), [apiUsers]);
+  const { data: apiRoles } = useRoles();
+  const roles = useMemo(() => (apiRoles ?? []).map(toUiRole), [apiRoles]);
   const createUser = useCreateUserFromValues();
   const updateUser = useUpdateUserFromValues();
   const deleteUser = useDeleteUserWithAudit();
@@ -184,7 +215,10 @@ function UsersTab() {
     if (search) {
       const q = search.toLowerCase();
       r = r.filter(
-        (u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
+        (u) =>
+          u.name.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q) ||
+          (u.phone ?? '').toLowerCase().includes(q),
       );
     }
     if (roleFilter !== 'all') r = r.filter((u) => u.role === roleFilter);
@@ -198,10 +232,12 @@ function UsersTab() {
 
   const roleTabs: Array<{ value: 'all' | UserRole; label: string; count: number }> = [
     { value: 'all', label: 'Tất cả', count: counts.total },
-    { value: 'super_admin', label: 'Super Admin', count: counts.byRole.super_admin },
-    { value: 'admin', label: 'Admin', count: counts.byRole.admin },
-    { value: 'lawyer', label: 'Lawyer', count: counts.byRole.lawyer },
-    { value: 'staff', label: 'Staff', count: counts.byRole.staff },
+    { value: 'SUPER_ADMIN', label: 'Super Admin', count: counts.byRole.SUPER_ADMIN },
+    { value: 'ADMIN', label: 'Admin', count: counts.byRole.ADMIN },
+    { value: 'EDITOR', label: 'Editor', count: counts.byRole.EDITOR },
+    { value: 'CSKH', label: 'CSKH', count: counts.byRole.CSKH },
+    { value: 'LAWYER', label: 'Luật sư', count: counts.byRole.LAWYER },
+    { value: 'USER', label: 'Khách hàng', count: counts.byRole.USER },
   ];
 
   return (
@@ -223,14 +259,16 @@ function UsersTab() {
             gap: 8,
           }}
         >
-          <FilterTabs
-            tabs={roleTabs}
-            activeValue={roleFilter}
-            onChange={(v) => {
-              setRoleFilter(v as typeof roleFilter);
-              setPage(1);
-            }}
-          />
+          <div style={{ overflowX: 'auto', flex: 1 }}>
+            <FilterTabs
+              tabs={roleTabs}
+              activeValue={roleFilter}
+              onChange={(v) => {
+                setRoleFilter(v as typeof roleFilter);
+                setPage(1);
+              }}
+            />
+          </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
             <FilterTabs
               tabs={[
@@ -329,7 +367,7 @@ function UsersTab() {
             }}
             onDelete={(u) => setConfirmDelete(u)}
             onResetPassword={(u) => setConfirmReset(u)}
-            onToggleStatus={(u) => toggleStatus(u)}
+            onToggleStatus={(u) => toggleStatus(u as unknown as Parameters<typeof toggleStatus>[0])}
             onImpersonate={(u) => setImpersonateTarget(u)}
             currentUserId={currentUser?.id ?? ''}
             canWrite={canWrite}
@@ -380,7 +418,7 @@ function UsersTab() {
         onConfirm={async () => {
           if (!confirmDelete) return;
           try {
-            await deleteUser(confirmDelete);
+            await deleteUser(confirmDelete as unknown as Parameters<typeof deleteUser>[0]);
           } catch (e) {
             notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');
           } finally {
@@ -403,7 +441,7 @@ function UsersTab() {
         variant="primary"
         onConfirm={async () => {
           if (!confirmReset) return;
-          await resetPassword(confirmReset);
+          await resetPassword(confirmReset as unknown as Parameters<typeof resetPassword>[0]);
           setConfirmReset(null);
         }}
         onClose={() => setConfirmReset(null)}
@@ -430,7 +468,8 @@ function UsersTab() {
 function RolesTab() {
   const canWrite = useCan('users.write');
   const canDelete = useCan('users.write');
-  const { data: roles } = useRoles();
+  const { data: apiRoles } = useRoles();
+  const roles = useMemo(() => (apiRoles ?? []).map(toUiRole), [apiRoles]);
   const createRole = useCreateRoleFromValues();
   const updateRole = useUpdateRoleFromValues();
   const deleteRole = useDeleteRoleWithAudit();
@@ -589,7 +628,8 @@ function RolesTab() {
 // ─── MATRIX TAB ────────────────────────────────────────────────
 function MatrixTab() {
   const canWrite = useCan('users.write');
-  const { data: roles } = useRoles();
+  const { data: apiRoles } = useRoles();
+  const roles = useMemo(() => (apiRoles ?? []).map(toUiRole), [apiRoles]);
   const updateRolePermissions = useUpdateRolePermissions();
 
   return (

@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { Star, Check, X as XIcon, Reply, Eye, MessageCircle, CheckSquare, Square, Flag } from 'lucide-react';
 import { DataTableV2, type DataTableColumn } from '@/features/admin/components';
 import { StatusBadge, type StatusVariant } from '@/features/admin/shared';
-import type { Review, ReviewStatus } from '@/features/admin/types';
+import type { Review, ReviewStatus } from '../hooks/use-reviews';
 import { REVIEW_STATUS_LABELS } from '../hooks/use-reviews';
 
 interface ReviewsTableProps {
@@ -26,6 +26,7 @@ const STATUS_VARIANT: Record<ReviewStatus, StatusVariant> = {
   pending: 'yellow',
   approved: 'green',
   rejected: 'red',
+  spam: 'gray',
 };
 
 function StarRating({ rating, size = 12 }: { rating: number; size?: number }) {
@@ -111,9 +112,9 @@ export function ReviewsTable({
       cell: (r) => (
         <div>
           <div style={{ fontSize: '0.8rem', color: 'var(--gray-700)' }}>{r.service}</div>
-          {r.lawyer && (
+          {r.lawyerName && (
             <div style={{ fontSize: '0.68rem', color: 'var(--gray-400)' }}>
-              LS. {r.lawyer}
+              LS. {r.lawyerName}
             </div>
           )}
         </div>

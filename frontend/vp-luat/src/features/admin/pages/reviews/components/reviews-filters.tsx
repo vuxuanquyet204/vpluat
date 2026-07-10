@@ -1,7 +1,7 @@
 'use client';
 
 import { X as XIcon } from 'lucide-react';
-import type { Review } from '@/features/admin/types';
+import type { Review } from '../hooks/use-reviews';
 
 export interface ReviewFiltersValue {
   rating: 'all' | '1' | '2' | '3' | '4' | '5';

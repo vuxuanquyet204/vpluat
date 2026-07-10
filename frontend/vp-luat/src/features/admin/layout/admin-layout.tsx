@@ -4,7 +4,6 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from './admin-sidebar';
 import { AdminTopbar } from './admin-topbar';
-import { MockDBProvider } from '../mock/provider';
 import { useBookingUpcomingAlerts } from '../pages/notifications/lib/use-booking-upcoming-alerts';
 import { ErrorBoundary, SkeletonPage } from '../components';
 import { useSession, signOut } from 'next-auth/react';
@@ -60,14 +59,12 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 export function AdminLayout({ children }: AdminLayoutProps) {
   useBookingUpcomingAlerts();
   return (
-    <MockDBProvider>
-      <ErrorBoundary>
-        <Suspense fallback={<SkeletonPage />}>
-          <AuthGuard>
-            <AdminShell>{children}</AdminShell>
-          </AuthGuard>
-        </Suspense>
-      </ErrorBoundary>
-    </MockDBProvider>
+    <ErrorBoundary>
+      <Suspense fallback={<SkeletonPage />}>
+        <AuthGuard>
+          <AdminShell>{children}</AdminShell>
+        </AuthGuard>
+      </Suspense>
+    </ErrorBoundary>
   );
 }

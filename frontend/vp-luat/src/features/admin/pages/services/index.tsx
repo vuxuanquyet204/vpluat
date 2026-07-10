@@ -37,11 +37,8 @@ import { AssignmentMatrix } from './components/assignment-matrix';
 import { LawyerScheduleEditor } from './components/lawyer-schedule-editor';
 import { useServices } from './hooks/use-services';
 import { useLawyers } from './hooks/use-lawyers';
+import type { Service, Lawyer } from './hooks/use-services';
 import { useAssignment } from './hooks/use-assignment';
-import type {
-  Service,
-  Lawyer,
-} from '@/features/admin/types';
 import type { ServiceFormValues, LawyerFormValues } from '@/features/admin/schema';
 
 type Tab = 'services' | 'lawyers' | 'assignment' | 'schedule';

@@ -18,9 +18,10 @@ import {
   useChangeBookingStatus,
   useDeleteBooking,
 } from './hooks/use-booking-mutations';
-import { useMockQuery, useCan, notifySuccess, notifyError, notifyInfo, exportToCSV, pushInAppNotification } from '@/features/admin/lib';
-import { MockDB } from '@/features/admin/mock/db';
-import type { Booking, BookingStatus, BookingMethod, Lead, Lawyer } from '@/features/admin/types';
+import { useCan, notifySuccess, notifyError, notifyInfo, exportToCSV, pushInAppNotification } from '@/features/admin/lib';
+import { useLeads } from '@/features/admin/lib';
+import { leadApi } from '@/lib/api/admin-crm';
+import type { Booking, BookingStatus, BookingMethod } from '@/features/admin/types';
 
 const BOOKING_STATUS_MAP: Record<BookingStatus, { label: string; variant: StatusVariant }> = {
   pending: { label: 'Chờ xác nhận', variant: 'yellow' },
@@ -75,16 +76,12 @@ export default function BookingsPage() {
   const [confirmDelete, setConfirmDelete] = useState<Booking | null>(null);
   const [createLeadBooking, setCreateLeadBooking] = useState<Booking | null>(null);
 
-  const { data: leads = [] } = useMockQuery<Lead>('leads');
+  const { data: leadsPage } = useLeads();
+  const leads = leadsPage?.content ?? [];
   const { data: realLawyers = [] } = useLawyers();
-  
-  // Fallback to mock lawyers if API fails
-  const { data: mockLawyers = [] } = useMockQuery<Lawyer>('lawyers');
-  const allLawyers = realLawyers.length > 0 ? realLawyers : mockLawyers;
-  
   const activeLawyerNames = useMemo(
-    () => allLawyers.filter((l) => l.isActive).map((l) => l.name),
-    [allLawyers],
+    () => realLawyers.filter((l) => l.isActive).map((l) => l.name),
+    [realLawyers],
   );
 
   const allBookings = useBookings({ search });
@@ -184,24 +181,19 @@ export default function BookingsPage() {
   );
 
   const handleCreateLead = useCallback(
-    (booking: Booking) => {
-      // Tạo lead mới từ booking chưa có leadId
+    async (booking: Booking) => {
       if (booking.leadId) {
         notifyInfo('Booking này đã liên kết với lead');
         return;
       }
-      const newLead: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'> = {
+      const lead = await leadApi.create({
         name: booking.customerName,
         phone: booking.customerPhone,
         email: booking.customerEmail,
-        service: booking.service,
         source: 'other',
         status: 'contacted',
-        assignedTo: 'Lan',
         notes: `Tạo tự động từ booking ${booking.id} ngày ${booking.date}`,
-      };
-      const lead = MockDB.insert<Lead>('leads', newLead as Lead);
-      // Update booking với leadId
+      });
       update.mutate({ id: booking.id, patch: { leadId: lead.id } as Partial<Booking> });
       pushInAppNotification({
         type: 'lead_new',
@@ -496,7 +488,7 @@ export default function BookingsPage() {
           onSubmit={handleSubmitForm}
           initial={editingBooking}
           leads={leads}
-          lawyers={allLawyers.filter((l) => l.isActive)}
+          lawyers={realLawyers.filter((l) => l.isActive)}
           isLoading={create.isPending || update.isPending}
           defaultDate={formDefaults.date}
           defaultTime={formDefaults.time}

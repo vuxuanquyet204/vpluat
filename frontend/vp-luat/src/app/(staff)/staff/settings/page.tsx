@@ -2,9 +2,16 @@
 
 import { useSession } from 'next-auth/react';
 import { User, Bell, Globe, Shield } from 'lucide-react';
+import { RoleDisplayNames } from '@/features/auth/utils/permissions';
+import type { Role } from '@/features/auth/utils/permissions';
 
 export default function StaffSettingsPage() {
   const { data: session } = useSession();
+
+  const userRole = (session?.user?.role as Role) ?? 'VIEWER';
+  const roleDisplayName = RoleDisplayNames[userRole] ?? 'Nhân viên';
+  const userName = session?.user?.name ?? 'Người dùng';
+  const userEmail = session?.user?.email ?? '';
 
   return (
     <div className="admin-view">
@@ -27,16 +34,19 @@ export default function StaffSettingsPage() {
           <div style={{ padding: '8px 0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--gray-100)' }}>
               <div style={{ width: 80, color: 'var(--gray-500)', fontSize: '0.82rem' }}>Họ tên</div>
-              <div style={{ fontWeight: 600 }}>{session?.user?.name ?? 'Người dùng'}</div>
+              <div style={{ fontWeight: 600 }}>{userName}</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--gray-100)' }}>
               <div style={{ width: 80, color: 'var(--gray-500)', fontSize: '0.82rem' }}>Email</div>
-              <div style={{ fontWeight: 600 }}>{session?.user?.email ?? 'email@example.com'}</div>
+              <div style={{ fontWeight: 600 }}>{userEmail || '—'}</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0' }}>
               <div style={{ width: 80, color: 'var(--gray-500)', fontSize: '0.82rem' }}>Vai trò</div>
               <div>
                 <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
                   padding: '4px 10px',
                   background: 'var(--primary-faint, #EFF3F8)',
                   color: 'var(--primary, #1E3A5F)',
@@ -44,7 +54,8 @@ export default function StaffSettingsPage() {
                   fontSize: '0.78rem',
                   fontWeight: 600
                 }}>
-                  {String(session?.user?.role ?? 'VIEWER')}
+                  <Shield size={11} />
+                  {roleDisplayName}
                 </span>
               </div>
             </div>

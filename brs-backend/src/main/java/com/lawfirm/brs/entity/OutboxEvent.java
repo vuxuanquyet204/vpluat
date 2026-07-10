@@ -10,7 +10,9 @@ import java.util.UUID;
  * Outbox event entity for transactional outbox pattern.
  */
 @Entity
-@Table(name = "outbox_events")
+@Table(name = "outbox_events", indexes = {
+    @Index(name = "idx_outbox_processed", columnList = "processed, created_at")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -44,9 +46,24 @@ public class OutboxEvent {
     @Column(name = "processed_at")
     private Instant processedAt;
 
+    /**
+     * Number of times the OutboxProcessor has tried to handle this event.
+     * Used to give up after a few retries so a poison event doesn't churn
+     * the queue forever.
+     */
+    @Column(name = "retry_count")
+    @Builder.Default
+    private Integer retryCount = 0;
+
+    /**
+     * Last error message captured when handling failed.
+     */
+    @Column(name = "last_error", length = 1000)
+    private String lastError;
+
     @PrePersist
     protected void onCreate() {
-        createdAt = Instant.now();
+        if (createdAt == null) createdAt = Instant.now();
     }
 
     /**

@@ -1,13 +1,11 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import {
   CalendarDays,
   UserPlus,
   TrendingUp,
-  MessagesSquare,
   Star,
   CheckCircle2,
   CircleDot,
@@ -18,6 +16,8 @@ import {
 import { RoleDisplayNames, canAccessNav } from '@/features/auth/utils/permissions';
 import type { Role } from '@/features/auth/utils/permissions';
 import Link from 'next/link';
+import { useApiQuery } from '@/lib/api/hooks';
+import { type DashboardStats, type BookingStats, type LeadPipelineStats } from '@/lib/api';
 
 function StatCard({
   icon,
@@ -77,65 +77,53 @@ function QuickActionCard({
 
 export default function StaffDashboardPage() {
   const { data: session } = useSession();
-  const router = useRouter();
 
   const userRole = (session?.user?.role as Role) ?? 'VIEWER';
-  const userName = session?.user?.name ?? session?.user?.fullName ?? 'Nhân viên';
+  const userName = session?.user?.name ?? 'Nhân viên';
   const roleDisplayName = RoleDisplayNames[userRole] ?? 'Nhân viên';
+
+  // === Real data from backend ===
+  const { data: bookingStats } = useApiQuery<BookingStats>(
+    ['staff-dashboard-booking-stats'],
+    '/bookings/admin/stats',
+    {},
+    { enabled: canAccessNav(userRole, 'bookings') }
+  );
+
+  const { data: dashboardStats } = useApiQuery<DashboardStats>(
+    ['staff-dashboard-stats'],
+    '/admin/dashboard/stats/range',
+    { range: '7d' },
+    {
+      enabled: canAccessNav(userRole, 'crm') || canAccessNav(userRole, 'reviews') || canAccessNav(userRole, 'blog'),
+    }
+  );
+
+  const { data: pipelineStats } = useApiQuery<LeadPipelineStats>(
+    ['staff-lead-pipeline'],
+    '/crm/leads/pipeline',
+    {},
+    { enabled: canAccessNav(userRole, 'crm') }
+  );
 
   const quickActions = useMemo(() => {
     const actions = [];
 
     if (canAccessNav(userRole, 'crm')) {
-      actions.push({
-        icon: UserPlus,
-        label: 'Quản lý Lead',
-        href: '/staff/crm',
-        bg: '#FEF9EF',
-        color: '#C9A84C'
-      });
+      actions.push({ icon: UserPlus, label: 'Quản lý Lead', href: '/staff/crm', bg: '#FEF9EF', color: '#C9A84C' });
     }
-
     if (canAccessNav(userRole, 'bookings')) {
-      actions.push({
-        icon: CalendarDays,
-        label: 'Lịch hẹn',
-        href: '/staff/bookings',
-        bg: '#ECFDF5',
-        color: '#059669'
-      });
+      actions.push({ icon: CalendarDays, label: 'Lịch hẹn', href: '/staff/bookings', bg: '#ECFDF5', color: '#059669' });
     }
-
     if (canAccessNav(userRole, 'reviews')) {
-      actions.push({
-        icon: Star,
-        label: 'Đánh giá',
-        href: '/staff/reviews',
-        bg: '#FEF3C7',
-        color: '#F59E0B'
-      });
+      actions.push({ icon: Star, label: 'Đánh giá', href: '/staff/reviews', bg: '#FEF3C7', color: '#F59E0B' });
     }
-
     if (canAccessNav(userRole, 'blog')) {
-      actions.push({
-        icon: Newspaper,
-        label: 'Bài viết',
-        href: '/staff/blog',
-        bg: '#EFF3F8',
-        color: '#1E3A5F'
-      });
+      actions.push({ icon: Newspaper, label: 'Bài viết', href: '/staff/blog', bg: '#EFF3F8', color: '#1E3A5F' });
     }
-
     if (canAccessNav(userRole, 'landing-pages')) {
-      actions.push({
-        icon: BarChart3,
-        label: 'Landing Pages',
-        href: '/staff/landing-pages',
-        bg: '#EFF6FF',
-        color: '#2563EB'
-      });
+      actions.push({ icon: BarChart3, label: 'Landing Pages', href: '/staff/landing-pages', bg: '#EFF6FF', color: '#2563EB' });
     }
-
     return actions;
   }, [userRole]);
 
@@ -163,37 +151,37 @@ export default function StaffDashboardPage() {
       </div>
 
       <div className="stats-grid">
-        {canAccessNav(userRole, 'crm') && (
+        {canAccessNav(userRole, 'crm') && pipelineStats && (
           <>
             <StatCard
               icon={<UserPlus size={18} strokeWidth={2.2} />}
               iconVariant="green"
-              value="24"
-              label="Lead mới tuần này"
+              value={pipelineStats.newCount}
+              label="Lead mới"
               href="/staff/crm"
             />
             <StatCard
               icon={<TrendingUp size={18} strokeWidth={2.2} />}
               iconVariant="yellow"
-              value="68%"
-              label="Tỷ lệ phản hồi"
+              value={`${pipelineStats.conversionRate}%`}
+              label="Tỷ lệ chuyển đổi"
             />
           </>
         )}
 
-        {canAccessNav(userRole, 'bookings') && (
+        {canAccessNav(userRole, 'bookings') && bookingStats && (
           <>
             <StatCard
               icon={<CalendarDays size={18} strokeWidth={2.2} />}
               iconVariant="blue"
-              value="5"
+              value={bookingStats.total ?? 0}
               label="Lịch hẹn hôm nay"
               href="/staff/bookings"
             />
             <StatCard
               icon={<CircleDot size={18} strokeWidth={2.2} />}
               iconVariant="purple"
-              value="2"
+              value={bookingStats.pending ?? 0}
               label="Chờ xác nhận"
               href="/staff/bookings"
             />
@@ -204,7 +192,7 @@ export default function StaffDashboardPage() {
           <StatCard
             icon={<Star size={18} strokeWidth={2.2} />}
             iconVariant="yellow"
-            value="12"
+            value={dashboardStats?.pendingReviews ?? '—'}
             label="Review chờ duyệt"
             href="/staff/reviews"
           />
@@ -215,21 +203,23 @@ export default function StaffDashboardPage() {
             <StatCard
               icon={<Newspaper size={18} strokeWidth={2.2} />}
               iconVariant="cyan"
-              value="8"
+              value={(dashboardStats?.totalPosts ?? 0) > 0
+                ? ((dashboardStats?.totalPosts ?? 0) - (dashboardStats?.publishedPosts ?? 0))
+                : '—'}
               label="Bài viết draft"
               href="/staff/blog"
             />
             <StatCard
               icon={<CheckCircle2 size={18} strokeWidth={2.2} />}
               iconVariant="green"
-              value="45"
+              value={dashboardStats?.publishedPosts ?? '—'}
               label="Bài đã xuất bản"
             />
           </>
         )}
       </div>
 
-      {canAccessNav(userRole, 'bookings') && (
+      {canAccessNav(userRole, 'bookings') && bookingStats && (
         <div style={{
           background: 'white',
           border: '1px solid var(--gray-200)',
@@ -250,26 +240,26 @@ export default function StaffDashboardPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
             <div style={{ padding: 12, background: 'var(--success-faint, #D1FAE5)', borderRadius: 8, textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--success, #10B981)' }}>3</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--success, #10B981)' }}>{bookingStats.completed ?? 0}</div>
               <div style={{ fontSize: '0.72rem', color: 'var(--gray-500)' }}>Hoàn tất</div>
             </div>
             <div style={{ padding: 12, background: 'var(--primary-faint, #EFF3F8)', borderRadius: 8, textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary, #1E3A5F)' }}>2</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary, #1E3A5F)' }}>{bookingStats.confirmed ?? 0}</div>
               <div style={{ fontSize: '0.72rem', color: 'var(--gray-500)' }}>Đã xác nhận</div>
             </div>
             <div style={{ padding: 12, background: 'var(--warning-faint, #FEF3C7)', borderRadius: 8, textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--warning, #B45309)' }}>2</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--warning, #B45309)' }}>{bookingStats.pending ?? 0}</div>
               <div style={{ fontSize: '0.72rem', color: 'var(--gray-500)' }}>Chờ xác nhận</div>
             </div>
             <div style={{ padding: 12, background: 'var(--danger-faint, #FEE2E2)', borderRadius: 8, textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--danger, #DC2626)' }}>0</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--danger, #DC2626)' }}>{bookingStats.cancelled ?? 0}</div>
               <div style={{ fontSize: '0.72rem', color: 'var(--gray-500)' }}>Đã hủy</div>
             </div>
           </div>
         </div>
       )}
 
-      {canAccessNav(userRole, 'crm') && (
+      {canAccessNav(userRole, 'crm') && pipelineStats && (
         <div style={{
           background: 'white',
           border: '1px solid var(--gray-200)',
@@ -295,19 +285,19 @@ export default function StaffDashboardPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
             <div style={{ padding: 12, background: '#EFF6FF', borderRadius: 8, textAlign: 'center', borderLeft: '3px solid #2563EB' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#2563EB' }}>12</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#2563EB' }}>{pipelineStats.newCount}</div>
               <div style={{ fontSize: '0.72rem', color: 'var(--gray-500)' }}>Mới</div>
             </div>
             <div style={{ padding: 12, background: '#FEF9EF', borderRadius: 8, textAlign: 'center', borderLeft: '3px solid #D97706' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#D97706' }}>8</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#D97706' }}>{pipelineStats.contacted}</div>
               <div style={{ fontSize: '0.72rem', color: 'var(--gray-500)' }}>Đã liên hệ</div>
             </div>
             <div style={{ padding: 12, background: '#F3E8FF', borderRadius: 8, textAlign: 'center', borderLeft: '3px solid #7C3AED' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#7C3AED' }}>5</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#7C3AED' }}>{pipelineStats.qualified}</div>
               <div style={{ fontSize: '0.72rem', color: 'var(--gray-500)' }}>Đang tư vấn</div>
             </div>
             <div style={{ padding: 12, background: '#ECFDF5', borderRadius: 8, textAlign: 'center', borderLeft: '3px solid #059669' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#059669' }}>3</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#059669' }}>{pipelineStats.converted}</div>
               <div style={{ fontSize: '0.72rem', color: 'var(--gray-500)' }}>Đã chuyển đổi</div>
             </div>
           </div>

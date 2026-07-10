@@ -34,7 +34,6 @@ public class UserController {
     private final AuditLogRepository auditLogRepository;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all users with pagination (Admin)")
     public ResponseEntity<ApiResponse<PageResponse<UserDTO>>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
@@ -46,7 +45,6 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get user by ID (Admin)")
     public ResponseEntity<ApiResponse<UserDTO>> getUserById(@PathVariable UUID id) {
         UserDTO user = userService.getUserById(id);
@@ -54,7 +52,6 @@ public class UserController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Operation(summary = "Create a new user (SuperAdmin)")
     public ResponseEntity<ApiResponse<UserDTO>> createUser(
             @Valid @RequestBody RegisterRequest request) {
@@ -63,7 +60,6 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update a user (Admin)")
     public ResponseEntity<ApiResponse<UserDTO>> updateUser(
             @PathVariable UUID id,
@@ -73,7 +69,6 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/role")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Operation(summary = "Change user role (SuperAdmin)")
     public ResponseEntity<ApiResponse<UserDTO>> changeUserRole(
             @PathVariable UUID id,
@@ -83,7 +78,6 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Activate/deactivate a user (Admin)")
     public ResponseEntity<ApiResponse<UserDTO>> toggleUserActive(@PathVariable UUID id) {
         UserDTO user = userService.toggleUserActive(id);
@@ -91,7 +85,6 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Operation(summary = "Delete a user (SuperAdmin)")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
@@ -99,7 +92,6 @@ public class UserController {
     }
 
     @GetMapping("/{id}/activity")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Recent activity entries by a specific user")
     public ResponseEntity<ApiResponse<List<ActivityLogResponse>>> activity(
             @PathVariable UUID id,

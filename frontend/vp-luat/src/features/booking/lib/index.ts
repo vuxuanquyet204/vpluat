@@ -1,14 +1,19 @@
 import type { BookingLawyerOption, BookingServiceOption, BookingConsultationType } from '../types';
 
 export const BOOKING_SERVICES: BookingServiceOption[] = [
-  { id: 'service-doanh-nghiep', slug: 'doanh-nghiep', name: 'Luật Doanh nghiệp & M&A', icon: 'building' },
-  { id: 'service-hinh-su', slug: 'hinh-su', name: 'Luật Hình sự', icon: 'gavel' },
-  { id: 'service-dan-su', slug: 'dan-su', name: 'Luật Dân sự', icon: 'file-text' },
-  { id: 'service-dat-dai', slug: 'dat-dai', name: 'Luật Đất đai & BĐS', icon: 'landmark' },
+  { id: 'service-tu-van-phap-ly', slug: 'tu-van-phap-ly', name: 'Tư vấn pháp lý', icon: 'scale' },
+  { id: 'service-dai-dien-phap-ly', slug: 'dai-dien-phap-ly', name: 'Đại diện pháp lý', icon: 'gavel' },
+  { id: 'service-to-cao-khieu-nai', slug: 'to-cao-khieu-nai', name: 'Tố cáo & Khiếu nại', icon: 'alert' },
+  { id: 'service-thu-tuc-hanh-chinh', slug: 'thu-tuc-hanh-chinh', name: 'Thủ tục hành chính', icon: 'file-text' },
   { id: 'service-lao-dong', slug: 'lao-dong', name: 'Luật Lao động & BHXH', icon: 'users' },
-  { id: 'service-fdi', slug: 'fdi', name: 'Đầu tư nước ngoài (FDI)', icon: 'globe' },
-  { id: 'service-shtt', slug: 'shtt', name: 'Sở hữu trí tuệ', icon: 'lightbulb' },
-  { id: 'service-khac', slug: 'khac', name: 'Tư vấn khác', icon: 'circle-help' },
+  { id: 'service-doanh-nghiep', slug: 'doanh-nghiep', name: 'Luật Doanh nghiệp', icon: 'briefcase' },
+  { id: 'service-nha-dat', slug: 'nha-dat', name: 'Luật Nhà đất & BĐS', icon: 'home' },
+  { id: 'service-so-huu-tri-tue', slug: 'so-huu-tri-tue', name: 'Sở hữu trí tuệ', icon: 'lightbulb' },
+  { id: 'service-fdi', slug: 'fdi', name: 'FDI — Đầu tư nước ngoài', icon: 'globe' },
+  { id: 'service-hinh-su', slug: 'hinh-su', name: 'Luật Hình sự', icon: 'shield' },
+  { id: 'service-tu-van-hop-dong', slug: 'tu-van-hop-dong', name: 'Tư vấn hợp đồng', icon: 'file-signature' },
+  { id: 'service-ly-hon', slug: 'ly-hon', name: 'Ly hôn & Gia đình', icon: 'heart' },
+  { id: 'service-ma', slug: 'ma', name: 'M&A — Mua bán & Sáp nhập', icon: 'handshake' },
 ];
 
 export const BOOKING_LAWYERS: BookingLawyerOption[] = [

@@ -81,14 +81,13 @@ public class AvailabilityService {
     }
 
     @Transactional
-    public void createSlotsFromWorkingHours(UUID lawyerId, LocalDate startDate, LocalDate endDate) {
+    public List<AvailabilitySlotDTO> createSlotsFromWorkingHours(UUID lawyerId, LocalDate startDate, LocalDate endDate) {
         log.info("Creating slots from working hours for lawyer: {}", lawyerId);
-        
+
         LawyerProfile lawyer = lawyerRepository.findById(lawyerId)
             .orElseThrow(() -> new ResourceNotFoundException("Lawyer not found: " + lawyerId));
 
-        // Parse working hours from JSON and create slots
-        // This is a simplified implementation
+        List<AvailabilitySlot> createdSlots = new java.util.ArrayList<>();
         LocalTime startTime = LocalTime.of(9, 0);
         LocalTime endTime = LocalTime.of(17, 0);
         int slotDuration = 60;
@@ -98,7 +97,7 @@ public class AvailabilityService {
             LocalTime slotStart = startTime;
             while (slotStart.plusMinutes(slotDuration).isBefore(endTime) || slotStart.plusMinutes(slotDuration).equals(endTime)) {
                 LocalTime slotEnd = slotStart.plusMinutes(slotDuration);
-                
+
                 if (!slotRepository.existsByLawyerIdAndSlotDateAndStartTime(lawyerId, current, slotStart)) {
                     AvailabilitySlot slot = AvailabilitySlot.builder()
                         .lawyer(lawyer)
@@ -107,13 +106,16 @@ public class AvailabilityService {
                         .endTime(slotEnd)
                         .isAvailable(true)
                         .build();
-                    slotRepository.save(slot);
+                    createdSlots.add(slotRepository.save(slot));
                 }
-                
+
                 slotStart = slotEnd;
             }
             current = current.plusDays(1);
         }
+
+        log.info("Created {} slots for lawyer: {}", createdSlots.size(), lawyerId);
+        return slotMapper.toDTOList(createdSlots);
     }
 
     @Transactional
@@ -128,5 +130,44 @@ public class AvailabilityService {
         }
 
         slotRepository.delete(slot);
+    }
+
+    @Transactional
+    public List<AvailabilitySlotDTO> createSlotsForAllLawyers(LocalDate startDate, LocalDate endDate) {
+        log.info("Creating slots for all lawyers from {} to {}", startDate, endDate);
+
+        List<LawyerProfile> lawyers = lawyerRepository.findAll();
+        List<AvailabilitySlot> allCreatedSlots = new java.util.ArrayList<>();
+
+        for (LawyerProfile lawyer : lawyers) {
+            LocalTime startTime = LocalTime.of(9, 0);
+            LocalTime endTime = LocalTime.of(17, 0);
+            int slotDuration = 60;
+
+            LocalDate current = startDate;
+            while (!current.isAfter(endDate)) {
+                LocalTime slotStart = startTime;
+                while (slotStart.plusMinutes(slotDuration).isBefore(endTime) || slotStart.plusMinutes(slotDuration).equals(endTime)) {
+                    LocalTime slotEnd = slotStart.plusMinutes(slotDuration);
+
+                    if (!slotRepository.existsByLawyerIdAndSlotDateAndStartTime(lawyer.getId(), current, slotStart)) {
+                        AvailabilitySlot slot = AvailabilitySlot.builder()
+                            .lawyer(lawyer)
+                            .slotDate(current)
+                            .startTime(slotStart)
+                            .endTime(slotEnd)
+                            .isAvailable(true)
+                            .build();
+                        allCreatedSlots.add(slotRepository.save(slot));
+                    }
+
+                    slotStart = slotEnd;
+                }
+                current = current.plusDays(1);
+            }
+        }
+
+        log.info("Created {} slots for {} lawyers", allCreatedSlots.size(), lawyers.size());
+        return slotMapper.toDTOList(allCreatedSlots);
     }
 }

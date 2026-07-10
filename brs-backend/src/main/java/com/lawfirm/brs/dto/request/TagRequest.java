@@ -11,5 +11,8 @@ public record TagRequest(
     @NotBlank(message = "Slug is required")
     @Size(max = 100, message = "Slug is too long")
     @Pattern(regexp = "^[a-z0-9-]+$", message = "Slug must contain only lowercase letters, numbers, and hyphens")
-    String slug
+    String slug,
+
+    @Size(max = 100, message = "Name is too long")
+    String name
 ) {}

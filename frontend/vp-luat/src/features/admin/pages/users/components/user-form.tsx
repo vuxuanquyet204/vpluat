@@ -21,17 +21,19 @@ interface UserFormProps {
 const DEFAULT: UserFormValues = {
   name: '',
   email: '',
-  role: 'staff',
+  role: 'USER',
   isActive: true,
   phone: '',
   password: '',
 };
 
 const ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
-  { value: 'super_admin', label: 'Super Admin' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'lawyer', label: 'Lawyer' },
-  { value: 'staff', label: 'Staff' },
+  { value: 'SUPER_ADMIN', label: 'Super Admin' },
+  { value: 'ADMIN', label: 'Admin' },
+  { value: 'EDITOR', label: 'Editor' },
+  { value: 'CSKH', label: 'CSKH' },
+  { value: 'LAWYER', label: 'Luật sư' },
+  { value: 'USER', label: 'Khách hàng' },
 ];
 
 export function UserForm({ isOpen, onClose, onSubmit, initial, isLoading, hidePassword }: UserFormProps) {

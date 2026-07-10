@@ -60,9 +60,9 @@ export function UserMenu() {
 
   if (!currentUser) return null;
   const display = effectiveUser ?? currentUser;
-  const color = ROLE_COLOR[display.role] ?? pickColor(display.name);
-  const initials = getInitials(display.name) || 'A';
-  const bgColor = pickColor(display.name);
+  const color = ROLE_COLOR[display.role] ?? pickColor(display.name ?? display.email);
+  const initials = getInitials(display.name ?? display.email ?? '') || 'A';
+  const bgColor = pickColor(display.name ?? display.email ?? '');
 
   const handleStopImpersonate = () => {
     stopImpersonate();

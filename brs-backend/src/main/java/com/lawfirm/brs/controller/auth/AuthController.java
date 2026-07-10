@@ -3,7 +3,7 @@ package com.lawfirm.brs.controller.auth;
 import com.lawfirm.brs.dto.request.RegisterRequest;
 import com.lawfirm.brs.dto.response.ApiResponse;
 import com.lawfirm.brs.dto.response.UserDTO;
-import com.lawfirm.brs.entity.User;
+import com.lawfirm.brs.security.UserPrincipal;
 import com.lawfirm.brs.service.auth.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -56,40 +56,40 @@ public class AuthController {
     @PostMapping("/logout")
     @Operation(summary = "Logout", description = "Logout and invalidate tokens")
     public ResponseEntity<ApiResponse<Void>> logout(
-            @AuthenticationPrincipal User user,
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody Map<String, String> request
     ) {
-        authService.logout(user.getEmail(), request.get("refreshToken"));
+        authService.logout(principal.getEmail(), request.get("refreshToken"));
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
     }
 
     @GetMapping("/me")
     @Operation(summary = "Get current user", description = "Get authenticated user profile")
     public ResponseEntity<ApiResponse<UserDTO>> getCurrentUser(
-            @AuthenticationPrincipal User user
+            @AuthenticationPrincipal UserPrincipal principal
     ) {
-        var userDTO = authService.getCurrentUser(user);
+        var userDTO = authService.getCurrentUser(principal.getUser());
         return ResponseEntity.ok(ApiResponse.success(userDTO));
     }
 
     @PutMapping("/me")
     @Operation(summary = "Update profile", description = "Update authenticated user profile")
     public ResponseEntity<ApiResponse<UserDTO>> updateProfile(
-            @AuthenticationPrincipal User user,
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody Map<String, String> updates
     ) {
-        var userDTO = authService.updateProfile(user, updates);
+        var userDTO = authService.updateProfile(principal.getUser(), updates);
         return ResponseEntity.ok(ApiResponse.success("Profile updated", userDTO));
     }
 
     @PostMapping("/change-password")
     @Operation(summary = "Change password", description = "Change user password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
-            @AuthenticationPrincipal User user,
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody Map<String, String> passwords
     ) {
         authService.changePassword(
-            user,
+            principal.getUser(),
             passwords.get("currentPassword"),
             passwords.get("newPassword")
         );
