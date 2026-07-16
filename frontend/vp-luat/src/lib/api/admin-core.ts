@@ -19,6 +19,8 @@ export interface AdminUser {
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
+  lastLoginAt?: string;
+  impersonatedBy?: string;
 }
 
 export interface Role {

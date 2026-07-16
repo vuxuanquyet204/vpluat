@@ -58,6 +58,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     ? new UserPrincipal(u)
                     : userDetails;
 
+                // Expose the authenticated user id as a request attribute so
+                // controllers that take @RequestAttribute("userId") UUID can
+                // resolve it without re-deriving from the principal.
+                if (userDetails instanceof User u) {
+                    request.setAttribute("userId", u.getId());
+                }
+
                 UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                         principal,

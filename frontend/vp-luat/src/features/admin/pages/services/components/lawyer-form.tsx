@@ -1,12 +1,13 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, X, Camera } from 'lucide-react';
+import { Save, X, Camera, Loader2 } from 'lucide-react';
 import { Modal } from '@/features/admin/shared';
 import { FormFieldInput, FormFieldTextarea } from '@/features/admin/components';
 import { lawyerSchema, type LawyerFormValues } from '@/features/admin/schema';
+import { uploadImage } from '@/lib/api/upload-image';
 import type { Service, Lawyer } from '../hooks/use-services';
 
 interface LawyerFormProps {
@@ -17,6 +18,9 @@ interface LawyerFormProps {
   services: Service[];
   isLoading?: boolean;
 }
+
+const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+const ACCEPTED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 const DEFAULT_VALUES: LawyerFormValues = {
   name: '',
@@ -40,6 +44,8 @@ export function LawyerForm({
   isLoading,
 }: LawyerFormProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -74,15 +80,33 @@ export function LawyerForm({
 
   const avatar = watch('avatar');
 
-  const handleFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result === 'string') {
-        setValue('avatar', result);
-      }
-    };
-    reader.readAsDataURL(file);
+  const handleFile = async (file: File) => {
+    setUploadError(null);
+    if (!ACCEPTED.includes(file.type)) {
+      setUploadError('Định dạng không hỗ trợ. Chỉ chấp nhận JPG, PNG, GIF, WEBP.');
+      return;
+    }
+    if (file.size > MAX_SIZE_BYTES) {
+      setUploadError(
+        `Kích thước tối đa 2MB. File của bạn: ${(file.size / 1024 / 1024).toFixed(1)}MB.`,
+      );
+      return;
+    }
+    setUploading(true);
+    try {
+      const result = await uploadImage(file, 'lawyers');
+      if (!result.url) throw new Error('Phản hồi từ server không có URL ảnh');
+      setValue('avatar', result.url);
+    } catch (e) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Upload ảnh thất bại';
+      setUploadError(msg);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const specialtiesRaw = watch('specialties');
@@ -160,11 +184,13 @@ export function LawyerForm({
                 type="button"
                 className="action-btn"
                 onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
                 style={{ display: 'flex', alignItems: 'center', gap: 4 }}
               >
-                <Camera size={12} /> Upload avatar
+                {uploading ? <Loader2 size={12} className="pe-uploader__spinner" /> : <Camera size={12} />}
+                {uploading ? 'Đang tải lên...' : 'Upload avatar'}
               </button>
-              {avatar && (
+              {avatar && !uploading && (
                 <button
                   type="button"
                   className="action-btn"
@@ -175,8 +201,13 @@ export function LawyerForm({
                 </button>
               )}
               <div style={{ fontSize: '0.72rem', color: 'var(--gray-500)', marginTop: 4 }}>
-                PNG, JPG, tối đa ~500KB (base64)
+                JPG, PNG, WEBP, tối đa 2MB
               </div>
+              {uploadError && (
+                <div style={{ fontSize: '0.72rem', color: '#DC2626', marginTop: 4 }}>
+                  {uploadError}
+                </div>
+              )}
             </div>
           </div>
 

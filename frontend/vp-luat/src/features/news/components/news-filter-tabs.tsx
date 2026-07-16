@@ -2,15 +2,25 @@
 
 import { useMemo } from 'react';
 import { FilterBar } from '@/components/layout/filter-bar';
-import { NEWS_ARTICLES, NEWS_CATEGORIES } from '../lib/data/news-data';
+import { NEWS_CATEGORIES } from '../lib/data/news-data';
 import type { NewsCategory } from '../types';
+import type { PostApiResponse } from '../api/news-api';
 
 interface NewsFilterTabsProps {
   active: 'all' | NewsCategory;
   onChange: (value: 'all' | NewsCategory) => void;
+  posts?: PostApiResponse[];
 }
 
-export function NewsFilterTabs({ active, onChange }: NewsFilterTabsProps) {
+const CATEGORY_LABELS: Record<string, string> = {
+  'tin-tuc': 'Tin tức',
+  'nghi-dinh': 'Nghị định',
+  'blog': 'Blog',
+  'case-study': 'Case study',
+  'huong-dan': 'Hướng dẫn',
+};
+
+export function NewsFilterTabs({ active, onChange, posts = [] }: NewsFilterTabsProps) {
   const options = useMemo(() => {
     const seen = new Set<string>(['all']);
     const rest = NEWS_CATEGORIES.filter((c) => !seen.has(c.id)).map((c) => {
@@ -28,16 +38,16 @@ export function NewsFilterTabs({ active, onChange }: NewsFilterTabsProps) {
         id: 'all' as const,
         label: all?.label ?? 'Tất cả',
         icon: all?.icon ?? 'fa-solid fa-layer-group',
-        count: all?.count ?? NEWS_ARTICLES.length,
+        count: posts.length,
       },
       ...rest,
     ];
-  }, []);
+  }, [posts.length]);
 
   const totalForActive =
     active === 'all'
-      ? NEWS_ARTICLES.length
-      : NEWS_ARTICLES.filter((a) => a.category === active).length;
+      ? posts.length
+      : posts.filter((a) => a.category === active).length;
 
   return (
     <FilterBar

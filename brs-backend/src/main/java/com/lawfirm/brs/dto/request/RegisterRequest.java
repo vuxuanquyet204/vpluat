@@ -23,5 +23,7 @@ public record RegisterRequest(
     String fullName,
 
     @Size(max = 20, message = "Phone number is too long")
-    String phone
+    String phone,
+
+    String role
 ) {}

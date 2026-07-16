@@ -1,24 +1,30 @@
 package com.lawfirm.brs.service.upload;
 
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 /**
- * Service for uploading files to Cloudinary.
- * Note: CloudinaryConfig needs to be created separately with Cloudinary bean configuration.
+ * Service for storing uploaded files on the local filesystem under {@code base-dir}.
+ * Files are served publicly via Spring's static resource handler at {@code /files/**}
+ * (configured in {@code WebMvcConfig}).
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class FileStorageService {
 
@@ -33,20 +39,25 @@ public class FileStorageService {
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     ));
 
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-    private static final long MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;  // 10MB
+    private static final long MAX_IMAGE_SIZE = 5 * 1024 * 1024;  // 5MB
 
-    @Value("${app.cloudinary.cloud-name:}")
-    private String cloudName;
+    private static final String PUBLIC_URL_PREFIX = "/files/";
 
-    @Value("${app.cloudinary.api-key:}")
-    private String apiKey;
+    @Value("${app.upload.base-dir:/app/uploads}")
+    private String baseDir;
 
-    @Value("${app.cloudinary.api-secret:}")
-    private String apiSecret;
+    private Path basePath;
+
+    @PostConstruct
+    void init() throws IOException {
+        this.basePath = Paths.get(baseDir).toAbsolutePath().normalize();
+        Files.createDirectories(this.basePath);
+        log.info("File storage base directory initialized at {}", this.basePath);
+    }
 
     /**
-     * Upload an image file to Cloudinary
+     * Upload an image file (validated as image, max 5MB).
      */
     public FileUploadResult upload(MultipartFile file, String folder) {
         validateImageFile(file);
@@ -54,7 +65,7 @@ public class FileStorageService {
     }
 
     /**
-     * Upload a raw file (document) to Cloudinary
+     * Upload a raw document file (validated as document, max 10MB).
      */
     public FileUploadResult uploadRaw(MultipartFile file, String folder) {
         validateDocumentFile(file);
@@ -62,7 +73,7 @@ public class FileStorageService {
     }
 
     /**
-     * Upload file with auto type detection
+     * Upload with auto type detection.
      */
     public FileUploadResult uploadAuto(MultipartFile file, String folder) {
         validateFile(file);
@@ -72,76 +83,80 @@ public class FileStorageService {
 
     private FileUploadResult doUpload(MultipartFile file, String folder, String resourceType) {
         try {
-            String publicId = generatePublicId(folder);
+            String safeFolder = sanitizeFolder(folder);
+            String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM"));
+            String original = file.getOriginalFilename();
+            String ext = extractExtension(original);
+            String storedName = UUID.randomUUID().toString() + ext;
 
-            Map<String, Object> result = cloudinaryUpload(file, folder, publicId, resourceType);
+            Path relative = Paths.get(safeFolder, datePath, storedName);
+            Path target = basePath.resolve(relative).normalize();
+            ensureInsideBase(target);
 
-            log.info("File uploaded successfully: publicId={}", publicId);
+            Files.createDirectories(target.getParent());
+            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+
+            String url = PUBLIC_URL_PREFIX + relative.toString().replace('\\', '/');
+            log.info("File stored: relative={}, url={}", relative, url);
 
             return FileUploadResult.builder()
-                .publicId((String) result.get("public_id"))
-                .url((String) result.get("secure_url"))
-                .format((String) result.get("format"))
-                .width((Integer) result.get("width"))
-                .height((Integer) result.get("height"))
-                .bytes((Long) result.get("bytes"))
+                .publicId(relative.toString().replace('\\', '/'))
+                .url(url)
+                .format(stripDot(ext))
+                .bytes(file.getSize())
                 .build();
-
-        } catch (Exception e) {
-            log.error("Failed to upload file to Cloudinary", e);
-            throw new RuntimeException("File upload failed: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new UncheckedIOException("File upload failed: " + e.getMessage(), e);
         }
     }
 
     /**
-     * Get secure URL for a file
-     */
-    public String getSecureUrl(String publicId) {
-        return String.format("https://res.cloudinary.com/%s/raw/upload/%s",
-            cloudName, publicId);
-    }
-
-    /**
-     * Get thumbnail URL for an image with specified dimensions
-     */
-    public String getThumbnailUrl(String publicId, int width, int height) {
-        return String.format(
-            "https://res.cloudinary.com/%s/image/upload/c_fill,w_%d,h_%d/%s",
-            cloudName, width, height, publicId
-        );
-    }
-
-    /**
-     * Get optimized image URL with transformations
-     */
-    public String getOptimizedUrl(String publicId, int width, int height) {
-        return String.format(
-            "https://res.cloudinary.com/%s/image/upload/c_scale,w_%d,h_%d,q_auto,f_auto/%s",
-            cloudName, width, height, publicId
-        );
-    }
-
-    /**
-     * Delete a file from Cloudinary
+     * Delete a file by its stored relative path (e.g. {@code images/2026/07/abc.jpg}).
      */
     public boolean delete(String publicId) {
+        if (publicId == null || publicId.isBlank()) {
+            return false;
+        }
         try {
-            // Note: Requires Cloudinary bean to be configured
-            // cloudinary.uploader().destroy(publicId, Map.of());
-            log.info("File deleted: publicId={}", publicId);
-            return true;
-        } catch (Exception e) {
-            log.error("Failed to delete file from Cloudinary: {}", publicId, e);
+            Path target = basePath.resolve(publicId).normalize();
+            ensureInsideBase(target);
+            boolean removed = Files.deleteIfExists(target);
+            log.info("Delete file: relative={}, removed={}", publicId, removed);
+            return removed;
+        } catch (IOException e) {
+            log.error("Failed to delete file: {}", publicId, e);
             return false;
         }
     }
 
     /**
-     * Delete file by URL
+     * Delete file by public URL such as {@code /files/images/2026/07/abc.jpg}.
+     * Non-local URLs (e.g. legacy Cloudinary links) are logged and ignored.
      */
     public boolean deleteByUrl(String url) {
-        String publicId = extractPublicIdFromUrl(url);
-        return publicId != null ? delete(publicId) : false;
+        String relative = extractRelativeFromUrl(url);
+        if (relative == null) {
+            log.warn("Skip delete (not a local /files/ URL): {}", url);
+            return false;
+        }
+        return delete(relative);
+    }
+
+    /**
+     * Resolve a stored relative path to its absolute filesystem location.
+     */
+    public Path resolveLocalPath(String publicIdOrUrl) {
+        String relative = extractRelativeFromUrl(publicIdOrUrl);
+        if (relative == null) {
+            relative = publicIdOrUrl;
+        }
+        Path target = basePath.resolve(relative).normalize();
+        ensureInsideBase(target);
+        return target;
+    }
+
+    public String getBaseDir() {
+        return basePath != null ? basePath.toString() : baseDir;
     }
 
     private void validateFile(MultipartFile file) {
@@ -179,7 +194,6 @@ public class FileStorageService {
         if (contentType != null) {
             return contentType;
         }
-        // Fallback to Tika for MIME detection
         try {
             return new org.apache.tika.Tika().detect(file.getInputStream());
         } catch (IOException e) {
@@ -188,37 +202,58 @@ public class FileStorageService {
         }
     }
 
-    private String generatePublicId(String folder) {
-        String timestamp = String.valueOf(System.currentTimeMillis());
-        String uuid = UUID.randomUUID().toString().substring(0, 8);
-        return (folder != null ? folder + "/" : "") + timestamp + "_" + uuid;
+    private String sanitizeFolder(String folder) {
+        if (folder == null || folder.isBlank()) {
+            return "misc";
+        }
+        String cleaned = folder.replace('\\', '/');
+        while (cleaned.startsWith("/")) {
+            cleaned = cleaned.substring(1);
+        }
+        if (cleaned.contains("..") || cleaned.contains("\0")) {
+            throw new IllegalArgumentException("Invalid folder name");
+        }
+        return cleaned;
     }
 
-    private String extractPublicIdFromUrl(String url) {
+    private String extractExtension(String filename) {
+        if (filename == null) {
+            return "";
+        }
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0 || dot == filename.length() - 1) {
+            return "";
+        }
+        return filename.substring(dot).toLowerCase();
+    }
+
+    private String stripDot(String ext) {
+        return ext == null || ext.isEmpty() ? ext : ext.substring(1);
+    }
+
+    private String extractRelativeFromUrl(String url) {
         if (url == null) {
             return null;
         }
-        // Extract public ID from Cloudinary URL
-        int uploadIndex = url.indexOf("/upload/");
-        if (uploadIndex > 0) {
-            return url.substring(uploadIndex + 8);
+        int idx = url.indexOf(PUBLIC_URL_PREFIX);
+        if (idx < 0) {
+            return null;
         }
-        return null;
+        String rel = url.substring(idx + PUBLIC_URL_PREFIX.length());
+        if (rel.contains("..") || rel.contains("\0")) {
+            return null;
+        }
+        return rel;
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> cloudinaryUpload(MultipartFile file, String folder,
-                                                  String publicId, String resourceType) {
-        // Note: This requires Cloudinary SDK configuration
-        // Implementation placeholder - needs Cloudinary bean
-        throw new UnsupportedOperationException(
-            "Cloudinary upload requires CloudinaryConfig to be configured. " +
-            "Please create CloudinaryConfig with Cloudinary bean."
-        );
+    private void ensureInsideBase(Path target) {
+        if (!target.startsWith(basePath)) {
+            throw new IllegalArgumentException("Path traversal detected: " + target);
+        }
     }
 
     /**
-     * Result of file upload operation
+     * Result of file upload operation.
      */
     @lombok.Data
     @lombok.Builder

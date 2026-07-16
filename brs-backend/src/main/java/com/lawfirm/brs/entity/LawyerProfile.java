@@ -2,9 +2,13 @@ package com.lawfirm.brs.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -64,8 +68,13 @@ public class LawyerProfile {
     @Builder.Default
     private Boolean isFeatured = false;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "working_hours", columnDefinition = "jsonb")
-    private String workingHours;
+    private Map<String, Object> workingHours;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "service_ids", columnDefinition = "jsonb")
+    private List<UUID> serviceIds;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

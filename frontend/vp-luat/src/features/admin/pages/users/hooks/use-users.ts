@@ -145,11 +145,17 @@ export function useResetPassword() {
 }
 
 export function useCreateUserFromValues() {
+  const qc = useQueryClient();
   return useCallback(async (values: UserFormValues): Promise<string | null> => {
     try {
-      const password = values.password && values.password.length >= 8
-        ? values.password
-        : 'Welcome@2026'; // safe default; admin must rotate on first login
+      // Password: nếu rỗng hoặc quá ngắn → dùng default. Có thông báo cho admin biết.
+      let password = values.password;
+      if (!password || password.length < 8) {
+        password = 'Welcome@2026';
+        notifySuccess(
+          'Đã tạo user (mật khẩu mặc định Welcome@2026)',
+        );
+      }
       const created = await userApi.create({
         email: values.email,
         fullName: values.name,
@@ -164,13 +170,21 @@ export function useCreateUserFromValues() {
         entityLabel: created.fullName ?? created.email,
         diff: { before: { sourceId: '' }, after: { name: values.name, email: values.email, role: values.role } },
       });
-      notifySuccess('Đã tạo user');
+      // Nếu tạo user role=LAWYER, invalidate lawyers cache vì BE sẽ tự tạo LawyerProfile
+      if ((values.role ?? 'USER') === 'LAWYER') {
+        qc.invalidateQueries({ queryKey: ['lawyers'] });
+      }
+      if (password === 'Welcome@2026') {
+        // đã notify ở trên với thông báo về password mặc định
+      } else {
+        notifySuccess('Đã tạo user');
+      }
       return created.id;
     } catch (err) {
       notifyError('Lỗi', (err as Error).message);
       return null;
     }
-  }, []);
+  }, [qc]);
 }
 
 export function useUpdateUserFromValues() {
@@ -185,6 +199,10 @@ export function useUpdateUserFromValues() {
         phone: values.phone || undefined,
       });
       qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+      // Nếu đổi role sang LAWYER hoặc cập nhật user LAWYER, invalidate lawyers
+      if (values.role === 'LAWYER') {
+        qc.invalidateQueries({ queryKey: ['lawyers'] });
+      }
       ghiAudit({
         action: 'update',
         entity: 'user',

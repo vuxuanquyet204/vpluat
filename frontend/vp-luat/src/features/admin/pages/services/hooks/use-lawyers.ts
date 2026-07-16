@@ -14,31 +14,92 @@ import type { Service, Lawyer } from './use-services';
 // ─── Mappers from raw API shape to page-expected shape ──────────────────────
 
 function mapToLawyer(raw: Record<string, unknown>): Lawyer {
-  const arr = Array.isArray(raw.specializations) ? raw.specializations : [];
+  const arr = Array.isArray(raw.languages) ? raw.languages : [];
+  const email = (raw.userEmail as string | null) || '';
+  const phone = (raw.phone as string | null) || '';
   return {
     id: String(raw.id ?? ''),
-    name: String(raw.fullName ?? ''),
-    title: '',
-    bio: String(raw.bio ?? ''),
-    avatar: raw.avatarUrl as string | undefined,
+    slug: String(raw.slug ?? ''),
+    userId: raw.userId ? String(raw.userId) : undefined,
+    userEmail: raw.userEmail ? String(raw.userEmail) : undefined,
+    name: String(raw.nameVi ?? raw.nameEn ?? ''),
+    nameVi: raw.nameVi ? String(raw.nameVi) : undefined,
+    nameEn: raw.nameEn ? String(raw.nameEn) : undefined,
+    title: String(raw.positionVi ?? raw.positionEn ?? ''),
+    positionVi: raw.positionVi ? String(raw.positionVi) : undefined,
+    positionEn: raw.positionEn ? String(raw.positionEn) : undefined,
+    bio: String(raw.bioVi ?? raw.bioEn ?? ''),
+    bioVi: raw.bioVi ? String(raw.bioVi) : undefined,
+    bioEn: raw.bioEn ? String(raw.bioEn) : undefined,
+    avatar: (raw.avatarUrl as string | null) ?? undefined,
     specialties: arr as string[],
-    email: String(raw.email ?? ''),
-    phone: String(raw.phone ?? ''),
+    barNumber: raw.barNumber ? String(raw.barNumber) : undefined,
+    email,
+    phone,
     experience: Number(raw.experienceYears ?? 0),
     serviceIds: Array.isArray(raw.serviceIds) ? (raw.serviceIds as string[]) : [],
-    isActive: Boolean(raw.isActive ?? true),
+    workingHours: (raw.workingHours as Record<string, unknown>) ?? undefined,
+    isActive: Boolean(raw.isFeatured ?? true),
     createdAt: String(raw.createdAt ?? new Date().toISOString()),
+  };
+}
+
+// ─── Mapper from FE form to BE request ──────────────────────────────────────
+
+interface LawyerFormData {
+  name: string;
+  title: string;
+  bio: string;
+  avatar?: string;
+  specialties: string[];
+  email: string;
+  phone: string;
+  experience: number;
+  serviceIds: string[];
+  isActive: boolean;
+}
+
+function mapToBackendRequest(form: Partial<LawyerFormData>): Record<string, unknown> {
+  const name = (form.name ?? '').toString().trim();
+  const slug = name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .slice(0, 50) || `lawyer-${Date.now()}`;
+
+  return {
+    slug,
+    nameVi: name,
+    nameEn: name,
+    bioVi: form.bio ?? '',
+    bioEn: form.bio ?? '',
+    positionVi: form.title ?? '',
+    positionEn: form.title ?? '',
+    experienceYears: form.experience ?? 0,
+    languages: form.specialties ?? [],
+    avatarUrl: form.avatar || null,
+    serviceIds: form.serviceIds ?? [],
+    isFeatured: form.isActive ?? true,
+    email: form.email || null,
+    phone: form.phone || null,
   };
 }
 
 // ─── Query hooks ───────────────────────────────────────────────────────────────
 
 export function useLawyers() {
-  const { data = [], ...rest } = useApiQuery<Lawyer[]>(
+  const { data: rawData = [], ...rest } = useApiQuery<Lawyer[]>(
     ['lawyers'],
     '/admin/lawyers',
     undefined,
   );
+
+  const data = useMemo(() => {
+    return (rawData as unknown as Record<string, unknown>[]).map(mapToLawyer);
+  }, [rawData]);
 
   const counts = useMemo(() => {
     const c = { total: data.length, active: 0, inactive: 0 };
@@ -86,7 +147,7 @@ export function useActiveLawyers() {
 export function useCreateLawyer() {
   const qc = useQueryClient();
 
-  const mutation = useApiMutation<Record<string, unknown>, Omit<Lawyer, 'id'>>(
+  const mutation = useApiMutation<Record<string, unknown>, LawyerFormData>(
     'POST',
     '/admin/lawyers',
     {
@@ -107,16 +168,20 @@ export function useCreateLawyer() {
     },
   );
 
-  return useCallback(
-    (body: Omit<Lawyer, 'id'>) => mutation.mutate(body),
-    [mutation],
+  return Object.assign(
+    useCallback(
+      (body: LawyerFormData) => mutation.mutate(mapToBackendRequest(body) as unknown as LawyerFormData),
+      [mutation],
+    ),
+    { isPending: mutation.isPending },
   );
 }
 
 export function useUpdateLawyer() {
   const qc = useQueryClient();
 
-  const mutation = useApiMutation<Record<string, unknown>, { id: string; body: Partial<Omit<Lawyer, 'id'>> }>(
+  // Dùng PATCH để update partial - tránh mất field khi FE không gửi đầy đủ
+  const mutation = useApiMutation<Record<string, unknown>, { id: string; body: Partial<LawyerFormData> | Record<string, unknown> }>(
     'PATCH',
     (vars) => `/admin/lawyers/${vars.id}`,
     {
@@ -137,9 +202,20 @@ export function useUpdateLawyer() {
     },
   );
 
-  return useCallback(
-    (id: string, body: Partial<Omit<Lawyer, 'id'>>) => mutation.mutate({ id, body }),
-    [mutation],
+  return Object.assign(
+    useCallback(
+      (id: string, body: Partial<LawyerFormData> | Record<string, unknown>) => {
+        const finalBody =
+          'nameVi' in (body as Record<string, unknown>) ||
+          'nameEn' in (body as Record<string, unknown>) ||
+          'positionVi' in (body as Record<string, unknown>)
+            ? body
+            : mapToBackendRequest(body as Partial<LawyerFormData>);
+        mutation.mutate({ id, body: finalBody });
+      },
+      [mutation],
+    ),
+    { isPending: mutation.isPending },
   );
 }
 

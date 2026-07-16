@@ -1,21 +1,29 @@
+// features/admin/pages/blog/components/post-image-uploader.tsx
+// Drag-drop image uploader — replaces the legacy FileReader-base64
+// implementation. The actual file is uploaded to the backend via
+// /api/admin/upload/image; the returned URL (/files/images/...) is what
+// gets stored in PostFormValues.thumbnail.
+
 'use client';
 
 import { useRef, useState, type DragEvent, type ChangeEvent } from 'react';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Loader2 } from 'lucide-react';
+import { uploadImage } from '@/lib/api/upload-image';
 
 const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
 const ACCEPTED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
 
 interface PostImageUploaderProps {
   value: string;
-  onChange: (dataUrl: string) => void;
+  onChange: (url: string) => void;
   onClear: () => void;
   aspectRatio?: string; // CSS aspect-ratio, e.g. '16/9'
 }
 
 /**
- * Drag-drop image uploader — đọc File, nén/resize nhẹ nếu quá lớn,
- * lưu dưới dạng data URL (base64) để giữ trong localStorage.
+ * Drag-drop image uploader — reads the File, uploads it to
+ * `/api/admin/upload/image`, and stores the returned `/files/...` URL
+ * in the form so it survives `PostRequest.thumbnailUrl` validation.
  */
 export function PostImageUploader({
   value,
@@ -26,6 +34,7 @@ export function PostImageUploader({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleFile = async (file: File) => {
     setError(null);
@@ -37,8 +46,23 @@ export function PostImageUploader({
       setError(`Kích thước tối đa 2MB. File của bạn: ${(file.size / 1024 / 1024).toFixed(1)}MB.`);
       return;
     }
-    const dataUrl = await readFileAsDataUrl(file);
-    onChange(dataUrl);
+    setUploading(true);
+    try {
+      const result = await uploadImage(file, 'thumbnail');
+      if (!result.url) {
+        throw new Error('Phản hồi từ server không có URL ảnh');
+      }
+      onChange(result.url);
+    } catch (e) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Upload ảnh thất bại';
+      setError(msg);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
@@ -75,7 +99,7 @@ export function PostImageUploader({
     <div>
       <div
         className={`pe-uploader pe-uploader--dropzone${dragOver ? ' pe-uploader--over' : ''}`}
-        style={{ aspectRatio }}
+        style={{ aspectRatio, opacity: uploading ? 0.6 : 1, pointerEvents: uploading ? 'none' : 'auto' }}
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);
@@ -92,6 +116,7 @@ export function PostImageUploader({
           }
         }}
         aria-label="Tải ảnh đại diện lên"
+        aria-disabled={uploading}
       >
         <input
           ref={inputRef}
@@ -99,6 +124,7 @@ export function PostImageUploader({
           accept={ACCEPTED.join(',')}
           onChange={handleSelect}
           style={{ display: 'none' }}
+          disabled={uploading}
         />
         <div
           style={{
@@ -111,9 +137,22 @@ export function PostImageUploader({
             padding: 12,
           }}
         >
-          <Upload size={24} />
-          <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>Kéo thả ảnh hoặc bấm để chọn</div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--gray-400)' }}>JPG, PNG, WEBP, GIF, SVG · tối đa 2MB</div>
+          {uploading ? (
+            <>
+              <Loader2 size={24} className="pe-uploader__spinner" />
+              <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>Đang tải ảnh lên...</div>
+            </>
+          ) : (
+            <>
+              <Upload size={24} />
+              <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>
+                Kéo thả ảnh hoặc bấm để chọn
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--gray-400)' }}>
+                JPG, PNG, WEBP, GIF, SVG · tối đa 2MB
+              </div>
+            </>
+          )}
         </div>
       </div>
       {error && (
@@ -129,13 +168,4 @@ export function PostImageUploader({
       )}
     </div>
   );
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error('Không đọc được file'));
-    reader.readAsDataURL(file);
-  });
 }

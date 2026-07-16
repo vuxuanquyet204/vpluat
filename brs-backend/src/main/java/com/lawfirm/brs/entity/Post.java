@@ -2,6 +2,7 @@ package com.lawfirm.brs.entity;
 
 import com.lawfirm.brs.constants.PostStatus;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.Instant;
@@ -67,6 +68,23 @@ public class Post {
     @Column(name = "language")
     @Builder.Default
     private String language = "vi";
+
+    @Size(max = 1000, message = "Title is too long")
+    @Column(name = "title")
+    private String title;
+
+    @Size(max = 500, message = "Excerpt is too long")
+    @Column(name = "excerpt", length = 500)
+    private String excerpt;
+
+    @Column(name = "content", columnDefinition = "text")
+    private String content;
+
+    @Column(name = "meta_title")
+    private String metaTitle;
+
+    @Column(name = "meta_desc", length = 500)
+    private String metaDesc;
 
     @Version
     @Column(name = "version")

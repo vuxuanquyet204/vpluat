@@ -15,11 +15,17 @@ public interface LawyerMapper {
     @Named("lawyerToDTO")
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "userEmail", source = "user.email")
+    @Mapping(target = "phone", source = "user.phone")
+    @Mapping(target = "languages", source = "languages", defaultExpression = "java(java.util.Collections.emptyList())")
+    @Mapping(target = "serviceIds", source = "serviceIds")
     LawyerDTO toDTO(LawyerProfile lawyer);
 
     @Named("lawyerToDTOWithDetails")
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "userEmail", source = "user.email")
+    @Mapping(target = "phone", source = "user.phone")
+    @Mapping(target = "languages", source = "languages", defaultExpression = "java(java.util.Collections.emptyList())")
+    @Mapping(target = "serviceIds", source = "serviceIds")
     LawyerDTO toDTOWithDetails(LawyerProfile lawyer);
 
     @Named("lawyerListToDTO")

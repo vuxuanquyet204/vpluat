@@ -88,7 +88,7 @@ function mapPostDto(dto: PostDTO): PostApiResponse {
     content: dto.content || '',
     category: dto.categoryName?.toLowerCase().replace(/\s+/g, '-') || 'tin-tuc',
     categoryName: dto.categoryName,
-    tags: dto.tags || [],
+    tags: Array.isArray((dto as unknown as Record<string, unknown>).tags) ? ((dto as unknown as Record<string, unknown>).tags as string[]) : [],
     author: {
       name: dto.authorName || 'Author',
       initials: authorInitials,

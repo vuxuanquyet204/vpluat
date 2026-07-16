@@ -21,6 +21,7 @@ import type {
   PostRevision,
 } from '@/features/admin/types';
 import { useCreatePost, useUpdatePost, usePublishPost, useSchedulePost, useDeletePost, useDeleteManyPosts, useRestoreRevision } from './hooks/use-post-mutations';
+import type { Post } from '@/lib/api/admin-content';
 import { usePosts } from './hooks/use-posts';
 import {
   useCategories,
@@ -238,6 +239,15 @@ export default function BlogPage() {
     setEditorOpen(true);
   }, []);
 
+  // UI status (PostStatus = 'draft'|'published'|'scheduled') must be normalized
+  // to backend enum (DRAFT|PUBLISHED|SCHEDULED) before hitting the API. Without
+  // this Spring throws "No enum constant PostStatus.published".
+  const toBackendStatus = (s: PostStatus): 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' => {
+    if (s === 'published') return 'PUBLISHED';
+    if (s === 'scheduled') return 'SCHEDULED';
+    return 'DRAFT';
+  };
+
   const handleSavePost = useCallback(
     async (
       values: PostFormValues,
@@ -247,16 +257,50 @@ export default function BlogPage() {
       const authorName = editingPost?.author ?? user?.name ?? 'Admin';
       const now = new Date().toISOString();
       const isPublishing = options.status === 'published';
+      const apiStatus = toBackendStatus(options.status);
 
       if (editingPost) {
         const before = { ...editingPost };
-        const patch: Partial<BlogPost> = {
+        // Map legacy editor fields (category + tag UUIDs) onto the
+        // PostRequest shape the backend actually expects (categoryId + slug
+        // strings for tags). Without this remap Spring rejects the request
+        // with "Unrecognized field category".
+        const patch: Record<string, unknown> = {
           ...values,
-          status: options.status,
+          status: apiStatus,
           publishedAt: isPublishing ? now : editingPost.publishedAt,
           scheduledAt: options.scheduledAt,
         };
-        const updated = await updatePost.mutateAsync({ id: editingPost.id, patch });
+        if ('category' in patch) {
+          const catId = (patch as { category?: string }).category;
+          delete (patch as Record<string, unknown>).category;
+          if (catId) (patch as Record<string, unknown>).categoryId = catId;
+        }
+        if ('tags' in patch && Array.isArray(patch.tags)) {
+          patch.tags = (patch.tags as unknown as string[]).map((t) => {
+            const match = tags.find((tg) => tg.id === t);
+            return match?.slug ?? t;
+          });
+        }
+        if ('thumbnail' in patch) {
+          const thumb = (patch as { thumbnail?: string }).thumbnail;
+          delete (patch as Record<string, unknown>).thumbnail;
+          if (thumb) (patch as Record<string, unknown>).thumbnailUrl = thumb;
+        }
+        if ('author' in patch) {
+          delete (patch as Record<string, unknown>).author;
+        }
+        if (values.seo) {
+          (patch as Record<string, unknown>).metaTitle = values.seo.metaTitle;
+          (patch as Record<string, unknown>).metaDesc = values.seo.metaDescription;
+          (patch as Record<string, unknown>).ogImageUrl = values.seo.ogImage;
+          // Drop the legacy seo envelope so the backend doesn't see unknown fields.
+          delete (patch as Record<string, unknown>).seo;
+        }
+        const updated = await updatePost.mutateAsync({
+          id: editingPost.id,
+          patch: patch as unknown as Partial<BlogPost>,
+        });
         if (!updated) {
           notifyError('Lỗi', 'Không tìm thấy bài viết');
           throw new Error('Post not found');
@@ -275,13 +319,45 @@ export default function BlogPage() {
       }
 
       // Tạo mới
-      const result = (await createPost.mutateAsync({
+      const newPostValues: Record<string, unknown> = {
         ...values,
-        status: options.status,
+        status: apiStatus,
         author: authorName,
         publishedAt: isPublishing ? now : undefined,
         scheduledAt: options.scheduledAt,
-      } as unknown as Omit<BlogPost, 'id' | 'createdAt' | 'updatedAt'>)) as BlogPost;
+      };
+      // Map legacy editor fields (category + tag UUIDs + thumbnail + seo
+      // + author) onto the PostRequest shape the backend actually expects.
+      // Without this remap Spring rejects with "Unrecognized field
+      // category/thumbnail/author". authorId comes from the JWT, not the body.
+      if ('category' in newPostValues) {
+        const catId = newPostValues.category as string | undefined;
+        delete newPostValues.category;
+        if (catId) newPostValues.categoryId = catId;
+      }
+      if (Array.isArray(newPostValues.tags)) {
+        newPostValues.tags = (newPostValues.tags as unknown as string[]).map((t) => {
+          const match = tags.find((tg) => tg.id === t);
+          return match?.slug ?? t;
+        });
+      }
+      if ('thumbnail' in newPostValues) {
+        const thumb = newPostValues.thumbnail as string | undefined;
+        delete newPostValues.thumbnail;
+        if (thumb) newPostValues.thumbnailUrl = thumb;
+      }
+      if ('author' in newPostValues) {
+        delete newPostValues.author;
+      }
+      if (values.seo) {
+        newPostValues.metaTitle = values.seo.metaTitle;
+        newPostValues.metaDesc = values.seo.metaDescription;
+        newPostValues.ogImageUrl = values.seo.ogImage;
+        delete newPostValues.seo;
+      }
+      const result = (await createPost.mutateAsync(
+        newPostValues as unknown as Omit<BlogPost, 'id' | 'createdAt' | 'updatedAt'>,
+      )) as BlogPost;
       ghiAudit({
         action: 'create',
         entity: 'post',
@@ -324,7 +400,7 @@ export default function BlogPage() {
         const now = new Date().toISOString();
         await updatePost.mutateAsync({
           id: p.id,
-          patch: { status: 'published', publishedAt: now },
+          patch: { status: 'PUBLISHED', publishedAt: now } as unknown as Partial<BlogPost>,
         });
         ghiAudit({
           action: 'publish',
@@ -345,7 +421,7 @@ export default function BlogPage() {
       try {
         await updatePost.mutateAsync({
           id: p.id,
-          patch: { status: 'draft', publishedAt: undefined },
+          patch: { status: 'DRAFT', publishedAt: undefined } as unknown as Partial<BlogPost>,
         });
         ghiAudit({
           action: 'update',

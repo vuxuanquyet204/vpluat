@@ -1,5 +1,10 @@
 package com.lawfirm.brs.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,14 +56,39 @@ public class RedisConfig {
     @Value("${app.cache.locale:60}")
     private long localeTtl;
 
+    /**
+     * Jackson ObjectMapper with JavaTimeModule registered so that Java 8
+     * date/time types (Instant, LocalDateTime, etc.) serialize to ISO-8601
+     * strings instead of causing {@link com.fasterxml.jackson.databind.exc.InvalidDefinitionException}.
+     * <p>
+     * {@code OBJECT_AND_NON_CONCRETE} is used so that the serializer embeds
+     * {@code @class} metadata for any non-concrete type (e.g. {@code PageResponse},
+     * {@code ArrayList}) into the JSON.  When Redis deserializes, Jackson reads the
+     * metadata and instantiates the correct concrete class.  Without this the cache
+     * throws {@code ClassCastException: LinkedHashMap cannot be cast to PageResponse}.
+     */
+    private static ObjectMapper redisObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        // Embed concrete-type metadata so GenericJackson2JsonRedisSerializer can
+        // deserialize back to the proper classes (e.g. PageResponseImpl, PostDTO).
+        mapper.activateDefaultTyping(
+            LaissezFaireSubTypeValidator.instance,
+            ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS,
+            JsonTypeInfo.As.PROPERTY
+        );
+        return mapper;
+    }
+
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer(redisObjectMapper()));
+        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer(redisObjectMapper()));
         template.afterPropertiesSet();
         return template;
     }
@@ -89,7 +119,7 @@ public class RedisConfig {
             .entryTtl(Duration.ofMinutes(5))
             .disableCachingNullValues()
             .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-            .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+            .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer(redisObjectMapper())));
 
         // Per-cache TTL overrides keyed by @Cacheable(value = "...").
         Map<String, RedisCacheConfiguration> perCache = new HashMap<>();

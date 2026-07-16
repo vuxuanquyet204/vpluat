@@ -87,7 +87,11 @@ export default function NewsPage() {
         <div className="container">
           <div className="main-layout__grid">
             <main>
-              <NewsFilterTabs active={activeCategory} onChange={(v) => { setActiveCategory(v); setPage(1); }} />
+              <NewsFilterTabs
+                active={activeCategory}
+                onChange={(v) => { setActiveCategory(v); setPage(1); }}
+                posts={allArticles}
+              />
 
               {paginated.length === 0 ? (
                 <div className="services-empty">

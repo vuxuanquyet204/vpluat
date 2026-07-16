@@ -21,7 +21,8 @@ function mapPost(p: Post) {
     content: p.content ?? '',
     author: p.authorName ?? p.authorId,
     category: p.categoryId,
-    tags: [] as string[],
+    thumbnail: p.thumbnailUrl ?? '',
+    tags: (p as unknown as { tags?: string[] }).tags ?? [],
   };
 }
 

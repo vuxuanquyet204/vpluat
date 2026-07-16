@@ -2,24 +2,19 @@
 
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useApiQuery, useApiMutation } from '@/lib/api/hooks';
+import { useApiMutation } from '@/lib/api/hooks';
 import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
+import { useServices } from './use-services';
+import { useLawyers } from './use-lawyers';
 
 // Share types with the other hooks files
 export type { Service, Lawyer } from './use-services';
+
 import type { Service, Lawyer } from './use-services';
 
 export function useAssignment() {
-  const { data: services = [], refetch: refetchServices } = useApiQuery<Service[]>(
-    ['services'],
-    '/admin/services',
-    undefined,
-  );
-  const { data: lawyers = [], refetch: refetchLawyers } = useApiQuery<Lawyer[]>(
-    ['lawyers'],
-    '/admin/lawyers',
-    undefined,
-  );
+  const { data: services = [], refetch: refetchServices } = useServices();
+  const { data: lawyers = [], refetch: refetchLawyers } = useLawyers();
 
   const qc = useQueryClient();
 

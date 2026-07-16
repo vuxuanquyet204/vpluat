@@ -2,6 +2,8 @@ package com.lawfirm.brs.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -31,6 +33,10 @@ public class PostRevision {
     @Column(name = "revision_number", nullable = false)
     private Integer revisionNumber;
 
+    // Hibernate 6 needs an explicit JSON SqlTypes binding on jsonb columns; otherwise
+    // the driver sends the value as text and Postgres rejects it with "column
+    // snapshot is of type jsonb but expression is of type character varying".
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "snapshot", nullable = false, columnDefinition = "jsonb")
     private String snapshot;
 

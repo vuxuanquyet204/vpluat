@@ -26,4 +26,13 @@ public class CategoryDTO {
     private String metaTitleVi;
     private String metaDescEn;
     private String metaDescVi;
+
+    /**
+     * Convenience display fields populated by CategoryMapper so the admin
+     * frontend can render names/descriptions without knowing about the
+     * localised meta variants.
+     */
+    private String name;
+    private String description;
+    private Integer postCount;
 }

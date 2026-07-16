@@ -12,6 +12,7 @@ import com.lawfirm.brs.mapper.PostMapper;
 import com.lawfirm.brs.repository.PostRepository;
 import com.lawfirm.brs.repository.PostRevisionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lawfirm.brs.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,7 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -38,6 +41,7 @@ public class PostErpService {
     private final PostRevisionRepository revisionRepository;
     private final PostMapper postMapper;
     private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
 
     /**
      * Return version history for a post (most recent first).
@@ -77,7 +81,7 @@ public class PostErpService {
             .post(post)
             .revisionNumber((int) next)
             .snapshot(snapshot)
-            .editedBy(editorId == null ? null : buildUserRef(editorId))
+            .editedBy(loadUserRef(editorId))
             .changeNote(changeNote)
             .build();
         return revisionRepository.save(rev);
@@ -146,11 +150,46 @@ public class PostErpService {
 
     private String toJson(Post post) {
         try {
-            return objectMapper.writeValueAsString(post);
+            return objectMapper.writeValueAsString(toSnapshotMap(post));
         } catch (Exception e) {
             log.warn("Snapshot serialization failed", e);
             return "{}";
         }
+    }
+
+    /**
+     * Project a Post entity into a plain Map suitable for JSON snapshotting.
+     * We deliberately avoid serializing the entity directly because lazy
+     * associations (author, category, postTags) would otherwise drag Hibernate
+     * proxies into Jackson, which blows up with
+     * "No serializer found for class ByteBuddyInterceptor".
+     */
+    private Map<String, Object> toSnapshotMap(Post post) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("id", post.getId());
+        data.put("slug", post.getSlug());
+        data.put("thumbnailUrl", post.getThumbnailUrl());
+        data.put("ogImageUrl", post.getOgImageUrl());
+        data.put("status", post.getStatus() != null ? post.getStatus().name() : null);
+        data.put("views", post.getViews());
+        data.put("language", post.getLanguage());
+        data.put("title", post.getTitle());
+        data.put("excerpt", post.getExcerpt());
+        data.put("content", post.getContent());
+        data.put("metaTitle", post.getMetaTitle());
+        data.put("metaDesc", post.getMetaDesc());
+        data.put("publishedAt", post.getPublishedAt());
+        data.put("scheduledAt", post.getScheduledAt());
+        data.put("createdAt", post.getCreatedAt());
+        data.put("updatedAt", post.getUpdatedAt());
+        data.put("isFeatured", post.getIsFeatured());
+        if (post.getAuthor() != null) {
+            data.put("authorId", post.getAuthor().getId());
+        }
+        if (post.getCategory() != null) {
+            data.put("categoryId", post.getCategory().getId());
+        }
+        return data;
     }
 
     @SuppressWarnings("unchecked")
@@ -174,11 +213,12 @@ public class PostErpService {
         }
     }
 
-    private static User buildUserRef(UUID id) {
+    private User loadUserRef(UUID id) {
         if (id == null) return null;
-        User u = new User();
-        u.setId(id);
-        return u;
+        // getReferenceById returns a managed Hibernate proxy carrying the
+        // entity's @Version, so persisting PostRevision won't trigger
+        // "uninitialized version value 'null'" on the transient User.
+        return userRepository.getReferenceById(id);
     }
 
     /**

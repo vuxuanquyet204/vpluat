@@ -53,6 +53,8 @@ app:
   jwt:
     private-key-path: ${JWT_PRIVATE_KEY_PATH:keys/jwt-private.pem}
     public-key-path: ${JWT_PUBLIC_KEY_PATH:keys/jwt-public.pem}
+  upload:
+    base-dir: ${UPLOAD_DIR:./uploads}
 
 # Logging
 logging:

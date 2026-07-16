@@ -23,7 +23,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import java.util.List;
 /**
  * Spring Security configuration with JWT authentication.
  */
@@ -38,14 +37,16 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenStore refreshTokenStore;
     private final RateLimitFilter rateLimitFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
         return http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
-            .sessionManagement(session -> 
+            .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/auth/login", "/api/auth/refresh",
@@ -64,6 +65,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/webhooks/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/actuator/health/**").permitAll()
+                // Locally-served uploaded files
+                .requestMatchers(HttpMethod.GET, "/files", "/files/**").permitAll()
                 // Authenticated endpoints
                 .requestMatchers("/api/auth/me", "/api/auth/me/**").authenticated()
                 .requestMatchers("/api/notifications/**").authenticated()
@@ -89,7 +92,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) 
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
             throws Exception {
         return config.getAuthenticationManager();
     }

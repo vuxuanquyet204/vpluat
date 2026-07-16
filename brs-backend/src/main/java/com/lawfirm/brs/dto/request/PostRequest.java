@@ -2,8 +2,8 @@ package com.lawfirm.brs.dto.request;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import org.hibernate.validator.constraints.URL;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,7 +24,10 @@ public record PostRequest(
     String content,
 
     @Size(max = 1000, message = "Thumbnail URL is too long")
-    @URL(message = "Invalid thumbnail URL")
+    @Pattern(
+        regexp = "^(https?://.+|/files/.+|)$",
+        message = "Thumbnail URL must be an http(s) URL, /files/... path, or empty"
+    )
     String thumbnailUrl,
 
     UUID categoryId,
@@ -38,7 +41,10 @@ public record PostRequest(
     Integer readingTime,
 
     @Size(max = 1000, message = "OG image URL is too long")
-    @URL(message = "Invalid OG image URL")
+    @Pattern(
+        regexp = "^(https?://.+|/files/.+|)$",
+        message = "OG image URL must be an http(s) URL, /files/... path, or empty"
+    )
     String ogImageUrl,
 
     Boolean isFeatured,
@@ -56,7 +62,7 @@ public record PostRequest(
 
     List<UUID> lawyerIds,
 
-    String publishAt,
+    String publishedAt,
 
     String scheduledAt
 ) {}

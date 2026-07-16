@@ -12,6 +12,13 @@ spring:
   config:
     import: optional:file:.env
 
+  # Multipart upload limits (must be set explicitly; default is only 1MB)
+  servlet:
+    multipart:
+      max-file-size: ${SPRING_MULTIPART_MAX_FILE_SIZE:10MB}
+      max-request-size: ${SPRING_MULTIPART_MAX_REQUEST_SIZE:50MB}
+      file-size-threshold: 2MB
+
   # JPA / Hibernate
   jpa:
     open-in-view: false
@@ -25,7 +32,7 @@ spring:
         generate_statistics: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: update 
 
   # Jackson
   jackson:
@@ -134,8 +141,9 @@ app:
     posts: 2
     search: 2
 
-  # File Upload
+  # File Upload (local disk under app.upload.base-dir)
   upload:
+    base-dir: ${UPLOAD_DIR:/app/uploads}
     max-file-size: 10MB
     max-request-size: 50MB
     allowed-extensions: jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx
@@ -143,12 +151,6 @@ app:
   # Webhook Verification
   webhook:
     secret: ${WEBHOOK_SECRET:change-this-in-production}
-
-  # Cloudinary Configuration
-  cloudinary:
-    cloud-name: ${CLOUDINARY_CLOUD_NAME:}
-    api-key: ${CLOUDINARY_API_KEY:}
-    api-secret: ${CLOUDINARY_API_SECRET:}
 
   # OpenAI Configuration
   openai:

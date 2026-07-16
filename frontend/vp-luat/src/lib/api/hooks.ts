@@ -32,8 +32,21 @@ export interface ApiEnvelope<T> {
 }
 
 async function get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
-  const res = await apiClient.get<ApiEnvelope<T>>(url, { params });
-  return unwrap(res.data);
+  if (typeof console !== 'undefined') {
+    console.log('[api GET]', url, params);
+  }
+  try {
+    const res = await apiClient.get<ApiEnvelope<T>>(url, { params });
+    if (typeof console !== 'undefined') {
+      console.log('[api GET response]', url, 'env=', res.data);
+    }
+    return unwrap(res.data);
+  } catch (e) {
+    if (typeof console !== 'undefined') {
+      console.error('[api GET error]', url, (e as { response?: { status?: number; data?: unknown } })?.response?.status, (e as { response?: { data?: unknown } })?.response?.data);
+    }
+    throw e;
+  }
 }
 
 async function post<T>(url: string, body?: unknown): Promise<T> {
@@ -114,10 +127,27 @@ export function useApiMutation<T, V = unknown>(
       if (method === 'POST') return post<T>(target, vars);
       if (method === 'PATCH') {
         // PATCH body must not include the id field (it's already in the URL).
-        const { id: _id, ...body } = vars as { id?: string } & Record<string, unknown>;
+        // Hooks may pass vars as `{ id, body }` (common pattern across the
+        // admin modules) — in that case forward `body` directly.
+        const v = vars as { id?: string; body?: unknown } & Record<string, unknown>;
+        if ('body' in v && v.body !== undefined) {
+          return patch<T>(target, v.body as Record<string, unknown>);
+        }
+        const { id: _id, ...body } = v;
         return patch<T>(target, body);
       }
-      if (method === 'PUT') return put<T>(target, vars);
+      if (method === 'PUT') {
+        // PUT body must not include the id field (it's already in the URL).
+        // Hooks may pass vars as `{ id, body }` (common pattern across the
+        // admin modules) — in that case forward `body` directly.
+        const v = vars as { id?: string; body?: unknown } & Record<string, unknown>;
+        if ('body' in v && v.body !== undefined) {
+          const payload = v.body as Record<string, unknown>;
+          return put<T>(target, payload);
+        }
+        const { id: _id, ...body } = v;
+        return put<T>(target, body);
+      }
       return del<T>(target);
     },
     ...options,

@@ -117,7 +117,7 @@ public class DocumentService {
 
         // Return file resource
         try {
-            Path filePath = Paths.get(document.getFilePath());
+            Path filePath = resolveDocumentPath(document.getFilePath());
             Resource resource = new UrlResource(filePath.toUri());
             if (resource.exists() && resource.isReadable()) {
                 return resource;
@@ -126,6 +126,22 @@ public class DocumentService {
         } catch (MalformedURLException e) {
             throw new BusinessException("DOWNLOAD_FAILED", "Failed to download document");
         }
+    }
+
+    private Path resolveDocumentPath(String filePath) {
+        if (filePath == null || filePath.isBlank()) {
+            throw new BusinessException("FILE_NOT_FOUND", "Document has no file path");
+        }
+        // New local-storage format: /files/...
+        if (filePath.startsWith("/files/")) {
+            return fileStorageService.resolveLocalPath(filePath);
+        }
+        // Legacy absolute file path or http(s) URL.
+        if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
+            throw new BusinessException("FILE_NOT_FOUND",
+                "Document is stored on a remote URL and cannot be served from disk: " + filePath);
+        }
+        return Paths.get(filePath);
     }
 
     /**

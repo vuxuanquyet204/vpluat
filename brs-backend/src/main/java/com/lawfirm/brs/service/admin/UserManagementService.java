@@ -4,8 +4,10 @@ import com.lawfirm.brs.constants.Roles;
 import com.lawfirm.brs.dto.request.RegisterRequest;
 import com.lawfirm.brs.dto.response.PageResponse;
 import com.lawfirm.brs.dto.response.UserDTO;
+import com.lawfirm.brs.entity.LawyerProfile;
 import com.lawfirm.brs.entity.User;
 import com.lawfirm.brs.mapper.UserMapper;
+import com.lawfirm.brs.repository.LawyerProfileRepository;
 import com.lawfirm.brs.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,15 +29,35 @@ import java.util.UUID;
 public class UserManagementService {
 
     private final UserRepository userRepository;
+    private final LawyerProfileRepository lawyerProfileRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
-    @Transactional(readOnly = true)
+@Transactional(readOnly = true)
     public PageResponse<UserDTO> getAllUsers(int page, int size, String role, Boolean isActive) {
         log.debug("Fetching users: page={}, size={}, role={}, isActive={}", page, size, role, isActive);
         PageRequest pageRequest = PageRequest.of(page, size);
-        Page<User> userPage = userRepository.findAll(pageRequest);
-        
+        Page<User> userPage;
+
+        boolean hasRole = role != null && !role.isBlank() && !"all".equalsIgnoreCase(role);
+        Roles parsedRole = null;
+        if (hasRole) {
+            try {
+                parsedRole = Roles.valueOf(role.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid role filter '{}', ignoring", role);
+                hasRole = false;
+            }
+        }
+
+        if (hasRole && parsedRole != null && isActive != null) {
+            userPage = userRepository.findByRoleAndIsActive(parsedRole, isActive, pageRequest);
+        } else if (hasRole && parsedRole != null) {
+            userPage = userRepository.findByRole(parsedRole, pageRequest);
+        } else {
+            userPage = userRepository.findAll(pageRequest);
+        }
+
         return PageResponse.<UserDTO>builder()
                 .content(userMapper.toDTOList(userPage.getContent()))
                 .page(userPage.getNumber())
@@ -55,28 +77,47 @@ public class UserManagementService {
 
     public UserDTO createUser(RegisterRequest request) {
         log.debug("Creating user: {}", request.email());
-        
+
         if (userRepository.findByEmail(request.email()).isPresent()) {
             throw new RuntimeException("Email already exists: " + request.email());
         }
-        
+
+        String roleStr = request.role();
+        Roles role = Roles.USER;
+        if (roleStr != null && !roleStr.isBlank()) {
+            try {
+                role = Roles.valueOf(roleStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid role '{}', defaulting to USER", roleStr);
+            }
+        }
+
         User user = User.builder()
                 .email(request.email())
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .fullName(request.fullName())
                 .phone(request.phone())
-                .role(Roles.USER)
+                .role(role)
                 .isActive(true)
                 .build();
-        
-        return userMapper.toDTO(userRepository.save(user));
+
+        User saved = userRepository.save(user);
+
+        // Nếu role = LAWYER, tự động tạo LawyerProfile rỗng liên kết với user
+        if (role == Roles.LAWYER) {
+            ensureLawyerProfile(saved);
+        }
+
+        return userMapper.toDTO(saved);
     }
 
     public UserDTO updateUser(UUID id, UpdateUserRequest request) {
         log.debug("Updating user: {}", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found: " + id));
-        
+
+        Roles oldRole = user.getRole();
+
         if (request.fullName() != null) {
             user.setFullName(request.fullName());
         }
@@ -86,24 +127,135 @@ public class UserManagementService {
         if (request.avatarUrl() != null) {
             user.setAvatarUrl(request.avatarUrl());
         }
-        
-        return userMapper.toDTO(userRepository.save(user));
+        if (request.email() != null && !request.email().isBlank()
+                && !request.email().equalsIgnoreCase(user.getEmail())) {
+            // Check trùng email trước khi cập nhật
+            if (userRepository.findByEmail(request.email()).isPresent()) {
+                throw new RuntimeException("Email already exists: " + request.email());
+            }
+            user.setEmail(request.email());
+        }
+        if (request.role() != null && !request.role().isBlank()) {
+            try {
+                user.setRole(Roles.valueOf(request.role().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid role '{}' in update, ignoring", request.role());
+            }
+        }
+        if (request.isActive() != null) {
+            user.setIsActive(request.isActive());
+        }
+
+        User saved = userRepository.save(user);
+
+        // Đồng bộ LawyerProfile theo role mới
+        Roles newRole = saved.getRole();
+        if (newRole == Roles.LAWYER) {
+            ensureLawyerProfile(saved);
+        } else if (oldRole == Roles.LAWYER) {
+            // Hạ từ LAWYER xuống role khác → xóa profile
+            removeLawyerProfile(saved);
+        }
+
+        return userMapper.toDTO(saved);
+    }
+
+    /**
+     * Xóa LawyerProfile liên kết với user (khi user bị hạ role từ LAWYER).
+     */
+    private void removeLawyerProfile(User user) {
+        lawyerProfileRepository.findByUser_Id(user.getId())
+                .ifPresent(profile -> {
+                    lawyerProfileRepository.delete(profile);
+                    log.debug("Removed LawyerProfile for user {} (role downgraded from LAWYER)", user.getEmail());
+                });
+    }
+
+    /**
+     * Đảm bảo user có role=LAWYER luôn đi kèm LawyerProfile.
+     * - Nếu chưa có: tạo mới với slug = email base, name_vi = fullName.
+     * - Nếu có rồi: đồng bộ fullName/phone/avatarUrl.
+     */
+    private void ensureLawyerProfile(User user) {
+        LawyerProfile profile = lawyerProfileRepository.findByUser_Id(user.getId()).orElse(null);
+
+        if (profile == null) {
+            String slug = generateSlug(user.getEmail(), user.getFullName());
+            profile = LawyerProfile.builder()
+                    .user(user)
+                    .slug(slug)
+                    .nameVi(user.getFullName() != null ? user.getFullName() : user.getEmail())
+                    .nameEn(user.getFullName() != null ? user.getFullName() : user.getEmail())
+                    .avatarUrl(user.getAvatarUrl())
+                    .isFeatured(true)
+                    .build();
+            lawyerProfileRepository.save(profile);
+            log.debug("Auto-created LawyerProfile for LAWYER user: {}", user.getEmail());
+        } else {
+            // Đồng bộ thông tin từ User sang profile (giữ nguyên các field do lawyer quản lý)
+            if (user.getFullName() != null && (profile.getNameVi() == null || profile.getNameVi().isBlank())) {
+                profile.setNameVi(user.getFullName());
+                profile.setNameEn(user.getFullName());
+            }
+            if (user.getAvatarUrl() != null && (profile.getAvatarUrl() == null || profile.getAvatarUrl().isBlank())) {
+                profile.setAvatarUrl(user.getAvatarUrl());
+            }
+            lawyerProfileRepository.save(profile);
+        }
+    }
+
+    private String generateSlug(String email, String fullName) {
+        String base = fullName != null && !fullName.isBlank() ? fullName : (email != null ? email : "lawyer");
+        String slug = base.toLowerCase()
+                .replaceAll("[đĐ]", "d")
+                .replaceAll("[ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝàáâãäåæçèéêëìíîïðñòóôõöøùúûüýÿ]", "")
+                .replaceAll("[^a-z0-9\\s-]", "")
+                .replaceAll("\\s+", "-")
+                .replaceAll("-+", "-")
+                .replaceAll("^-|-$", "");
+        if (slug.isBlank()) slug = "lawyer-" + System.currentTimeMillis();
+
+        // Đảm bảo unique
+        String candidate = slug;
+        int suffix = 1;
+        while (lawyerProfileRepository.existsBySlug(candidate)) {
+            candidate = slug + "-" + suffix++;
+        }
+        return candidate;
     }
 
     public UserDTO changeUserRole(UUID id, String role) {
         log.debug("Changing user role: id={}, role={}", id, role);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found: " + id));
-        
-        user.setRole(Roles.valueOf(role));
-        return userMapper.toDTO(userRepository.save(user));
+
+        Roles newRole;
+        try {
+            newRole = Roles.valueOf(role);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new RuntimeException("Invalid role: " + role + ". Valid: " + java.util.Arrays.toString(Roles.values()));
+        }
+
+        Roles oldRole = user.getRole();
+        user.setRole(newRole);
+        User saved = userRepository.save(user);
+
+        // Đồng bộ LawyerProfile theo role mới
+        if (newRole == Roles.LAWYER) {
+            ensureLawyerProfile(saved);
+        } else if (oldRole == Roles.LAWYER) {
+            // Role bị hạ từ LAWYER xuống role khác → xóa profile để tránh rác
+            removeLawyerProfile(saved);
+        }
+
+        return userMapper.toDTO(saved);
     }
 
     public UserDTO toggleUserActive(UUID id) {
         log.debug("Toggling user active status: {}", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found: " + id));
-        
+
         user.setIsActive(!user.getIsActive());
         return userMapper.toDTO(userRepository.save(user));
     }
@@ -113,5 +265,5 @@ public class UserManagementService {
         userRepository.deleteById(id);
     }
 
-    public record UpdateUserRequest(String fullName, String phone, String avatarUrl) {}
+    public record UpdateUserRequest(String email, String fullName, String phone, String avatarUrl, String role, Boolean isActive) {}
 }

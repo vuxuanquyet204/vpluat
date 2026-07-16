@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -20,6 +22,7 @@ public class LawyerDTO {
     private UUID id;
     private UUID userId;
     private String userEmail;
+    private String phone;
     private String slug;
     private String nameVi;
     private String nameEn;
@@ -29,9 +32,10 @@ public class LawyerDTO {
     private String positionEn;
     private Integer experienceYears;
     private String barNumber;
-    private String[] languages;
+    private List<String> languages;
     private String avatarUrl;
+    private List<UUID> serviceIds;
     private Boolean isFeatured;
-    private String workingHours;
+    private Map<String, Object> workingHours;
     private Instant createdAt;
 }

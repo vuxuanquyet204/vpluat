@@ -9,6 +9,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { ArrowLeft, Save, Eye, History, X, Globe, Clock } from 'lucide-react';
 import { postSchema, type PostFormValues } from '@/features/admin/schema';
 import { notifyError } from '@/features/admin/lib';
+import { uploadImage } from '@/lib/api/upload-image';
 import type {
   BlogPost,
   Category,
@@ -317,13 +318,21 @@ export function PostEditor({
 
   const handleImageUpload = async (file: File) => {
     if (!editor) return;
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = () => reject(new Error('Không đọc được file'));
-      reader.readAsDataURL(file);
-    });
-    editor.chain().focus().setImage({ src: dataUrl, alt: file.name }).run();
+    try {
+      const result = await uploadImage(file, 'content');
+      if (!result.url) {
+        notifyError('Upload ảnh thất bại', 'Phản hồi từ server không có URL ảnh');
+        return;
+      }
+      editor.chain().focus().setImage({ src: result.url, alt: file.name }).run();
+    } catch (e) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Upload ảnh thất bại';
+      notifyError('Upload ảnh thất bại', msg);
+    }
   };
 
   const handleThumbnailChange = (dataUrl: string) => {

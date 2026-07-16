@@ -38,8 +38,12 @@ export function useCreatePost() {
 
 export function useUpdatePost() {
   const qc = useQueryClient();
+  // Backend exposes PUT /api/admin/posts/{id} for full update. We use PUT
+  // (not PATCH) to match the existing PostController.updatePost mapping.
+  // Note: Jackson ignores the `id` field on the body since PostRequest has
+  // no such property.
   const mutation = useApiMutation<Post, { id: string; values: Partial<Post> }>(
-    'PATCH',
+    'PUT',
     (vars) => `/admin/posts/${vars.id}`,
   );
 

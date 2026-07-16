@@ -1,5 +1,6 @@
 package com.lawfirm.brs.controller.admin;
 
+import com.lawfirm.brs.dto.request.LawyerPatchRequest;
 import com.lawfirm.brs.dto.request.LawyerRequest;
 import com.lawfirm.brs.dto.response.ApiResponse;
 import com.lawfirm.brs.dto.response.LawyerDTO;
@@ -36,12 +37,21 @@ public class LawyerProfileController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update a lawyer profile")
+    @Operation(summary = "Update a lawyer profile (full update)")
     public ResponseEntity<ApiResponse<LawyerDTO>> updateLawyer(
             @PathVariable UUID id,
             @Valid @RequestBody LawyerRequest request) {
         LawyerDTO lawyer = lawyerService.updateLawyer(id, request);
         return ResponseEntity.ok(ApiResponse.success("Lawyer profile updated successfully", lawyer));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Partial update lawyer profile (only send fields you want to change)")
+    public ResponseEntity<ApiResponse<LawyerDTO>> patchLawyer(
+            @PathVariable UUID id,
+            @Valid @RequestBody LawyerPatchRequest request) {
+        LawyerDTO lawyer = lawyerService.patchLawyer(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Lawyer profile patched successfully", lawyer));
     }
 
     @GetMapping("/{id}")

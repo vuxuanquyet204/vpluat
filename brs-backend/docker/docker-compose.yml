@@ -89,11 +89,13 @@ services:
   #     - RABBITMQ_PASSWORD=guest
   #     - JWT_PRIVATE_KEY_PATH=/app/keys/jwt-private.pem
   #     - JWT_PUBLIC_KEY_PATH=/app/keys/jwt-public.pem
+  #     - UPLOAD_DIR=/app/uploads
   #   ports:
   #     - "8080:8080"
   #   volumes:
   #     - ./keys:/app/keys:ro
   #     - app_logs:/app/logs
+  #     - uploads_data:/app/uploads
   #   depends_on:
   #     postgres:
   #       condition: service_healthy
@@ -109,28 +111,12 @@ services:
   #   networks:
   #     - brs-network
 
-  # # ============================================================
-  # # Nginx Reverse Proxy
-  # # ============================================================
-  # nginx:
-  #   image: nginx:alpine
-  #   container_name: brs-nginx
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-  #     - ./nginx/ssl:/etc/nginx/ssl:ro
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - brs-network
-
 volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
-  app_logs:
+  # app_logs:
+  # uploads_data:
 
 networks:
   brs-network:

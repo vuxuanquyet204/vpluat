@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -51,10 +52,16 @@ public class PostManagementService {
 
         Post post = Post.builder()
             .slug(slug)
+            .title(request.title())
+            .excerpt(request.excerpt())
+            .content(request.content())
             .thumbnailUrl(request.thumbnailUrl())
+            .metaTitle(request.metaTitle())
+            .metaDesc(request.metaDesc())
             .author(author)
             .language(request.language() != null ? request.language() : "vi")
             .isFeatured(request.isFeatured() != null ? request.isFeatured() : false)
+            .status(parseStatus(request.status()))
             .build();
 
         if (request.categoryId() != null) {
@@ -95,8 +102,23 @@ public class PostManagementService {
         if (request.slug() != null) {
             post.setSlug(request.slug());
         }
+        if (request.title() != null) {
+            post.setTitle(request.title());
+        }
+        if (request.excerpt() != null) {
+            post.setExcerpt(request.excerpt());
+        }
+        if (request.content() != null) {
+            post.setContent(request.content());
+        }
         if (request.thumbnailUrl() != null) {
             post.setThumbnailUrl(request.thumbnailUrl());
+        }
+        if (request.metaTitle() != null) {
+            post.setMetaTitle(request.metaTitle());
+        }
+        if (request.metaDesc() != null) {
+            post.setMetaDesc(request.metaDesc());
         }
         if (request.categoryId() != null) {
             Category category = categoryRepository.findById(request.categoryId())
@@ -108,6 +130,9 @@ public class PostManagementService {
         }
         if (request.ogImageUrl() != null) {
             post.setOgImageUrl(request.ogImageUrl());
+        }
+        if (request.status() != null) {
+            post.setStatus(parseStatus(request.status()));
         }
 
         post = postRepository.save(post);
@@ -182,10 +207,10 @@ public class PostManagementService {
         Page<Post> posts;
 
         if (status != null && !status.isEmpty()) {
-            posts = postRepository.findByStatus(
-                com.lawfirm.brs.constants.PostStatus.valueOf(status), pageable);
+            posts = postRepository.findByStatusAndDeletedAtIsNull(
+                parseStatus(status), pageable);
         } else {
-            posts = postRepository.findAll(pageable);
+            posts = postRepository.findAllByDeletedAtIsNull(pageable);
         }
 
         return PageResponse.of(
@@ -194,5 +219,34 @@ public class PostManagementService {
             size,
             posts.getTotalElements()
         );
+    }
+
+    /**
+     * Coerce a free-form status string (lowercase, mixed-case, hyphenated,
+     * legacy spellings) into the canonical {@link com.lawfirm.brs.constants.PostStatus}
+     * enum. Defaults to DRAFT for null/blank/unknown so admin clients that
+     * drift from the contract never crash the request with a 500.
+     */
+    private com.lawfirm.brs.constants.PostStatus parseStatus(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return com.lawfirm.brs.constants.PostStatus.DRAFT;
+        }
+        String key = raw.trim().toUpperCase(Locale.ROOT).replace('-', '_');
+        switch (key) {
+            case "PUBLISH":
+            case "PUBLISHED":
+                return com.lawfirm.brs.constants.PostStatus.PUBLISHED;
+            case "SCHEDULE":
+            case "SCHEDULED":
+                return com.lawfirm.brs.constants.PostStatus.SCHEDULED;
+            case "ARCHIVE":
+            case "ARCHIVED":
+                return com.lawfirm.brs.constants.PostStatus.ARCHIVED;
+            case "DRAFT":
+                return com.lawfirm.brs.constants.PostStatus.DRAFT;
+            default:
+                log.warn("Unknown post status '{}', falling back to DRAFT", raw);
+                return com.lawfirm.brs.constants.PostStatus.DRAFT;
+        }
     }
 }

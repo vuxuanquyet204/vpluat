@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, X } from 'lucide-react';
+import { Save, X, AlertCircle } from 'lucide-react';
 import { Modal } from '@/features/admin/shared';
 import { FormFieldInput } from '@/features/admin/components';
 import { userFormSchema, type UserFormValues } from '@/features/admin/schema';
@@ -40,12 +40,17 @@ export function UserForm({ isOpen, onClose, onSubmit, initial, isLoading, hidePa
   const {
     register,
     handleSubmit,
+    control,
     reset,
     formState: { errors },
   } = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: DEFAULT,
   });
+
+  // Watch role để hiển thị cảnh báo khi chọn LAWYER
+  const watchedRole = useWatch({ control, name: 'role' });
+  const watchedPassword = useWatch({ control, name: 'password' });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -62,6 +67,8 @@ export function UserForm({ isOpen, onClose, onSubmit, initial, isLoading, hidePa
       reset(DEFAULT);
     }
   }, [isOpen, initial, reset]);
+
+  const isLawyerDowngrade = initial?.role === 'LAWYER' && watchedRole !== 'LAWYER';
 
   return (
     <Modal
@@ -88,6 +95,51 @@ export function UserForm({ isOpen, onClose, onSubmit, initial, isLoading, hidePa
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {watchedRole === 'LAWYER' && !initial && (
+            <div
+              role="alert"
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                padding: '10px 12px',
+                background: '#fffbeb',
+                border: '1px solid #fcd34d',
+                borderRadius: 6,
+                fontSize: '0.78rem',
+                color: '#92400e',
+              }}
+            >
+              <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <strong>Lưu ý:</strong> Khi tạo user với vai trò Luật sư, hệ thống sẽ <strong>tự động tạo hồ sơ luật sư</strong> liên kết.
+                Bạn có thể bổ sung thông tin chuyên môn (bio, kinh nghiệm, dịch vụ...) tại trang Quản lý luật sư.
+              </div>
+            </div>
+          )}
+
+          {isLawyerDowngrade && (
+            <div
+              role="alert"
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                padding: '10px 12px',
+                background: '#fef2f2',
+                border: '1px solid #fca5a5',
+                borderRadius: 6,
+                fontSize: '0.78rem',
+                color: '#991b1b',
+              }}
+            >
+              <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <strong>Cảnh báo:</strong> Đổi vai trò từ Luật sư sang vai trò khác sẽ <strong>xóa hồ sơ luật sư</strong> liên kết.
+              </div>
+            </div>
+          )}
+
           <FormFieldInput
             label="Họ và tên"
             required
@@ -102,6 +154,7 @@ export function UserForm({ isOpen, onClose, onSubmit, initial, isLoading, hidePa
             placeholder="user@vpluat.vn"
             {...register('email')}
             error={errors.email?.message}
+            hint={initial ? 'Có thể đổi email nếu chưa bị trùng' : undefined}
           />
           <FormFieldInput
             label="Số điện thoại"
@@ -131,11 +184,20 @@ export function UserForm({ isOpen, onClose, onSubmit, initial, isLoading, hidePa
           </div>
           {!hidePassword && (
             <FormFieldInput
-              label="Mật khẩu (để trống = giữ nguyên)"
+              label={initial ? 'Mật khẩu mới (để trống = giữ nguyên)' : 'Mật khẩu'}
               type="password"
-              placeholder="Tối thiểu 8 ký tự"
+              placeholder={initial ? 'Để trống nếu không đổi' : 'Tối thiểu 8 ký tự'}
               {...register('password')}
-              error={errors.password?.message}
+              error={
+                !initial && watchedPassword && watchedPassword.length < 8
+                  ? 'Mật khẩu tối thiểu 8 ký tự (hoặc để trống để dùng mật khẩu mặc định)'
+                  : errors.password?.message
+              }
+              hint={
+                initial
+                  ? 'Để trống để giữ mật khẩu hiện tại'
+                  : 'Để trống sẽ dùng mật khẩu mặc định Welcome@2026'
+              }
             />
           )}
         </div>
@@ -156,4 +218,3 @@ function labelStyle(): React.CSSProperties {
 function inputStyle(): React.CSSProperties {
   return { width: '100%', padding: '8px 10px', fontSize: '0.85rem' };
 }
-

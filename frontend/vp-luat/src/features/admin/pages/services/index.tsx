@@ -36,7 +36,7 @@ import { ServiceFilters, type ServiceFiltersValue } from './components/services-
 import { AssignmentMatrix } from './components/assignment-matrix';
 import { LawyerScheduleEditor } from './components/lawyer-schedule-editor';
 import { useServices } from './hooks/use-services';
-import { useLawyers } from './hooks/use-lawyers';
+import { useLawyers, useCreateLawyer, useUpdateLawyer, useDeleteLawyer } from './hooks/use-lawyers';
 import type { Service, Lawyer } from './hooks/use-services';
 import { useAssignment } from './hooks/use-assignment';
 import type { ServiceFormValues, LawyerFormValues } from '@/features/admin/schema';
@@ -437,9 +437,9 @@ function LawyersTab() {
   const canWrite = useCan('lawyers.write');
   const canDelete = useCan('lawyers.write');
 
-  const createLwy = useCreate<Lawyer>('lawyers', 'lawyer');
-  const updateLwy = useUpdate<Lawyer>('lawyers', 'lawyer');
-  const removeLwy = useDelete('lawyers', 'lawyer');
+  const createLwy = useCreateLawyer();
+  const updateLwy = useUpdateLawyer();
+  const removeLwy = useDeleteLawyer();
 
   const tabsWithCounts = LAWYER_TABS.map((t) => ({
     value: t.value,
@@ -473,25 +473,68 @@ function LawyersTab() {
   const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
 
   const handleSubmit = async (values: LawyerFormValues) => {
-    const payload: Omit<Lawyer, 'id' | 'createdAt'> = {
-      name: values.name,
-      title: values.title,
-      bio: values.bio ?? '',
-      avatar: values.avatar ?? '',
-      specialties: values.specialties,
-      email: values.email,
-      phone: values.phone,
-      experience: values.experience,
-      isActive: values.isActive,
-      serviceIds: values.serviceIds,
+    // Validate tối thiểu ở FE để phát hiện sớm thay vì đợi BE trả 400
+    const trimmedName = (values.name || '').trim();
+    if (trimmedName.length < 2) {
+      notifyError('Lỗi', 'Họ tên luật sư tối thiểu 2 ký tự');
+      return;
+    }
+    const trimmedEmail = (values.email || '').trim();
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      notifyError('Lỗi', 'Email không hợp lệ');
+      return;
+    }
+
+    // Payload theo đúng shape LawyerRequest/BE LawyerPatchRequest
+    // Khi EDIT: vẫn dùng PATCH nên có thể bỏ qua field không thay đổi
+    // Khi CREATE: cần đầy đủ field
+    const isEdit = !!editing;
+    const newSlug = trimmedName
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .slice(0, 50) || `lawyer-${Date.now()}`;
+
+    const payload: Record<string, unknown> = {
+      // Khi EDIT: giữ slug cũ trừ khi user đổi tên
+      slug: isEdit ? editing.slug || newSlug : newSlug,
+      // nameEn: nếu đang edit mà có nameEn riêng → giữ, ngược lại mirror nameVi
+      nameVi: trimmedName,
+      nameEn: isEdit && editing.nameEn && editing.nameEn !== editing.name ? editing.nameEn : trimmedName,
+      bioVi: values.bio || '',
+      bioEn: values.bio || '',
+      positionVi: values.title || 'Luật sư',
+      positionEn: values.title || 'Lawyer',
+      experienceYears: Number(values.experience) || 0,
+      avatarUrl: values.avatar || null,
+      languages: values.specialties || [],
+      serviceIds: values.serviceIds || [],
+      isFeatured: values.isActive ?? true,
+      email: trimmedEmail,
+      phone: values.phone || null,
     };
+
+    // Khi EDIT mà email đã từng link user: gửi kèm userId để BE biết giữ user hiện tại
+    if (isEdit && editing.userId) {
+      // không cần kèm - BE có logic giữ user nếu email không đổi
+    }
+
+    // Khi EDIT: nếu email KHÔNG đổi so với user hiện tại → không cần password
+    // ngược lại: cần password để tạo user mới (nếu email chưa tồn tại)
+    const emailChanged = isEdit && editing.email && editing.email !== trimmedEmail;
+    const emailIsNew = !isEdit || emailChanged;
+    if (emailIsNew && !values.email?.includes('@')) {
+      // email format đã check ở trên rồi; chỉ guard thêm
+    }
+
     try {
       if (editing) {
-        await updateLwy.mutateAsync({ id: editing.id, patch: payload });
-        notifySuccess('Đã cập nhật luật sư');
+        await updateLwy(editing.id, payload);
       } else {
-        await createLwy.mutateAsync(payload);
-        notifySuccess('Đã tạo luật sư');
+        await createLwy(payload as any);
       }
       setFormOpen(false);
       setEditing(null);
@@ -503,10 +546,7 @@ function LawyersTab() {
   const handleToggleActive = useCallback(
     async (l: Lawyer) => {
       try {
-        await updateLwy.mutateAsync({
-          id: l.id,
-          patch: { isActive: !l.isActive },
-        });
+        await updateLwy(l.id, { isActive: !l.isActive });
         notifySuccess(l.isActive ? `Đã tạm dừng ${l.name}` : `Đã kích hoạt ${l.name}`);
       } catch (e) {
         notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
@@ -619,7 +659,7 @@ function LawyersTab() {
         onConfirm={async () => {
           if (!confirmDelete) return;
           try {
-            await removeLwy.mutateAsync(confirmDelete.id);
+            await removeLwy(confirmDelete.id);
             notifySuccess('Đã xóa luật sư');
           } catch (e) {
             notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');

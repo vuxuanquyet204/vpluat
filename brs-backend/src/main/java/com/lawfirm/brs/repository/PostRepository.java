@@ -49,8 +49,16 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     @Query("SELECT p FROM Post p JOIN p.postTags pt JOIN pt.tag t WHERE t.slug = :tagSlug AND p.deletedAt IS NULL")
     Page<Post> findByTagSlugAndDeletedAtIsNull(@Param("tagSlug") String tagSlug, Pageable pageable);
 
-    @Query("SELECT p FROM Post p WHERE p.category.id = :categoryId AND p.status = 'PUBLISHED' AND p.id != :postId ORDER BY p.publishedAt DESC")
+        @Query("SELECT p FROM Post p WHERE p.category.id = :categoryId AND p.status = 'PUBLISHED' AND p.id != :postId ORDER BY p.publishedAt DESC")
     List<Post> findRelatedPosts(@Param("postId") UUID postId, @Param("categoryId") UUID categoryId, Pageable pageable);
+
+    @Query("SELECT p FROM Post p WHERE p.status = :status AND p.deletedAt IS NULL")
+    Page<Post> findByStatusAndDeletedAtIsNull(@Param("status") PostStatus status, Pageable pageable);
+
+    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL")
+    Page<Post> findAllByDeletedAtIsNull(Pageable pageable);
+
+    long countByCategoryId(UUID categoryId);
 
     @Query("SELECT p FROM Post p WHERE p.status = 'PUBLISHED' AND p.id != :postId ORDER BY p.publishedAt DESC")
     List<Post> findRelatedPosts(@Param("postId") UUID postId, Pageable pageable);

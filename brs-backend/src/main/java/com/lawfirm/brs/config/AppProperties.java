@@ -23,7 +23,6 @@ public class AppProperties {
     private Upload upload = new Upload();
     private Mail mail = new Mail();
     private Sms sms = new Sms();
-    private Cloudinary cloudinary = new Cloudinary();
 
     @Getter
     @Setter
@@ -68,6 +67,7 @@ public class AppProperties {
     @Getter
     @Setter
     public static class Upload {
+        private String baseDir = "/app/uploads";
         private String maxFileSize = "10MB";
         private String maxRequestSize = "50MB";
         private List<String> allowedExtensions = List.of("jpg", "jpeg", "png", "gif", "pdf", "doc", "docx", "xls", "xlsx");
@@ -93,13 +93,5 @@ public class AppProperties {
         private String apiKey;
         private String apiSecret;
         private String fromNumber;
-    }
-
-    @Getter
-    @Setter
-    public static class Cloudinary {
-        private String cloudName;
-        private String apiKey;
-        private String apiSecret;
     }
 }

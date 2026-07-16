@@ -54,11 +54,15 @@ public class PostService {
         log.debug("Fetching post by slug: {}", slug);
         Post post = postRepository.findBySlugAndDeletedAtIsNull(slug)
             .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + slug));
-        
-        if (!post.isPublished()) {
+
+        // Allow viewing only PUBLISHED posts. We deliberately ignore the
+        // `publishedAt` timestamp because legacy data was inserted with
+        // status=PUBLISHED but no publish date; requiring `publishedAt != null`
+        // would 404 otherwise valid records.
+        if (post.getStatus() != com.lawfirm.brs.constants.PostStatus.PUBLISHED) {
             throw new ResourceNotFoundException("Post not found: " + slug);
         }
-        
+
         return postMapper.toDTOWithDetails(post);
     }
 

@@ -20,6 +20,10 @@ public interface LawyerProfileRepository extends JpaRepository<LawyerProfile, UU
 
     List<LawyerProfile> findByIsFeaturedTrue();
 
+    Optional<LawyerProfile> findByUser_Id(java.util.UUID userId);
+
+    boolean existsBySlug(String slug);
+
     @Query("SELECT l FROM LawyerProfile l WHERE l.isFeatured = true ORDER BY l.nameVi")
     List<LawyerProfile> findFeaturedLawyers();
 
@@ -28,4 +32,10 @@ public interface LawyerProfileRepository extends JpaRepository<LawyerProfile, UU
 
     @Query("SELECT l FROM LawyerProfile l WHERE LOWER(l.nameVi) LIKE LOWER(CONCAT('%', :name, '%'))")
     List<LawyerProfile> findByDisplayNameContaining(@Param("name") String name);
+
+    @Query("SELECT l FROM LawyerProfile l LEFT JOIN FETCH l.user WHERE l.id = :id")
+    Optional<LawyerProfile> findByIdWithUser(@Param("id") UUID id);
+
+    @Query("SELECT l FROM LawyerProfile l LEFT JOIN FETCH l.user")
+    List<LawyerProfile> findAllWithUser();
 }

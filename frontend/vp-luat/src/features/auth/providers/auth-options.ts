@@ -45,9 +45,19 @@ export const authOptions = {
 
           // Store token for apiClient
           setAuthToken(data.accessToken);
+          // Persist refresh token so the response interceptor can rotate
+          // the access token silently when it expires.
+          if (typeof window !== 'undefined' && data.refreshToken) {
+            try {
+              window.localStorage.setItem('brs_refresh_token', String(data.refreshToken));
+            } catch {
+              // ignore quota/privacy errors
+            }
+          }
 
           const role = (user.role || 'VIEWER') as Role;
           const accessToken: string | null = (data.accessToken ?? data.token ?? null) as string | null;
+          const refreshToken: string | null = (data.refreshToken ?? null) as string | null;
 
           return {
             id: String(user.id ?? user.email ?? ''),
@@ -56,6 +66,7 @@ export const authOptions = {
             role,
             permissions: getPermissions(role),
             accessToken,
+            refreshToken,
           };
         } catch (error) {
           console.error('Login failed:', error);
@@ -71,6 +82,7 @@ export const authOptions = {
         token.role = (user.role as string) ?? 'VIEWER';
         token.permissions = (user.permissions as unknown[]) ?? [];
         token.accessToken = user.accessToken ?? null;
+        token.refreshToken = user.refreshToken ?? null;
       }
       return token;
     },
@@ -85,6 +97,7 @@ export const authOptions = {
           role: (token.role as string) ?? 'VIEWER',
           permissions: (token.permissions as unknown[]) ?? [],
           accessToken: (token.accessToken as string | null) ?? null,
+          refreshToken: (token.refreshToken as string | null) ?? null,
         },
       };
     },

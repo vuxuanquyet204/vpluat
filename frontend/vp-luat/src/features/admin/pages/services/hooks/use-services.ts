@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useApiQuery, useApiMutation } from '@/lib/api/hooks';
 import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
 
-// ─── Types matching what pages/components expect ──────────────────────────────
+// ─── Types matching backend ServiceDTO ───────────────────────────
 export interface Service {
   id: string;
   name: string;
@@ -18,31 +18,54 @@ export interface Service {
   createdAt: string;
 }
 
+// ─── Types matching backend LawyerDTO ─────────────────────────────
 export interface Lawyer {
   id: string;
+  slug: string;
+  userId?: string;
+  userEmail?: string;
   name: string;
+  nameVi?: string;
+  nameEn?: string;
   title: string;
+  positionVi?: string;
+  positionEn?: string;
   bio: string;
+  bioVi?: string;
+  bioEn?: string;
   avatar?: string;
   specialties: string[];
+  barNumber?: string;
   email: string;
   phone: string;
   experience: number;
   serviceIds: string[];
+  workingHours?: Record<string, unknown>;
   isActive: boolean;
   createdAt: string;
 }
 
-// ─── Mappers from raw API shape to page-expected shape ──────────────────────
+// ─── Backend response shape ─────────────────────────────────────
+interface PageResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+}
+
+// ─── Mappers from raw API shape to page-expected shape ──────────
 
 function mapToService(raw: Record<string, unknown>): Service {
   return {
     id: String(raw.id ?? ''),
-    name: String(raw.name ?? ''),
-    description: String(raw.description ?? ''),
+    name: String(raw.title ?? raw.slug ?? ''),
+    description: String(raw.excerpt ?? raw.content ?? ''),
     price: raw.price as number | undefined,
     duration: raw.duration as number | undefined,
-    category: String(raw.category ?? ''),
+    category: String(raw.parentName ?? ''),
     isActive: Boolean(raw.isActive ?? true),
     lawyerIds: (Array.isArray(raw.lawyerIds) ? raw.lawyerIds : []) as string[],
     createdAt: String(raw.createdAt ?? new Date().toISOString()),
@@ -50,42 +73,57 @@ function mapToService(raw: Record<string, unknown>): Service {
 }
 
 function mapToLawyer(raw: Record<string, unknown>): Lawyer {
-  const arr = Array.isArray(raw.specializations) ? raw.specializations : [];
+  const arr = Array.isArray(raw.languages) ? raw.languages : [];
   return {
     id: String(raw.id ?? ''),
-    name: String(raw.fullName ?? ''),
-    title: '',
-    bio: String(raw.bio ?? ''),
-    avatar: raw.avatarUrl as string | undefined,
+    slug: String(raw.slug ?? ''),
+    userId: raw.userId ? String(raw.userId) : undefined,
+    userEmail: raw.userEmail ? String(raw.userEmail) : undefined,
+    name: String(raw.nameVi ?? raw.nameEn ?? ''),
+    nameVi: raw.nameVi ? String(raw.nameVi) : undefined,
+    nameEn: raw.nameEn ? String(raw.nameEn) : undefined,
+    title: String(raw.positionVi ?? raw.positionEn ?? ''),
+    positionVi: raw.positionVi ? String(raw.positionVi) : undefined,
+    positionEn: raw.positionEn ? String(raw.positionEn) : undefined,
+    bio: String(raw.bioVi ?? raw.bioEn ?? ''),
+    bioVi: raw.bioVi ? String(raw.bioVi) : undefined,
+    bioEn: raw.bioEn ? String(raw.bioEn) : undefined,
+    avatar: (raw.avatarUrl as string | null) ?? undefined,
     specialties: arr as string[],
-    email: String(raw.email ?? ''),
+    barNumber: raw.barNumber ? String(raw.barNumber) : undefined,
+    email: String(raw.userEmail ?? ''),
     phone: String(raw.phone ?? ''),
     experience: Number(raw.experienceYears ?? 0),
     serviceIds: Array.isArray(raw.serviceIds) ? (raw.serviceIds as string[]) : [],
-    isActive: Boolean(raw.isActive ?? true),
+    workingHours: (raw.workingHours as Record<string, unknown>) ?? undefined,
+    isActive: Boolean(raw.isFeatured ?? true),
     createdAt: String(raw.createdAt ?? new Date().toISOString()),
   };
 }
 
-// ─── Query hooks ───────────────────────────────────────────────────────────────
+// ─── Query hooks ─────────────────────────────────────────────────
 
 export function useServices() {
-  const { data = [], ...rest } = useApiQuery<Service[]>(
+  const { data, ...rest } = useApiQuery<PageResponse<Record<string, unknown>>>(
     ['services'],
     '/admin/services',
-    undefined,
+    { page: 0, size: 200 },
   );
 
+  const services = useMemo(() => {
+    return (data?.content ?? []).map(mapToService);
+  }, [data?.content]);
+
   const counts = useMemo(() => {
-    const c = { total: data.length, active: 0, inactive: 0 };
-    for (const s of data) {
+    const c = { total: services.length, active: 0, inactive: 0 };
+    for (const s of services) {
       if (s.isActive) c.active += 1;
       else c.inactive += 1;
     }
     return c;
-  }, [data]);
+  }, [services]);
 
-  return { data, counts, ...rest };
+  return { data: services, counts, ...rest };
 }
 
 export function useService(id: string | null | undefined) {

@@ -11,6 +11,8 @@ declare module 'next-auth' {
       image?: string | null;
       role: Role;
       permissions: Permission[];
+      accessToken?: string | null;
+      refreshToken?: string | null;
     };
   }
 
@@ -18,6 +20,8 @@ declare module 'next-auth' {
     id: string;
     role: Role;
     permissions: Permission[];
+    accessToken?: string | null;
+    refreshToken?: string | null;
   }
 }
 
@@ -26,5 +30,7 @@ declare module '@auth/core/jwt' {
     id?: string;
     role?: Role;
     permissions?: Permission[];
+    accessToken?: string | null;
+    refreshToken?: string | null;
   }
 }
