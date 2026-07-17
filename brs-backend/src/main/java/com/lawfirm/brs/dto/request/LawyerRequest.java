@@ -1,7 +1,6 @@
 package com.lawfirm.brs.dto.request;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -11,15 +10,15 @@ import java.util.UUID;
 
 /**
  * Lawyer profile request DTO.
+ * Lưu ý: slug/nameVi để optional để tương thích PATCH - FE vẫn luôn gửi đầy đủ khi CREATE.
+ * @see LawyerPatchRequest cho PATCH semantics.
  */
 public record LawyerRequest(
-    @NotBlank(message = "Slug is required")
-    @Size(max = 255, message = "Slug is too long")
+    @Size(max = 255)
     @Pattern(regexp = "^[a-z0-9]+(?:-[a-z0-9]+)*$",
             message = "Slug chỉ chứa chữ thường, số và dấu gạch ngang (vd: nguyen-van-an)")
     String slug,
 
-    @NotBlank(message = "Vietnamese name is required")
     @Size(max = 255, message = "Name is too long")
     String nameVi,
 

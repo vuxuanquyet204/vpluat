@@ -43,6 +43,7 @@ export interface Lawyer {
   workingHours?: Record<string, unknown>;
   isActive: boolean;
   createdAt: string;
+  createdByName?: string;
 }
 
 // ─── Backend response shape ─────────────────────────────────────
@@ -72,7 +73,7 @@ function mapToService(raw: Record<string, unknown>): Service {
   };
 }
 
-function mapToLawyer(raw: Record<string, unknown>): Lawyer {
+export function mapToLawyer(raw: Record<string, unknown>): Lawyer {
   const arr = Array.isArray(raw.languages) ? raw.languages : [];
   return {
     id: String(raw.id ?? ''),
@@ -96,8 +97,10 @@ function mapToLawyer(raw: Record<string, unknown>): Lawyer {
     experience: Number(raw.experienceYears ?? 0),
     serviceIds: Array.isArray(raw.serviceIds) ? (raw.serviceIds as string[]) : [],
     workingHours: (raw.workingHours as Record<string, unknown>) ?? undefined,
-    isActive: Boolean(raw.isFeatured ?? true),
+    // BE uses isFeatured to mean "is active" — true = Hoạt động, false = Tạm dừng
+    isActive: raw.isFeatured !== false,
     createdAt: String(raw.createdAt ?? new Date().toISOString()),
+    createdByName: (raw.createdByName as string | null) ?? undefined,
   };
 }
 

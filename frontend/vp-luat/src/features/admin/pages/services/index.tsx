@@ -533,11 +533,20 @@ function LawyersTab() {
     try {
       if (editing) {
         await updateLwy(editing.id, payload);
+        setFormOpen(false);
+        setEditing(null);
       } else {
-        await createLwy(payload as any);
+        const result = await createLwy(payload as any);
+        // Nếu BE tự tạo user mới với mật khẩu mặc định → nhắc admin copy
+        const defaultPwd = (result as { defaultPassword?: string })?.defaultPassword;
+        if (defaultPwd) {
+          notifySuccess(
+            `Tạo tài khoản thành công. Mật khẩu mặc định: "${defaultPwd}" - vui lòng gửi cho luật sư để họ đăng nhập lần đầu.`,
+          );
+        }
+        setFormOpen(false);
+        setEditing(null);
       }
-      setFormOpen(false);
-      setEditing(null);
     } catch (e) {
       notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể lưu');
     }
@@ -546,7 +555,8 @@ function LawyersTab() {
   const handleToggleActive = useCallback(
     async (l: Lawyer) => {
       try {
-        await updateLwy(l.id, { isActive: !l.isActive });
+        // Map isActive → isFeatured (BE dùng isFeatured để đồng nghĩa Hoạt động/Tạm dừng)
+        await updateLwy(l.id, { isFeatured: !l.isActive });
         notifySuccess(l.isActive ? `Đã tạm dừng ${l.name}` : `Đã kích hoạt ${l.name}`);
       } catch (e) {
         notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');

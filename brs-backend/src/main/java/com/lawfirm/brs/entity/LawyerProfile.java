@@ -66,7 +66,7 @@ public class LawyerProfile {
 
     @Column(name = "is_featured")
     @Builder.Default
-    private Boolean isFeatured = false;
+    private Boolean isActive = false;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "working_hours", columnDefinition = "jsonb")
@@ -81,6 +81,9 @@ public class LawyerProfile {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Column(name = "created_by")
+    private UUID createdBy;
 
     @PrePersist
     protected void onCreate() {

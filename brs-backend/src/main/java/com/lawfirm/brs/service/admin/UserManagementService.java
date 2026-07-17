@@ -187,7 +187,7 @@ public class UserManagementService {
                     .nameVi(user.getFullName() != null ? user.getFullName() : user.getEmail())
                     .nameEn(user.getFullName() != null ? user.getFullName() : user.getEmail())
                     .avatarUrl(user.getAvatarUrl())
-                    .isFeatured(true)
+                    .isActive(true)
                     .build();
             lawyerProfileRepository.save(profile);
             log.debug("Auto-created LawyerProfile for LAWYER user: {}", user.getEmail());

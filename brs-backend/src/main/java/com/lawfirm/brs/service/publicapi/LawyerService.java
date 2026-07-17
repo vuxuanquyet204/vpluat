@@ -37,7 +37,7 @@ public class LawyerService {
     @Cacheable(value = "lawyers", key = "'featured'")
     public List<LawyerDTO> getFeaturedLawyers() {
         log.debug("Fetching featured lawyers");
-        return lawyerMapper.toDTOList(lawyerRepository.findByIsFeaturedTrue());
+        return lawyerMapper.toDTOList(lawyerRepository.findByIsActiveTrue());
     }
 
     public Page<LawyerDTO> getLawyers(Pageable pageable) {

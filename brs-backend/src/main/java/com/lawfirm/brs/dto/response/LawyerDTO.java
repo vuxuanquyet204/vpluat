@@ -38,4 +38,12 @@ public class LawyerDTO {
     private Boolean isFeatured;
     private Map<String, Object> workingHours;
     private Instant createdAt;
+    private UUID createdById;
+    private String createdByName;
+    /**
+     * Chỉ populate cho response khi BE tự sinh user mới với password mặc định
+     * (FE có thể hiển thị cho admin copy). Không persist xuống DB.
+     */
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private String defaultPassword;
 }

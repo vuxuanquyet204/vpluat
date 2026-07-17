@@ -18,13 +18,13 @@ public interface LawyerProfileRepository extends JpaRepository<LawyerProfile, UU
 
     Optional<LawyerProfile> findBySlug(String slug);
 
-    List<LawyerProfile> findByIsFeaturedTrue();
+    List<LawyerProfile> findByIsActiveTrue();
 
     Optional<LawyerProfile> findByUser_Id(java.util.UUID userId);
 
     boolean existsBySlug(String slug);
 
-    @Query("SELECT l FROM LawyerProfile l WHERE l.isFeatured = true ORDER BY l.nameVi")
+    @Query("SELECT l FROM LawyerProfile l WHERE l.isActive = true ORDER BY l.nameVi")
     List<LawyerProfile> findFeaturedLawyers();
 
     @Query("SELECT l FROM LawyerProfile l WHERE LOWER(l.nameVi) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(l.nameEn) LIKE LOWER(CONCAT('%', :query, '%'))")

@@ -10,83 +10,7 @@ export type { Service } from './use-services';
 export type { Lawyer } from './use-services';
 
 import type { Service, Lawyer } from './use-services';
-
-// ─── Mappers from raw API shape to page-expected shape ──────────────────────
-
-function mapToLawyer(raw: Record<string, unknown>): Lawyer {
-  const arr = Array.isArray(raw.languages) ? raw.languages : [];
-  const email = (raw.userEmail as string | null) || '';
-  const phone = (raw.phone as string | null) || '';
-  return {
-    id: String(raw.id ?? ''),
-    slug: String(raw.slug ?? ''),
-    userId: raw.userId ? String(raw.userId) : undefined,
-    userEmail: raw.userEmail ? String(raw.userEmail) : undefined,
-    name: String(raw.nameVi ?? raw.nameEn ?? ''),
-    nameVi: raw.nameVi ? String(raw.nameVi) : undefined,
-    nameEn: raw.nameEn ? String(raw.nameEn) : undefined,
-    title: String(raw.positionVi ?? raw.positionEn ?? ''),
-    positionVi: raw.positionVi ? String(raw.positionVi) : undefined,
-    positionEn: raw.positionEn ? String(raw.positionEn) : undefined,
-    bio: String(raw.bioVi ?? raw.bioEn ?? ''),
-    bioVi: raw.bioVi ? String(raw.bioVi) : undefined,
-    bioEn: raw.bioEn ? String(raw.bioEn) : undefined,
-    avatar: (raw.avatarUrl as string | null) ?? undefined,
-    specialties: arr as string[],
-    barNumber: raw.barNumber ? String(raw.barNumber) : undefined,
-    email,
-    phone,
-    experience: Number(raw.experienceYears ?? 0),
-    serviceIds: Array.isArray(raw.serviceIds) ? (raw.serviceIds as string[]) : [],
-    workingHours: (raw.workingHours as Record<string, unknown>) ?? undefined,
-    isActive: Boolean(raw.isFeatured ?? true),
-    createdAt: String(raw.createdAt ?? new Date().toISOString()),
-  };
-}
-
-// ─── Mapper from FE form to BE request ──────────────────────────────────────
-
-interface LawyerFormData {
-  name: string;
-  title: string;
-  bio: string;
-  avatar?: string;
-  specialties: string[];
-  email: string;
-  phone: string;
-  experience: number;
-  serviceIds: string[];
-  isActive: boolean;
-}
-
-function mapToBackendRequest(form: Partial<LawyerFormData>): Record<string, unknown> {
-  const name = (form.name ?? '').toString().trim();
-  const slug = name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .slice(0, 50) || `lawyer-${Date.now()}`;
-
-  return {
-    slug,
-    nameVi: name,
-    nameEn: name,
-    bioVi: form.bio ?? '',
-    bioEn: form.bio ?? '',
-    positionVi: form.title ?? '',
-    positionEn: form.title ?? '',
-    experienceYears: form.experience ?? 0,
-    languages: form.specialties ?? [],
-    avatarUrl: form.avatar || null,
-    serviceIds: form.serviceIds ?? [],
-    isFeatured: form.isActive ?? true,
-    email: form.email || null,
-    phone: form.phone || null,
-  };
-}
+import { mapToLawyer } from './use-services';
 
 // ─── Query hooks ───────────────────────────────────────────────────────────────
 
@@ -147,7 +71,7 @@ export function useActiveLawyers() {
 export function useCreateLawyer() {
   const qc = useQueryClient();
 
-  const mutation = useApiMutation<Record<string, unknown>, LawyerFormData>(
+  const mutation = useApiMutation<Record<string, unknown>, Record<string, unknown>>(
     'POST',
     '/admin/lawyers',
     {
@@ -161,6 +85,13 @@ export function useCreateLawyer() {
           entityLabel: mapped.name,
         });
         notifySuccess('Đã tạo luật sư');
+        // Nếu BE tự tạo user mới với password mặc định → nhắc admin
+        const defaultPwd = (data as { defaultPassword?: string }).defaultPassword;
+        if (defaultPwd) {
+          notifySuccess(
+            `Tài khoản đăng nhập tạm thời mật khẩu: ${defaultPwd}`,
+          );
+        }
       },
       onError: (e) => {
         notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể tạo luật sư');
@@ -169,10 +100,15 @@ export function useCreateLawyer() {
   );
 
   return Object.assign(
-    useCallback(
-      (body: LawyerFormData) => mutation.mutate(mapToBackendRequest(body) as unknown as LawyerFormData),
-      [mutation],
-    ),
+    (body: Record<string, unknown>) => {
+      // body đã là payload đã mapped từ index.tsx - không cần map lại
+      return new Promise<Record<string, unknown>>((resolve, reject) => {
+        mutation.mutate(body, {
+          onSuccess: (data) => resolve(data),
+          onError: (err) => reject(err),
+        });
+      });
+    },
     { isPending: mutation.isPending },
   );
 }
@@ -181,7 +117,8 @@ export function useUpdateLawyer() {
   const qc = useQueryClient();
 
   // Dùng PATCH để update partial - tránh mất field khi FE không gửi đầy đủ
-  const mutation = useApiMutation<Record<string, unknown>, { id: string; body: Partial<LawyerFormData> | Record<string, unknown> }>(
+  // body đã là payload đã mapped từ index.tsx (có nameVi, nameEn, positionVi,...)
+  const mutation = useApiMutation<Record<string, unknown>, { id: string; body: Record<string, unknown> }>(
     'PATCH',
     (vars) => `/admin/lawyers/${vars.id}`,
     {
@@ -204,14 +141,9 @@ export function useUpdateLawyer() {
 
   return Object.assign(
     useCallback(
-      (id: string, body: Partial<LawyerFormData> | Record<string, unknown>) => {
-        const finalBody =
-          'nameVi' in (body as Record<string, unknown>) ||
-          'nameEn' in (body as Record<string, unknown>) ||
-          'positionVi' in (body as Record<string, unknown>)
-            ? body
-            : mapToBackendRequest(body as Partial<LawyerFormData>);
-        mutation.mutate({ id, body: finalBody });
+      (id: string, body: Record<string, unknown>) => {
+        // body đã là payload đã mapped - gửi trực tiếp
+        mutation.mutate({ id, body });
       },
       [mutation],
     ),
