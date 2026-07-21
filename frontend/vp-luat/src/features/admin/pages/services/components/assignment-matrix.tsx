@@ -18,7 +18,8 @@ export function AssignmentMatrix({
   isAssigned,
   onToggle,
   onSaveBatch,
-}: AssignmentMatrixProps) {
+  apiError,
+}: AssignmentMatrixProps & { apiError?: unknown }) {
   // Local state: serviceId → Set<lawyerId>
   const initial = useMemo(() => {
     const map: Record<string, Set<string>> = {};
@@ -87,9 +88,12 @@ export function AssignmentMatrix({
   const rowCount = (serviceId: string): number => local[serviceId]?.size ?? 0;
 
   if (services.length === 0 || lawyers.length === 0) {
+    const reason = apiError
+      ? `Lỗi tải dữ liệu: ${(apiError as { message?: string })?.message ?? 'Không rõ'}. Vui lòng thử refresh hoặc đăng nhập lại.`
+      : 'Cần có ít nhất 1 dịch vụ và 1 luật sư đang hoạt động để thiết lập phân công.';
     return (
-      <div className="admin-card" style={{ padding: 32, textAlign: 'center', color: 'var(--gray-500)' }}>
-        Cần có ít nhất 1 dịch vụ và 1 luật sư đang hoạt động để thiết lập phân công.
+      <div className="admin-card" style={{ padding: 32, textAlign: 'center', color: apiError ? 'var(--danger, #DC2626)' : 'var(--gray-500)' }}>
+        {reason}
       </div>
     );
   }

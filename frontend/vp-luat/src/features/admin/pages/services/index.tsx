@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Plus,
   Download,
@@ -18,7 +18,6 @@ import {
   ConfirmDialog,
 } from '@/features/admin/shared';
 import {
-  useMockQuery,
   useCreate,
   useUpdate,
   useDelete,
@@ -103,9 +102,11 @@ export default function ServicesPage() {
 
 // ─── Tab 1: Services ─────────────────────────────────────────────────────
 function ServicesTab() {
-  const { data: services, counts } = useServices();
-  const { data: lawyers = [] } = useLawyers();
-  const [search, setSearch] = useState('');
+  // Local state for the input fields (so we can debounce before hitting BE)
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // statusFilter from the tabs (active/inactive quick toggle) is independent
+  // of the `filters.status` select box — they both map to the same isActive.
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [filters, setFilters] = useState<ServiceFiltersValue>({
     category: 'all',
@@ -114,6 +115,37 @@ function ServicesTab() {
     dateTo: '',
   });
   const [page, setPage] = useState(1);
+
+  // Derive the boolean isActive to send BE.  statusFilter (tabs) wins over
+  // filters.status (sidebar) when both are set, since tabs are a primary
+  // navigation control.
+  const derivedIsActive: boolean | undefined =
+    statusFilter !== 'all'
+      ? statusFilter === 'active'
+      : filters.status !== 'all'
+        ? filters.status === 'active'
+        : undefined;
+
+  // Debounce search input so we don't fire on every keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchInput), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  // Reset to page 1 whenever the server-side filter changes.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, derivedIsActive, filters.category, filters.dateFrom, filters.dateTo]);
+
+  const { data: services, counts } = useServices({
+    search: debouncedSearch,
+    isActive: derivedIsActive,
+    category: filters.category,
+    dateFrom: filters.dateFrom || undefined,
+    dateTo: filters.dateTo || undefined,
+  });
+
+  const { data: lawyers = [] } = useLawyers();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
@@ -140,36 +172,9 @@ function ServicesTab() {
           : counts.inactive,
   }));
 
-  const filtered = useMemo(() => {
-    let r = services;
-    if (search) {
-      const q = search.toLowerCase();
-      r = r.filter(
-        (s) =>
-          s.name.toLowerCase().includes(q) ||
-          s.description?.toLowerCase().includes(q) ||
-          s.category.toLowerCase().includes(q),
-      );
-    }
-    if (statusFilter !== 'all') {
-      const wantActive = statusFilter === 'active';
-      r = r.filter((s) => s.isActive === wantActive);
-    }
-    if (filters.category !== 'all') r = r.filter((s) => s.category === filters.category);
-    if (filters.status !== 'all') {
-      const wantActive = filters.status === 'active';
-      r = r.filter((s) => s.isActive === wantActive);
-    }
-    if (filters.dateFrom) {
-      const from = new Date(filters.dateFrom).getTime();
-      r = r.filter((s) => new Date(s.createdAt).getTime() >= from);
-    }
-    if (filters.dateTo) {
-      const to = new Date(filters.dateTo).getTime() + 24 * 60 * 60 * 1000;
-      r = r.filter((s) => new Date(s.createdAt).getTime() <= to);
-    }
-    return r;
-  }, [services, search, statusFilter, filters]);
+  // All filters (search, status, category, dates) are now sent to the BE.
+  // The local array IS the filtered list.
+  const filtered = services;
 
   const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
 
@@ -317,10 +322,10 @@ function ServicesTab() {
           }}
         >
           <SearchBar
-            value={search}
+            value={searchInput}
             onChange={(v) => {
-              setSearch(v);
-              setPage(1);
+              setSearchInput(v);
+              // page reset is handled by useEffect on debouncedSearch
             }}
             placeholder="Tìm theo tên dịch vụ, mô tả, danh mục..."
           />
@@ -423,9 +428,20 @@ function ServicesTab() {
 
 // ─── Tab 2: Lawyers ──────────────────────────────────────────────────────
 function LawyersTab() {
-  const { data: lawyers, counts } = useLawyers();
   const { data: services = [] } = useServices();
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  // Debounce search so we don't fire a request on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Server-side filter: search is debounced and sent to the BE; statusFilter
+  // is a client-side boolean quick-toggle.
+  const { data: lawyers, counts } = useLawyers({ search: debouncedSearch });
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchInput), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+  // Send the debounced search to the BE so the page itself is filtered
+  // server-side.  statusFilter remains a client-side filter on the current
+  // page because it's a quick `isActive` boolean we can apply locally.
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -452,23 +468,20 @@ function LawyersTab() {
           : counts.inactive,
   }));
 
+  // The backend search is already applied; statusFilter is the only remaining
+  // client-side filter (boolean quick-toggle).  Reset to page 1 whenever the
+  // server-side search changes.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
   const filtered = useMemo(() => {
-    let r = lawyers;
-    if (search) {
-      const q = search.toLowerCase();
-      r = r.filter(
-        (l) =>
-          l.name.toLowerCase().includes(q) ||
-          l.email.toLowerCase().includes(q) ||
-          l.specialties.some((sp) => sp.toLowerCase().includes(q)),
-      );
-    }
-    if (statusFilter !== 'all') {
-      const wantActive = statusFilter === 'active';
-      r = r.filter((l) => l.isActive === wantActive);
-    }
-    return r;
-  }, [lawyers, search, statusFilter]);
+    // If FE typed a search, the backend already filtered; status is applied
+    // locally here.  Without a search, the unfiltered list is what's shown.
+    if (statusFilter === 'all') return lawyers;
+    const wantActive = statusFilter === 'active';
+    return lawyers.filter((l) => l.isActive === wantActive);
+  }, [lawyers, statusFilter]);
 
   const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
 
@@ -608,10 +621,9 @@ function LawyersTab() {
           }}
         >
           <SearchBar
-            value={search}
+            value={searchInput}
             onChange={(v) => {
-              setSearch(v);
-              setPage(1);
+              setSearchInput(v);
             }}
             placeholder="Tìm theo tên, email, chuyên môn..."
           />
@@ -670,7 +682,7 @@ function LawyersTab() {
           if (!confirmDelete) return;
           try {
             await removeLwy(confirmDelete.id);
-            notifySuccess('Đã xóa luật sư');
+            // Notification 'Đã xóa' được handle trong hook useDeleteLawyer
           } catch (e) {
             notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');
           } finally {
@@ -685,28 +697,7 @@ function LawyersTab() {
 
 // ─── Tab 3: Assignment Matrix ───────────────────────────────────────────
 function AssignmentTab() {
-  const { services, lawyers, toggle, saveBatch } = useAssignment();
-  const { data: allServices = [] } = useMockQuery<Service>('services');
-  const { data: allLawyers = [] } = useMockQuery<Lawyer>('lawyers');
-
-  const serviceMap = useMemo(() => {
-    const m = new Map<string, Service>();
-    allServices.forEach((s) => m.set(s.id, s));
-    return m;
-  }, [allServices]);
-
-  const lawyerMap = useMemo(() => {
-    const m = new Map<string, Lawyer>();
-    allLawyers.forEach((l) => m.set(l.id, l));
-    return m;
-  }, [allLawyers]);
-
-  const isAssigned = useCallback(
-    (serviceId: string, lawyerId: string): boolean => {
-      return Boolean(serviceMap.get(serviceId)?.lawyerIds.includes(lawyerId));
-    },
-    [serviceMap],
-  );
+  const { services, lawyers, isAssigned, toggle, saveBatch, servicesError, lawyersError } = useAssignment();
 
   return (
     <>
@@ -720,6 +711,7 @@ function AssignmentTab() {
         isAssigned={isAssigned}
         onToggle={toggle}
         onSaveBatch={saveBatch}
+        apiError={servicesError ?? lawyersError}
       />
     </>
   );

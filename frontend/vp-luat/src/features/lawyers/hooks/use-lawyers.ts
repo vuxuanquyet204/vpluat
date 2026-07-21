@@ -10,10 +10,10 @@ import {
   type LawyerApiResponse 
 } from '../api/lawyers-api';
 
-export function useLawyers(page = 0, size = 20) {
+export function useLawyers(page = 0, size = 20, serviceSlug?: string) {
   return useQuery<LawyerApiResponse[], Error>({
-    queryKey: ['lawyers', page, size],
-    queryFn: () => getLawyers(page, size),
+    queryKey: ['lawyers', page, size, serviceSlug],
+    queryFn: () => getLawyers(page, size, serviceSlug),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

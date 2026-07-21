@@ -7,26 +7,9 @@ import { Modal } from '@/features/admin/shared';
 import { FormFieldInput, FormFieldSelect, FormFieldTextarea } from '@/features/admin/components';
 import { bookingSchema, type BookingFormValues } from '@/features/admin/schema';
 import { ReminderConfig } from './booking-reminder-config';
+import { useServices } from '@/features/services/hooks/use-services';
 import type { Booking, Lawyer } from '@/features/admin/types';
 import type { Lead as CrmLead } from '@/lib/api/admin-crm';
-
-const SERVICE_OPTIONS = [
-  { slug: 'tu-van-phap-ly', label: 'Tư Vấn Pháp Lý' },
-  { slug: 'dai-dien-phap-ly', label: 'Đại Diện Pháp Lý' },
-  { slug: 'to-cao-khieu-nai', label: 'Tố Cáo, Khiếu Nại' },
-  { slug: 'thu-tuc-hanh-chinh', label: 'Thủ Tục Hành Chính' },
-  { slug: 'so-huu-tri-tue', label: 'Sở Hữu Trí Tuệ' },
-  { slug: 'lao-dong', label: 'Luật Lao Động' },
-  { slug: 'doanh-nghiep', label: 'Doanh Nghiệp' },
-  { slug: 'nha-dat', label: 'Nhà Đất' },
-  { slug: 'tu-van-hop-dong', label: 'Tư Vấn Hợp Đồng' },
-  { slug: 'ly-hon', label: 'Ly Hôn & Tranh Chấp Gia Đình' },
-  { slug: 'ma', label: 'M&A — Mua Bán & Sáp Nhập' },
-  { slug: 'fdi', label: 'FDI — Đầu Tư Nước Ngoài' },
-  { slug: 'hinh-su', label: 'Luật Hình Sự' },
-  { slug: 'giay-phep', label: 'Giấy Phép Kinh Doanh' },
-  { slug: 'tu-van-dau-tu', label: 'Tư Vấn Đầu Tư' },
-];
 
 const METHOD_OPTIONS = [
   { value: 'office', label: 'Tại Văn Phòng' },
@@ -63,6 +46,13 @@ export function BookingForm({
   const [leadSearch, setLeadSearch] = useState('');
   const [showLeadMenu, setShowLeadMenu] = useState(false);
   const [reminderType, setReminderType] = useState<'24h' | '2h' | '30m' | null>('24h');
+
+  // Lấy danh sách dịch vụ động từ BE để đồng bộ với trang public.
+  const { data: services = [] } = useServices();
+  const serviceOptions = useMemo(
+    () => services.map((s) => ({ slug: s.slug, label: s.name })),
+    [services],
+  );
 
   const {
     register,
@@ -236,7 +226,7 @@ export function BookingForm({
           render={({ field }) => (
             <FormFieldSelect label="Dịch vụ" required {...field} error={errors.service?.message}>
               <option value="">-- Chọn dịch vụ --</option>
-              {SERVICE_OPTIONS.map((s) => (
+              {serviceOptions.map((s) => (
                 <option key={s.slug} value={s.slug}>
                   {s.label}
                 </option>

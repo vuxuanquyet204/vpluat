@@ -14,6 +14,7 @@ export interface BookingLawyerOption {
   rating: number;
   availabilityLabel: string;
   avatarGradient: string;
+  avatarUrl?: string;
 }
 
 export interface BookingTimeSlot {

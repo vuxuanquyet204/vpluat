@@ -2,12 +2,18 @@
 
 import { useEffect } from 'react';
 import { Star, Mail, Phone, Award, GraduationCap, Languages, X } from 'lucide-react';
-import type { Lawyer } from '../types';
-import { POSITION_LABELS, SPECIALTY_LABELS } from '../lib/data/lawyers-data';
+import type { LawyerApiResponse } from '../api/lawyers-api';
 
 interface LawyerProfileModalProps {
-  lawyer: Lawyer | null;
+  lawyer: LawyerApiResponse | null;
   onClose: () => void;
+}
+
+function getSpecialtyLabels(lawyer: LawyerApiResponse): string[] {
+  if (lawyer.serviceNames && lawyer.serviceNames.length > 0) {
+    return lawyer.serviceNames.filter((s): s is string => !!s);
+  }
+  return lawyer.specialties ?? [];
 }
 
 export function LawyerProfileModal({ lawyer, onClose }: LawyerProfileModalProps) {
@@ -41,20 +47,20 @@ export function LawyerProfileModal({ lawyer, onClose }: LawyerProfileModalProps)
         <div className="lawyer-modal__header" style={{ background: lawyer.avatarColor }}>
           <div className="lawyer-modal__avatar">{lawyer.initials}</div>
           <h2 className="lawyer-modal__name">{lawyer.name}</h2>
-          <p className="lawyer-modal__position">{POSITION_LABELS[lawyer.position]}</p>
+          <p className="lawyer-modal__position">{lawyer.position}</p>
           <div className="lawyer-modal__rating">
             <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <Star
                   key={n}
                   size={16}
-                  fill={n <= Math.floor(lawyer.rating) ? '#F59E0B' : 'none'}
-                  stroke={n <= Math.floor(lawyer.rating) ? '#F59E0B' : '#D1D5DB'}
+                  fill={n <= Math.floor(lawyer.rating ?? 0) ? '#F59E0B' : 'none'}
+                  stroke={n <= Math.floor(lawyer.rating ?? 0) ? '#F59E0B' : '#D1D5DB'}
                 />
               ))}
             </div>
             <span style={{ marginLeft: '6px' }}>
-              {lawyer.rating} · {lawyer.reviewCount} đánh giá
+              {lawyer.rating ?? 0} · {lawyer.reviewCount ?? 0} đánh giá
             </span>
           </div>
         </div>
@@ -90,8 +96,8 @@ export function LawyerProfileModal({ lawyer, onClose }: LawyerProfileModalProps)
           <section className="lawyer-modal__section">
             <h3>Lĩnh vực chuyên môn</h3>
             <div className="lawyer-modal__tags">
-              {lawyer.specialties.map((sp) => (
-                <span key={sp} className="lawyer-tag">{SPECIALTY_LABELS[sp]}</span>
+              {getSpecialtyLabels(lawyer).map((sp, i) => (
+                <span key={`${sp}-${i}`} className="lawyer-tag">{sp}</span>
               ))}
             </div>
           </section>

@@ -1,5 +1,4 @@
 import { ServicesPage } from '@/features/services';
-import { SERVICES } from '@/features/services/lib/data/services-data';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {

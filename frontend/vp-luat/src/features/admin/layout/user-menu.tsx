@@ -5,10 +5,10 @@ import { ChevronDown, User, Settings, LogOut, Shield, LogIn, UserPlus, Users } f
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { useAdminAuth } from '@/features/admin/pages/users/hooks/use-admin-auth';
+import { useAdminAuth, useInvalidateAuth } from '@/features/admin/pages/users/hooks/use-admin-auth';
 import { useAdminUIStore } from '@/features/admin/store';
 import { notifyInfo } from '@/features/admin/lib';
-import { clearAuthToken, setLoggingOut } from '@/lib/api/client';
+import { clearAuthToken, setLoggingOut, callServerLogout } from '@/lib/api/client';
 
 const ROLE_LABEL: Record<string, string> = {
   super_admin: 'Super Admin',
@@ -43,6 +43,7 @@ function pickColor(name: string): string {
 export function UserMenu() {
   const router = useRouter();
   const { currentUser, effectiveUser, isImpersonating, stopImpersonate } = useAdminAuth();
+  const invalidateAuth = useInvalidateAuth();
   const { impersonatingUserId, setImpersonating } = useAdminUIStore();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -74,16 +75,19 @@ export function UserMenu() {
   const handleSignOut = async () => {
     setLoggingOut(true);
     clearAuthToken();
+    invalidateAuth();
     if (typeof window !== 'undefined') {
       try {
-        window.localStorage.removeItem('admin-impersonated-user');
-        window.localStorage.removeItem('vp-luat-admin-current-user');
+        window.sessionStorage.removeItem('admin-impersonated-user');
+        window.sessionStorage.removeItem('vp-luat-admin-current-user');
       } catch {
         // ignore
       }
     }
     setOpen(false);
     notifyInfo('Đã đăng xuất', 'Vui lòng đăng nhập lại để tiếp tục');
+    // Best-effort: revoke refresh token in Redis + clear HttpOnly cookie.
+    await callServerLogout();
     await signOut({ callbackUrl: '/login', redirect: true });
   };
 

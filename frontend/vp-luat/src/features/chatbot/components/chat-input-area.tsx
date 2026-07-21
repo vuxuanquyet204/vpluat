@@ -34,14 +34,20 @@ export function ChatInputArea() {
     if (conversationState !== 'idle' && conversationState !== 'greeting') {
       const result = processUserInput(conversationState, trimmed);
       result.botMessages.forEach((m) => addMessage(m));
-      setConversationState(result.nextState as typeof conversationState);
+      if (result.nextState) setConversationState(result.nextState as typeof conversationState);
       return;
     }
 
     if (conversationState === 'greeting') {
       const result = processUserInput('greeting', trimmed);
       result.botMessages.forEach((m) => addMessage(m));
-      setConversationState(result.nextState as typeof conversationState);
+      // Passthrough: forward the raw text to the backend so the AI replies
+      // for inputs that didn't match any local keyword (e.g. "ly hôn").
+      if (result.passthrough) {
+        await sendMsg(trimmed);
+        return;
+      }
+      if (result.nextState) setConversationState(result.nextState as typeof conversationState);
       return;
     }
 
@@ -59,7 +65,7 @@ export function ChatInputArea() {
     const state = conversationState === 'idle' ? 'greeting' : conversationState;
     const result = processUserInput(state, reply);
     result.botMessages.forEach((m) => addMessage(m));
-    setConversationState(result.nextState as typeof conversationState);
+    if (result.nextState) setConversationState(result.nextState as typeof conversationState);
   };
 
   return (

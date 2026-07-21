@@ -7,6 +7,7 @@ import {
   MessageCircle,
   Tag,
   Eye,
+  HelpCircle,
 } from 'lucide-react';
 import {
   AdminPageHeader,
@@ -28,6 +29,7 @@ import { ChatbotSessionDetail } from './components/chatbot-session-detail';
 import { ChatbotIntentList } from './components/chatbot-intent-list';
 import { ChatbotIntentForm } from './components/chatbot-intent-form';
 import { ChatbotAnalytics } from './components/chatbot-analytics';
+import { ChatbotFaqTab } from './components/chatbot-faq-tab';
 import {
   useChatbotSessions,
   useDeleteSession,
@@ -40,11 +42,12 @@ import {
 import type { ChatbotSession, ChatbotIntent, ChatbotSessionStatus } from '@/features/admin/types';
 import type { IntentFormValues } from '@/features/admin/schema';
 
-type Tab = 'sessions' | 'intents';
+type Tab = 'sessions' | 'intents' | 'faqs';
 
 const TABS: Array<{ value: Tab; label: string; icon: typeof MessageCircle }> = [
   { value: 'sessions', label: 'Sessions', icon: MessageCircle },
   { value: 'intents', label: 'Intent Training', icon: Tag },
+  { value: 'faqs', label: 'Câu hỏi gợi ý (FAQ)', icon: HelpCircle },
 ];
 
 export default function ChatbotPage() {
@@ -53,6 +56,19 @@ export default function ChatbotPage() {
   const canWrite = useCan('chatbot.train');
   const canTrain = useCan('chatbot.train');
   const canDelete = useCan('chatbot.read');
+
+  // DEBUG: log auth state
+  if (typeof window !== 'undefined') {
+    const stored = sessionStorage.getItem('vp-luat-admin-current-user');
+    if (stored) {
+      try {
+        const u = JSON.parse(stored);
+        console.log('[ChatbotPage] canRead:', canRead, '| user.role:', u.role, '| stored role:', stored ? JSON.parse(stored).role : null);
+      } catch {}
+    } else {
+      console.log('[ChatbotPage] canRead:', canRead, '| NO stored user');
+    }
+  }
 
   return (
     <div className="admin-view">
@@ -91,8 +107,10 @@ export default function ChatbotPage() {
         </div>
       ) : tab === 'sessions' ? (
         <SessionsTab canDelete={canDelete} />
-      ) : (
+      ) : tab === 'intents' ? (
         <IntentsTab canWrite={canWrite} canDelete={canDelete} canTrain={canTrain} />
+      ) : (
+        <ChatbotFaqTab />
       )}
     </div>
   );
@@ -107,7 +125,7 @@ function SessionsTab({ canDelete }: { canDelete: boolean }) {
   const [statusFilter, setStatusFilter] = useState<'all' | ChatbotSessionStatus>('all');
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [viewSession, setViewSession] = useState<ChatbotSession | null>(null);
+  const [viewSessionId, setViewSessionId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<ChatbotSession | null>(null);
   const LIMIT = 15;
 
@@ -213,7 +231,7 @@ function SessionsTab({ canDelete }: { canDelete: boolean }) {
           data={paginated}
           selectedIds={selectedIds}
           onSelectChange={setSelectedIds}
-          onView={setViewSession}
+          onView={(s) => setViewSessionId(s.id)}
           onDelete={(s) => setConfirmDelete(s)}
           canDelete={canDelete}
         />
@@ -227,8 +245,8 @@ function SessionsTab({ canDelete }: { canDelete: boolean }) {
       </div>
 
       <ChatbotSessionDetail
-        session={viewSession}
-        onClose={() => setViewSession(null)}
+        sessionId={viewSessionId}
+        onClose={() => setViewSessionId(null)}
       />
 
       <ConfirmDialog

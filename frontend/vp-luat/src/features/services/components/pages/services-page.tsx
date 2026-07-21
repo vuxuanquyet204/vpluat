@@ -8,18 +8,17 @@ import { ProcessTimeline } from '@/features/services/components/process-timeline
 import { ServicesFaq } from '@/features/services/components/services-faq';
 import { ServicesCta } from '@/features/services/components/services-cta';
 import { useServices } from '@/features/services/hooks/use-services';
-import type { ServiceCategory } from '@/features/services/types';
 
 // Fallback stats when API fails
 const DEFAULT_STATS = {
   totalServices: 0,
-  totalLawyers: 6,
+  totalLawyers: 0,
   totalClients: 1200,
   successRate: 95,
 };
 
 export default function ServicesPage() {
-  const [active, setActive] = useState<'all' | ServiceCategory>('all');
+  const [active, setActive] = useState<string>('all');
   const { data: services = [], isLoading } = useServices();
 
   const filtered = useMemo(() => {

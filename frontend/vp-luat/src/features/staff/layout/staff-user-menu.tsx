@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { notifyInfo } from '@/features/admin/lib';
-import { clearAuthToken, setLoggingOut } from '@/lib/api/client';
+import { clearAuthToken, setLoggingOut, callServerLogout } from '@/lib/api/client';
 import { RoleDisplayNames, type Role } from '@/features/auth/utils/permissions';
 
 function getInitials(name: string): string {
@@ -67,14 +67,15 @@ export function StaffUserMenu() {
     clearAuthToken();
     if (typeof window !== 'undefined') {
       try {
-        window.localStorage.removeItem('admin-impersonated-user');
-        window.localStorage.removeItem('vp-luat-admin-current-user');
+        window.sessionStorage.removeItem('admin-impersonated-user');
+        window.sessionStorage.removeItem('vp-luat-admin-current-user');
       } catch {
         // ignore
       }
     }
     setOpen(false);
     notifyInfo('Đã đăng xuất', 'Vui lòng đăng nhập lại để tiếp tục');
+    await callServerLogout();
     await signOut({ callbackUrl: '/login', redirect: true });
   };
 

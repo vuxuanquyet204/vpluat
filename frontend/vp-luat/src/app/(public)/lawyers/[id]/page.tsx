@@ -1,92 +1,91 @@
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+'use client';
+
+import { use } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Phone, Mail, Award } from 'lucide-react';
-import { LAWYERS } from '@/features/lawyers/lib/data/lawyers-data';
-import { PageHero } from '@/components/layout/page-hero';
+import { useLawyerBySlug } from '@/features/lawyers/hooks/use-lawyers';
 
-export function generateStaticParams() {
-  return LAWYERS.map((l) => ({ id: l.id }));
-}
+export default function LawyerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { data: lawyer, isLoading } = useLawyerBySlug(id);
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const { id } = await params;
-  const lawyer = LAWYERS.find((l) => l.id === id);
-  if (!lawyer) return { title: 'Luật sư không tồn tại' };
-  return {
-    title: `${lawyer.name} — ${lawyer.position}`,
-    description: lawyer.bio,
-    alternates: { canonical: `/lawyers/${lawyer.id}` },
-  };
-}
+  if (isLoading) {
+    return (
+      <main className="lawyer-detail">
+        <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+          <p>Đang tải thông tin luật sư...</p>
+        </div>
+      </main>
+    );
+  }
 
-export default async function LawyerDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const lawyer = LAWYERS.find((l) => l.id === id);
-  if (!lawyer) notFound();
+  if (!lawyer) {
+    return (
+      <main className="lawyer-detail">
+        <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+          <h1>Không tìm thấy luật sư</h1>
+          <Link href="/lawyers" className="btn btn--primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
+            <ArrowLeft size={18} /> Quay lại danh sách
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="lawyer-detail">
-      <PageHero
-        title={lawyer.name}
-        subtitle={`${lawyer.position} · ${lawyer.specialties.join(', ')}`}
-        breadcrumb={[
-          { label: 'Trang chủ', href: '/' },
-          { label: 'Luật sư', href: '/lawyers' },
-          { label: lawyer.name },
-        ]}
-        stats={[
-          { value: String(lawyer.experience ?? 0) + '+', label: 'Năm kinh nghiệm' },
-          { value: String(lawyer.successfulCases ?? 0) + '+', label: 'Vụ thắng' },
-          { value: String(lawyer.rating ?? 0) + '/5', label: 'Đánh giá' },
-          { value: String(lawyer.reviewCount ?? 0), label: 'Lượt review' },
-        ]}
-      />
+      <section className="page-hero">
+        <div className="container">
+          <div className="page-hero__breadcrumbs">
+            <Link href="/">Trang chủ</Link>
+            <span>/</span>
+            <Link href="/lawyers">Luật sư</Link>
+            <span>/</span>
+            <span>{lawyer.name}</span>
+          </div>
+          <h1 className="page-hero__title">{lawyer.name}</h1>
+          <p className="page-hero__subtitle">{lawyer.position}</p>
+        </div>
+      </section>
 
       <section className="section">
         <div className="container lawyer-detail__layout">
           <div className="lawyer-detail__main">
             <div className="lawyer-detail__header">
               <div className="lawyer-detail__avatar" aria-hidden>
-                <i className="fa-solid fa-user-tie" />
+                {lawyer.avatar ? (
+                  <img src={lawyer.avatar} alt={lawyer.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                ) : (
+                  <i className="fa-solid fa-user-tie" />
+                )}
               </div>
               <div>
                 <h1 className="lawyer-detail__name">{lawyer.name}</h1>
                 <p className="lawyer-detail__position">{lawyer.position}</p>
                 <p className="lawyer-detail__specialty">
-                  Chuyên môn: {lawyer.specialties.join(', ')}
+                  Chuyên môn: {(lawyer.specialties ?? []).join(', ') || '—'}
                 </p>
               </div>
             </div>
 
             <div className="lawyer-detail__bio">
               <h2>Tiểu sử</h2>
-              <p>{lawyer.bio}</p>
+              <p>{lawyer.bio || 'Đang cập nhật.'}</p>
             </div>
 
-            {lawyer.achievements && lawyer.achievements.length > 0 && (
+            {lawyer.experience ? (
               <div className="lawyer-detail__achievements">
-                <h2>Thành tích nổi bật</h2>
+                <h2>Thông tin</h2>
                 <ul>
-                  {lawyer.achievements.map((a) => (
-                    <li key={a}>
-                      <Award className="lawyer-detail__check" size={18} aria-hidden /> {a}
-                    </li>
-                  ))}
+                  <li>
+                    <Award className="lawyer-detail__check" size={18} aria-hidden /> {lawyer.experience}+ năm kinh nghiệm
+                  </li>
+                  <li>
+                    <Award className="lawyer-detail__check" size={18} aria-hidden /> Ngôn ngữ: {(lawyer.languages ?? []).join(', ')}
+                  </li>
                 </ul>
               </div>
-            )}
-
-            {lawyer.education && lawyer.education.length > 0 && (
-              <div className="lawyer-detail__education">
-                <h2>Học vấn</h2>
-                <ul>
-                  {lawyer.education.map((e) => (
-                    <li key={e}>{e}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            ) : null}
           </div>
 
           <aside className="lawyer-detail__sidebar">
@@ -101,11 +100,13 @@ export default async function LawyerDetailPage({ params }: { params: Promise<{ i
               <h3>Liên hệ</h3>
               <ul>
                 <li>
-                  <Phone size={16} aria-hidden /> {lawyer.phone ?? '1900 1234'}
+                  <Phone size={16} aria-hidden /> {lawyer.phone ?? lawyer.email ?? '1900 1234'}
                 </li>
-                <li>
-                  <Mail size={16} aria-hidden /> {lawyer.email ?? 'contact@vuplat.vn'}
-                </li>
+                {lawyer.email && (
+                  <li>
+                    <Mail size={16} aria-hidden /> {lawyer.email}
+                  </li>
+                )}
               </ul>
             </div>
           </aside>

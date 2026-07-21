@@ -40,6 +40,12 @@ export interface Lawyer {
   phone: string;
   experience: number;
   serviceIds: string[];
+  /**
+   * Tên hiển thị của các dịch vụ (cùng thứ tự với serviceIds).
+   * Populate từ BE qua `LawyerDTO.serviceNames` để tránh FE phải tự lookup.
+   * Nếu serviceIds[i] không tồn tại trong bảng services thì serviceNames[i] = null.
+   */
+  serviceNames?: (string | null)[];
   workingHours?: Record<string, unknown>;
   isActive: boolean;
   createdAt: string;
@@ -62,8 +68,8 @@ interface PageResponse<T> {
 function mapToService(raw: Record<string, unknown>): Service {
   return {
     id: String(raw.id ?? ''),
-    name: String(raw.title ?? raw.slug ?? ''),
-    description: String(raw.excerpt ?? raw.content ?? ''),
+    name: String(raw.name ?? raw.slug ?? ''),
+    description: '',
     price: raw.price as number | undefined,
     duration: raw.duration as number | undefined,
     category: String(raw.parentName ?? ''),
@@ -96,6 +102,9 @@ export function mapToLawyer(raw: Record<string, unknown>): Lawyer {
     phone: String(raw.phone ?? ''),
     experience: Number(raw.experienceYears ?? 0),
     serviceIds: Array.isArray(raw.serviceIds) ? (raw.serviceIds as string[]) : [],
+    serviceNames: Array.isArray(raw.serviceNames)
+      ? (raw.serviceNames as (string | null)[])
+      : undefined,
     workingHours: (raw.workingHours as Record<string, unknown>) ?? undefined,
     // BE uses isFeatured to mean "is active" — true = Hoạt động, false = Tạm dừng
     isActive: raw.isFeatured !== false,
@@ -106,11 +115,32 @@ export function mapToLawyer(raw: Record<string, unknown>): Lawyer {
 
 // ─── Query hooks ─────────────────────────────────────────────────
 
-export function useServices() {
-  const { data, ...rest } = useApiQuery<PageResponse<Record<string, unknown>>>(
-    ['services'],
+export interface ServiceFilter {
+  search?: string;
+  isActive?: boolean;
+  category?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  size?: number;
+}
+
+export function useServices(filter: ServiceFilter = {}) {
+  const params: Record<string, string | number | boolean> = {
+    page: filter.page ?? 0,
+    size: filter.size ?? 200,
+  };
+  if (filter.search && filter.search.trim()) params.search = filter.search.trim();
+  if (typeof filter.isActive === 'boolean') params.isActive = filter.isActive;
+  if (filter.category && filter.category !== 'all' && filter.category.trim())
+    params.category = filter.category.trim();
+  if (filter.dateFrom) params.dateFrom = filter.dateFrom;
+  if (filter.dateTo) params.dateTo = filter.dateTo;
+
+  const { data, error, ...rest } = useApiQuery<PageResponse<Record<string, unknown>>>(
+    ['services', JSON.stringify(params)],
     '/admin/services',
-    { page: 0, size: 200 },
+    params,
   );
 
   const services = useMemo(() => {
@@ -126,7 +156,19 @@ export function useServices() {
     return c;
   }, [services]);
 
-  return { data: services, counts, ...rest };
+  // Surface API error so the UI can show it instead of silently rendering empty.
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error('[useServices] API error:', error, 'params:', params);
+  }
+
+  return {
+    data: services,
+    counts,
+    totalElements: data?.totalElements ?? services.length,
+    error,
+    ...rest,
+  };
 }
 
 export function useService(id: string | null | undefined) {
@@ -184,10 +226,10 @@ export function useCreateService() {
           entityId: mapped.id,
           entityLabel: mapped.name,
         });
-        notifySuccess('Đã tạo dịch vụ');
+        // Notification được handle ở caller
       },
-      onError: (e) => {
-        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể tạo dịch vụ');
+      onError: () => {
+        // Error notification được handle ở caller
       },
     },
   );
@@ -214,10 +256,10 @@ export function useUpdateService() {
           entityId: vars.id,
           entityLabel: mapped.name,
         });
-        notifySuccess('Đã cập nhật dịch vụ');
+        // Notification được handle ở caller
       },
-      onError: (e) => {
-        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật dịch vụ');
+      onError: () => {
+        // Error notification được handle ở caller
       },
     },
   );
@@ -243,10 +285,10 @@ export function useDeleteService() {
           entityId: id,
           entityLabel: 'service',
         });
-        notifySuccess('Đã xóa dịch vụ');
+        // Notification được handle ở caller
       },
-      onError: (e) => {
-        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa dịch vụ');
+      onError: () => {
+        // Error notification được handle ở caller
       },
     },
   );

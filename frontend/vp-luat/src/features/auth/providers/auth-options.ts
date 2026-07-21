@@ -1,7 +1,7 @@
 // Auth options for NextAuth v5
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import type { Role, Permission } from '../utils/permissions';
+import type { Role } from '../utils/permissions';
 import { getPermissions } from '../utils/permissions';
 import { setAuthToken } from '@/lib/api/client';
 
@@ -24,6 +24,9 @@ export const authOptions = {
           const response = await fetch(`${API_BASE}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            // Explicitly include credentials so the browser sends the new
+            // HttpOnly cookie that the backend sets in the response.
+            credentials: 'include',
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password,
@@ -43,21 +46,16 @@ export const authOptions = {
             throw new Error('Tai khoan da bi khoa');
           }
 
-          // Store token for apiClient
+          // Store the access token for apiClient (this is fine — the access
+          // token is short-lived, 15 minutes, and stored in memory + localStorage
+          // as a fallback for hard refreshes).
           setAuthToken(data.accessToken);
-          // Persist refresh token so the response interceptor can rotate
-          // the access token silently when it expires.
-          if (typeof window !== 'undefined' && data.refreshToken) {
-            try {
-              window.localStorage.setItem('brs_refresh_token', String(data.refreshToken));
-            } catch {
-              // ignore quota/privacy errors
-            }
-          }
+
+          // The refresh token is now stored in an HttpOnly cookie by the backend.
+          // DO NOT save it to localStorage — that would defeat the XSS protection.
+          // The browser will attach the cookie automatically on subsequent requests.
 
           const role = (user.role || 'VIEWER') as Role;
-          const accessToken: string | null = (data.accessToken ?? data.token ?? null) as string | null;
-          const refreshToken: string | null = (data.refreshToken ?? null) as string | null;
 
           return {
             id: String(user.id ?? user.email ?? ''),
@@ -65,8 +63,8 @@ export const authOptions = {
             name: user.fullName ?? user.name ?? user.email,
             role,
             permissions: getPermissions(role),
-            accessToken,
-            refreshToken,
+            accessToken: (data.accessToken ?? null) as string | null,
+            // refreshToken intentionally omitted — it lives in the HttpOnly cookie.
           };
         } catch (error) {
           console.error('Login failed:', error);
@@ -82,7 +80,7 @@ export const authOptions = {
         token.role = (user.role as string) ?? 'VIEWER';
         token.permissions = (user.permissions as unknown[]) ?? [];
         token.accessToken = user.accessToken ?? null;
-        token.refreshToken = user.refreshToken ?? null;
+        // refreshToken no longer stored here — it is in the HttpOnly cookie.
       }
       return token;
     },
@@ -97,7 +95,7 @@ export const authOptions = {
           role: (token.role as string) ?? 'VIEWER',
           permissions: (token.permissions as unknown[]) ?? [],
           accessToken: (token.accessToken as string | null) ?? null,
-          refreshToken: (token.refreshToken as string | null) ?? null,
+          // refreshToken intentionally not exposed to the client — it is HttpOnly.
         },
       };
     },

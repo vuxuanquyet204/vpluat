@@ -1,31 +1,20 @@
-export type LawyerSpecialty =
-  | 'doanh-nghiep'
-  | 'hinh-su'
-  | 'dan-su'
-  | 'dat-dai'
-  | 'fdi'
-  | 'lao-dong'
-  | 'hon-nhan'
-  | 'so-huu-tri-tue'
-  | 'thuong-mai';
+// BE (brs-backend) trả về `positionVi`/`positionEn` đã là label hiển thị sẵn
+// (vd "Trưởng Văn Phòng", "Phó Trưởng Văn Phòng", ...) và `serviceNames` thay vì
+// slug thô. FE chỉ cần render string, không map enum cứng nữa.
 
-export type LawyerPosition =
-  | 'truong-vp'
-  | 'pho-truong-vp'
-  | 'cong-su-cao-cap'
-  | 'cong-su'
-  | 'tu-van-vien';
+export type LawyerSpecialty = string;
+export type LawyerPosition = string;
 
-// Flexible lawyer type that accepts both strict types and API string responses
 export interface Lawyer {
   id: string;
   slug: string;
   name: string;
-  position: LawyerPosition | string;
+  position: LawyerPosition;
   bio: string;
   initials: string;
   avatarColor: string;
-  specialties: LawyerSpecialty[] | string[];
+  /** Slug dịch vụ (vd 'tu-van-phap-ly') - thường lấy từ `serviceSlugs` trong API. */
+  specialties: LawyerSpecialty[];
   experience: number;
   successfulCases: number;
   rating: number;
@@ -46,7 +35,8 @@ export interface LawyerStat {
 }
 
 export interface SpecialtyFilter {
-  id: 'all' | LawyerSpecialty;
+  /** Service slug từ backend (also used làm filter id). 'all' = tất cả. */
+  id: 'all' | string;
   label: string;
   icon?: string;
   count?: number;

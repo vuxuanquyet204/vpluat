@@ -58,11 +58,12 @@ function LoginForm() {
         const sessionData = await sessionRes.json();
         const userRole = (sessionData?.user?.role as Role) ?? 'VIEWER';
 
-        // Clear stale localStorage data from previous sessions (admin/staff confusion)
+        // Clear stale sessionStorage data from previous sessions (admin/staff confusion).
+        // The main user cache now lives in sessionStorage (per-tab) via rbac.tsx.
         if (typeof window !== 'undefined') {
           try {
-            window.localStorage.removeItem('admin-impersonated-user');
-            window.localStorage.removeItem('vp-luat-admin-current-user');
+            window.sessionStorage.removeItem('admin-impersonated-user');
+            window.sessionStorage.removeItem('vp-luat-admin-current-user');
           } catch {
             // ignore
           }

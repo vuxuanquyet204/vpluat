@@ -53,13 +53,12 @@ export function useSendMessage() {
       try {
         await sendMessage(
           {
-            sessionId: sessionId ?? 'new',
-            message: { from: 'user', content: userText },
-            context,
+            sessionId: sessionId,
+            message: userText,
           },
           appendStreamContent,
           (chunk) => {
-            finishStream(chunk.quickReplies, chunk.inputPrompt);
+            finishStream(chunk.quickReplies, chunk.inputPrompt, chunk.suggestedFaqs);
           },
           controller.signal,
         );

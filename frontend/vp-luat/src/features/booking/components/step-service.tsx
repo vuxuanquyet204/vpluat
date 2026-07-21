@@ -1,9 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { BOOKING_SERVICES } from '../lib';
 import { trackBookingLawyerSelected, trackBookingServiceSelected } from '../analytics';
 import { useBookingStore, useLawyersQuery } from '../hooks';
+import { useBookingServices } from '../hooks/use-booking-services';
 import { ServiceGrid } from './service-grid';
 import { LawyerSection } from './lawyer-section';
 import type { BookingLawyerOption } from '../types';
@@ -34,6 +35,7 @@ function toBookingLawyerOption(lawyer: { id: string; nameVi?: string; nameEn?: s
     rating: 5.0,
     availabilityLabel: 'Còn lịch hôm nay',
     avatarGradient: gradients[gradientIndex],
+    avatarUrl: lawyer.avatarUrl,
   };
 }
 
@@ -43,7 +45,26 @@ export function StepService({ onNext }: { onNext: () => void }) {
   const setService = useBookingStore((state) => state.setService);
   const setLawyer = useBookingStore((state) => state.setLawyer);
 
-  const { data: rawLawyers = [] } = useLawyersQuery();
+  const { services: bookingServices } = useBookingServices();
+
+  // Fetch lawyers filtered by selected service slug
+  const { data: rawLawyers = [], refetch } = useLawyersQuery(service?.slug);
+
+  // Refetch when service changes to get relevant lawyers
+  useEffect(() => {
+    if (service?.slug) {
+      refetch();
+    }
+  }, [service?.slug, refetch]);
+
+  // Reset lawyer selection when service changes
+  const prevServiceId = useBookingStore((state) => state.service?.id);
+  useEffect(() => {
+    if (prevServiceId && service?.id && prevServiceId !== service.id) {
+      setLawyer(null as unknown as BookingLawyerOption);
+    }
+  }, [service?.id, prevServiceId, setLawyer]);
+
   const bookingLawyers: BookingLawyerOption[] = rawLawyers.map(toBookingLawyerOption);
 
   const canProceed = Boolean(service && lawyer);
@@ -72,7 +93,7 @@ export function StepService({ onNext }: { onNext: () => void }) {
       </p>
 
       <ServiceGrid
-        services={BOOKING_SERVICES}
+        services={bookingServices}
         selectedServiceId={service?.id ?? null}
         onSelect={handleSelectService}
       />

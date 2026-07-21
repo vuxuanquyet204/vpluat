@@ -8,6 +8,7 @@ export interface ServiceDTO {
   id: string;
   parentId?: string;
   slug?: string;
+  name?: string;
   icon?: string;
   title?: string;
   titleEn?: string;
@@ -50,11 +51,11 @@ function mapServiceDto(dto: ServiceDTO): ServiceApiResponse {
   return {
     id: dto.id,
     slug: dto.slug || '',
-    name: dto.title || '',
-    shortDescription: dto.excerpt || '',
+    name: dto.name || dto.title || '',
+    shortDescription: dto.excerpt || dto.title || '',
     description: dto.content || '',
     category: dto.parentName?.toLowerCase().replace(/\s+/g, '-') || 'other',
-    icon: dto.icon || 'fa-solid fa-gavel',
+    icon: dto.icon ? `fa-solid fa-${dto.icon}` : 'fa-solid fa-gavel',
     isFeatured: dto.isFeatured || false,
     parentName: dto.parentName,
   };

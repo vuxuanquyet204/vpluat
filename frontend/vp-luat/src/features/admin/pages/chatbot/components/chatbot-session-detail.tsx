@@ -27,11 +27,12 @@ import {
   useEndSession,
   useCreateLeadFromSession,
   useCreateBookingFromSession,
+  useSessionDetail,
   SESSION_STATUS_LABELS,
 } from '../hooks/use-chatbot';
 
 interface ChatbotSessionDetailProps {
-  session: ChatbotSession | null;
+  sessionId: string | null;   // UUID of the session to load
   onClose: () => void;
   onNavigate?: (entity: 'lead' | 'booking', id: string) => void;
 }
@@ -75,7 +76,8 @@ function formatDuration(s: ChatbotSession) {
   return `${mins} phút`;
 }
 
-export function ChatbotSessionDetail({ session, onClose, onNavigate }: ChatbotSessionDetailProps) {
+export function ChatbotSessionDetail({ sessionId, onClose, onNavigate }: ChatbotSessionDetailProps) {
+  const { data: session, isLoading } = useSessionDetail(sessionId);
   const canHandoff = useCan('chatbot.handoff');
   const canCreate = useCan('crm.write');
   const canBooking = useCan('booking.write');
@@ -88,6 +90,18 @@ export function ChatbotSessionDetail({ session, onClose, onNavigate }: ChatbotSe
   const [handoffTo, setHandoffTo] = useState('LS. Hùng');
   const [handoffReason, setHandoffReason] = useState('');
   const [endOpen, setEndOpen] = useState(false);
+
+  if (!sessionId) return null;
+
+  if (isLoading) {
+    return (
+      <Drawer isOpen={true} onClose={onClose} width={560} title="Đang tải...">
+        <div style={{ padding: 32, textAlign: 'center', color: 'var(--gray-400)' }}>
+          Đang tải cuộc trò chuyện...
+        </div>
+      </Drawer>
+    );
+  }
 
   if (!session) return null;
 

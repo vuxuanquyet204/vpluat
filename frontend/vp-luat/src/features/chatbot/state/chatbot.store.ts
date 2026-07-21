@@ -3,6 +3,8 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
   ChatMessage,
   ChatbotConversationState,
+  FaqSuggestion,
+  InputPrompt,
   QuickReply,
 } from '../types';
 
@@ -33,7 +35,11 @@ export interface ChatbotWidgetState {
   setSessionId: (id: string) => void;
   addMessage: (message: ChatMessage) => void;
   appendStreamContent: (chunk: string) => void;
-  finishStream: (quickReplies?: QuickReply[], inputPrompt?: { placeholder: string; type: 'text' | 'tel' | 'email' }) => void;
+  finishStream: (
+    quickReplies?: QuickReply[],
+    inputPrompt?: InputPrompt,
+    suggestedFaqs?: FaqSuggestion[],
+  ) => void;
   cancelStream: () => void;
   setError: (error: string | null) => void;
   setConversationState: (state: ChatbotConversationState) => void;
@@ -135,22 +141,18 @@ export const useChatbotStore = create<ChatbotWidgetState>()(
           streamedContent: state.streamedContent + chunk,
         })),
 
-      finishStream: (quickReplies, inputPrompt) =>
+      finishStream: (quickReplies, inputPrompt, suggestedFaqs) =>
         set((state) => {
           if (!state.streamedContent) return state;
 
           const finalMessage: ChatMessage = {
-            // Use a stable counter-derived id so server-rendered and
-            // client-rendered trees agree (avoids duplicate-key warnings
-            // when SSR and client hydration race on freshly streamed
-            // messages). Combined with addMessage dedupe, this guarantees
-            // unique keys across the message list.
             id: `stream-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             from: 'bot',
             content: state.streamedContent,
             timestamp: new Date().toISOString(),
             quickReplies,
             inputPrompt,
+            suggestedFaqs: suggestedFaqs?.length ? suggestedFaqs : undefined,
             isStreaming: false,
           };
 

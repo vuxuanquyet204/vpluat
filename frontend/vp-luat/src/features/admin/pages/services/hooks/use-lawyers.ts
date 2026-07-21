@@ -14,16 +14,44 @@ import { mapToLawyer } from './use-services';
 
 // ─── Query hooks ───────────────────────────────────────────────────────────────
 
-export function useLawyers() {
-  const { data: rawData = [], ...rest } = useApiQuery<Lawyer[]>(
-    ['lawyers'],
+export interface LawyerFilter {
+  search?: string;
+  isActive?: boolean;
+  positionVi?: string;
+  serviceId?: string;
+  page?: number;
+  size?: number;
+}
+
+export function useLawyers(filter: LawyerFilter = {}) {
+  const params: Record<string, string | number | boolean> = {
+    page: filter.page ?? 0,
+    size: filter.size ?? 100, // admin page needs all to compute counts
+  };
+  if (filter.search && filter.search.trim()) params.search = filter.search.trim();
+  if (typeof filter.isActive === 'boolean') params.isActive = filter.isActive;
+  if (filter.positionVi && filter.positionVi.trim()) params.positionVi = filter.positionVi.trim();
+  if (filter.serviceId) params.serviceId = filter.serviceId;
+
+  const { data: pageData, error, ...rest } = useApiQuery<Record<string, unknown>>(
+    ['lawyers', JSON.stringify(params)],
     '/admin/lawyers',
-    undefined,
+    params,
   );
 
+  // Backend returns PageResponse<LawyerDTO>: { content: LawyerDTO[], page, size,
+  // totalElements, totalPages, ... }.  Older clients may still hit the legacy
+  // List endpoint (during the rollout window) which returned a bare array —
+  // we accept both shapes.
+  const rawList: unknown[] = Array.isArray(pageData)
+    ? (pageData as unknown[])
+    : Array.isArray((pageData as { content?: unknown[] } | undefined)?.content)
+      ? ((pageData as { content: unknown[] }).content)
+      : [];
+
   const data = useMemo(() => {
-    return (rawData as unknown as Record<string, unknown>[]).map(mapToLawyer);
-  }, [rawData]);
+    return (rawList as Record<string, unknown>[]).map(mapToLawyer);
+  }, [rawList]);
 
   const counts = useMemo(() => {
     const c = { total: data.length, active: 0, inactive: 0 };
@@ -34,7 +62,15 @@ export function useLawyers() {
     return c;
   }, [data]);
 
-  return { data, counts, ...rest };
+  const totalElements =
+    (pageData as { totalElements?: number } | undefined)?.totalElements ?? data.length;
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error('[useLawyers] API error:', error, 'params:', params);
+  }
+
+  return { data, counts, totalElements, pageData, error, ...rest };
 }
 
 export function useLawyer(id: string | null | undefined) {
@@ -84,17 +120,11 @@ export function useCreateLawyer() {
           entityId: mapped.id,
           entityLabel: mapped.name,
         });
-        notifySuccess('Đã tạo luật sư');
-        // Nếu BE tự tạo user mới với password mặc định → nhắc admin
-        const defaultPwd = (data as { defaultPassword?: string }).defaultPassword;
-        if (defaultPwd) {
-          notifySuccess(
-            `Tài khoản đăng nhập tạm thời mật khẩu: ${defaultPwd}`,
-          );
-        }
+        // Notification được handle ở caller (index.tsx) để tránh double notify
+        // Caller nhận data để hiển thị defaultPassword nếu có
       },
-      onError: (e) => {
-        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể tạo luật sư');
+      onError: () => {
+        // Error notification được handle ở caller
       },
     },
   );
@@ -131,10 +161,10 @@ export function useUpdateLawyer() {
           entityId: vars.id,
           entityLabel: mapped.name,
         });
-        notifySuccess('Đã cập nhật luật sư');
+        // Notification được handle ở caller (index.tsx)
       },
       onError: (e) => {
-        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật luật sư');
+        // Error notification được handle ở caller (index.tsx)
       },
     },
   );
@@ -168,8 +198,8 @@ export function useDeleteLawyer() {
         });
         notifySuccess('Đã xóa luật sư');
       },
-      onError: (e) => {
-        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa luật sư');
+      onError: () => {
+        // Error notification được handle ở caller
       },
     },
   );

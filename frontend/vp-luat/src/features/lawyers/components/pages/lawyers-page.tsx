@@ -7,22 +7,62 @@ import { LawyersFilterChips } from '@/features/lawyers/components/lawyers-filter
 import { LawyerCard } from '@/features/lawyers/components/lawyer-card';
 import { LawyerProfileModal } from '@/features/lawyers/components/lawyer-profile-modal';
 import { useLawyers } from '@/features/lawyers/hooks/use-lawyers';
-import type { Lawyer, LawyerSpecialty } from '@/features/lawyers/types';
+import { useServices } from '@/features/services/hooks/use-services';
+import type { LawyerApiResponse } from '@/features/lawyers/api/lawyers-api';
 
 export default function LawyersPage() {
   const router = useRouter();
-  const [active, setActive] = useState<'all' | LawyerSpecialty>('all');
-  const [profileLawyer, setProfileLawyer] = useState<Lawyer | null>(null);
+  const [active, setActive] = useState<'all' | string>('all');
+  const [profileLawyer, setProfileLawyer] = useState<LawyerApiResponse | null>(null);
 
-  const { data: lawyers = [], isLoading } = useLawyers();
+  const { data: services = [] } = useServices();
+  const { data: lawyers = [], isLoading } = useLawyers(0, 100);
+
+  // Map: tên dịch vụ (label đẹp) → count lawyer.
+  // Nếu services API fail/trả rỗng, lấy tên từ lawyers' serviceNames để filter vẫn hiển thị.
+  const serviceInfo = useMemo(() => {
+    // Từ services API
+    const serviceMap = new Map(services.map((s) => [s.slug, { name: s.name, icon: s.icon }]));
+    // Fallback: extract từ lawyers nếu serviceMap trống
+    if (serviceMap.size === 0 && lawyers.length > 0) {
+      lawyers.forEach((l) => {
+        const slugs = l.serviceSlugs ?? [];
+        const names = l.serviceNames ?? [];
+        slugs.forEach((slug, i) => {
+          if (slug && !serviceMap.has(slug)) {
+            serviceMap.set(slug, { name: names[i] || slug, icon: 'fa-solid fa-gavel' });
+          }
+        });
+      });
+    }
+    return Array.from(serviceMap.entries()).map(([slug, info]) => ({
+      slug,
+      name: info.name,
+      icon: info.icon,
+    }));
+  }, [services, lawyers]);
+
+  const countByServiceSlug = useMemo(() => {
+    const map: Record<string, number> = {};
+    lawyers.forEach((l) => {
+      const slugs = l.serviceSlugs ?? l.specialties ?? [];
+      slugs.forEach((s) => {
+        if (s) map[s] = (map[s] ?? 0) + 1;
+      });
+    });
+    return map;
+  }, [lawyers]);
 
   const filtered = useMemo(() => {
     if (active === 'all') return lawyers;
-    return lawyers.filter((l) => l.specialties?.includes(active));
+    return lawyers.filter((l) => {
+      const slugs = l.serviceSlugs ?? l.specialties ?? [];
+      return slugs.includes(active);
+    });
   }, [active, lawyers]);
 
-  const handleViewProfile = (lawyer: Lawyer) => setProfileLawyer(lawyer);
-  const handleBook = (lawyer: Lawyer) => {
+  const handleViewProfile = (lawyer: LawyerApiResponse) => setProfileLawyer(lawyer);
+  const handleBook = (lawyer: LawyerApiResponse) => {
     router.push(`/booking?lawyer=${lawyer.id}`);
   };
 
@@ -38,7 +78,13 @@ export default function LawyersPage() {
   return (
     <>
       <LawyersHero totalCount={lawyers.length || 0} />
-      <LawyersFilterChips active={active} onChange={setActive} />
+      <LawyersFilterChips
+        active={active}
+        onChange={setActive}
+        services={serviceInfo}
+        totalLawyers={filtered.length}
+        countByServiceSlug={countByServiceSlug}
+      />
 
       <section className="lawyers-section">
         <div className="container">
@@ -46,7 +92,7 @@ export default function LawyersPage() {
             {filtered.map((l) => (
               <LawyerCard
                 key={l.id}
-                lawyer={l as Lawyer}
+                lawyer={l}
                 onViewProfile={handleViewProfile}
                 onBook={handleBook}
               />

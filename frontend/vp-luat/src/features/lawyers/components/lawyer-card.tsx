@@ -1,13 +1,13 @@
 'use client';
 
 import { Star } from 'lucide-react';
-import { POSITION_LABELS, SPECIALTY_LABELS } from '../lib/data/lawyers-data';
-import type { Lawyer, LawyerPosition, LawyerSpecialty } from '../types';
+import type { Lawyer } from '../types';
+import type { LawyerApiResponse } from '../api/lawyers-api';
 
 interface LawyerCardProps {
-  lawyer: Lawyer;
-  onViewProfile?: (lawyer: Lawyer) => void;
-  onBook?: (lawyer: Lawyer) => void;
+  lawyer: LawyerApiResponse | Lawyer;
+  onViewProfile?: (lawyer: LawyerApiResponse) => void;
+  onBook?: (lawyer: LawyerApiResponse) => void;
 }
 
 function renderStars(rating: number) {
@@ -27,31 +27,34 @@ function renderStars(rating: number) {
   return stars;
 }
 
-// Helper to get position label from position string
-function getPositionLabel(position: LawyerPosition | string): string {
-  if (position in POSITION_LABELS) {
-    return POSITION_LABELS[position as LawyerPosition];
+function getSpecialtyLabels(lawyer: LawyerApiResponse): string[] {
+  // Ưu tiên serviceNames (BE trả về tên đẹp) - nếu thiếu thì dùng serviceSlugs
+  if (lawyer.serviceNames && lawyer.serviceNames.length > 0) {
+    return lawyer.serviceNames.filter((s): s is string => !!s);
   }
-  return position;
-}
-
-// Helper to get specialty label from specialty string
-function getSpecialtyLabel(specialty: LawyerSpecialty | string): string {
-  if (specialty in SPECIALTY_LABELS) {
-    return SPECIALTY_LABELS[specialty as LawyerSpecialty];
-  }
-  return specialty;
+  return lawyer.specialties ?? [];
 }
 
 export function LawyerCard({ lawyer, onViewProfile, onBook }: LawyerCardProps) {
+  const apiLawyer = lawyer as LawyerApiResponse;
+  const specialtyLabels = getSpecialtyLabels(apiLawyer);
+  const rating = lawyer.rating ?? 0;
+  const reviewCount = lawyer.reviewCount ?? 0;
+  const experience = lawyer.experience ?? 0;
+  const successfulCases = lawyer.successfulCases ?? 0;
+
   return (
     <article className="lawyer-card">
       <div className="lawyer-avatar-wrap">
         <div
           className="lawyer-avatar-placeholder"
-          style={{ background: lawyer.avatarColor }}
+          style={lawyer.avatar ? undefined : { background: lawyer.avatarColor }}
         >
-          {lawyer.initials}
+          {lawyer.avatar ? (
+            <img src={lawyer.avatar} alt={lawyer.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+          ) : (
+            lawyer.initials
+          )}
         </div>
         <div className="avatar-ring" aria-hidden="true" />
         {lawyer.isVerified && (
@@ -62,27 +65,27 @@ export function LawyerCard({ lawyer, onViewProfile, onBook }: LawyerCardProps) {
       </div>
 
       <h3 className="lawyer-name">{lawyer.name}</h3>
-      <p className="lawyer-position">{getPositionLabel(lawyer.position)}</p>
+      <p className="lawyer-position">{lawyer.position}</p>
 
       <div className="lawyer-stars">
-        {renderStars(lawyer.rating)}
+        {renderStars(rating)}
         <span className="lawyer-rating-text">
-          ({lawyer.rating} · {lawyer.reviewCount} đánh giá)
+          ({rating} · {reviewCount} đánh giá)
         </span>
       </div>
 
       <div className="lawyer-tags">
-        {lawyer.specialties.map((sp) => (
-          <span key={sp} className="lawyer-tag">{getSpecialtyLabel(sp)}</span>
+        {specialtyLabels.map((sp, i) => (
+          <span key={`${sp}-${i}`} className="lawyer-tag">{sp}</span>
         ))}
       </div>
 
       <div className="lawyer-meta">
         <span className="lawyer-meta-item">
-          <i className="fa-solid fa-clock" aria-hidden="true" /> <strong>{lawyer.experience}</strong> năm kinh nghiệm
+          <i className="fa-solid fa-clock" aria-hidden="true" /> <strong>{experience}</strong> năm kinh nghiệm
         </span>
         <span className="lawyer-meta-item">
-          <i className="fa-solid fa-trophy" aria-hidden="true" /> <strong>{lawyer.successfulCases}</strong> vụ thành công
+          <i className="fa-solid fa-trophy" aria-hidden="true" /> <strong>{successfulCases}</strong> vụ thành công
         </span>
       </div>
 
@@ -94,14 +97,14 @@ export function LawyerCard({ lawyer, onViewProfile, onBook }: LawyerCardProps) {
         <button
           type="button"
           className="card-btn card-btn-profile"
-          onClick={() => onViewProfile?.(lawyer)}
+          onClick={() => onViewProfile?.(apiLawyer)}
         >
           <i className="fa-solid fa-user" aria-hidden="true" /> Xem hồ sơ
         </button>
         <button
           type="button"
           className="card-btn card-btn-book"
-          onClick={() => onBook?.(lawyer)}
+          onClick={() => onBook?.(apiLawyer)}
         >
           <i className="fa-solid fa-calendar-plus" aria-hidden="true" /> Đặt lịch
         </button>

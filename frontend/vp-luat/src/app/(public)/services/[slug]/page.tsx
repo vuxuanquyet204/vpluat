@@ -1,69 +1,79 @@
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+'use client';
+
+import { use } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, ArrowLeft, Phone, Mail, MapPin } from 'lucide-react'
-import { SERVICES, SERVICES_FAQS, PROCESS_STEPS, SERVICES_STATS } from '@/features/services/lib/data/services-data';
-import { LAWYERS_BY_ID } from '@/features/lawyers/lib/data/lawyers-data';
-import { LawyersHero } from '@/features/lawyers/components/lawyers-hero';
+import { CheckCircle2, ArrowLeft, Phone, Mail, MapPin } from 'lucide-react';
+import { useServiceBySlug } from '@/features/services/hooks/use-services';
+import { useLawyers } from '@/features/lawyers/hooks/use-lawyers';
 import { LawyerCard } from '@/features/lawyers/components/lawyer-card';
-import { PageHero } from '@/features/services/components/page-hero';
-import { ServicesFaq } from '@/features/services/components/services-faq';
 import { ServicesCta } from '@/features/services/components/services-cta';
+import type { LawyerApiResponse } from '@/features/lawyers/api/lawyers-api';
 
-export function generateStaticParams() {
-  return SERVICES.map((s) => ({ slug: s.slug }));
+function toLawyerForCard(lawyer: LawyerApiResponse): LawyerApiResponse {
+  // LawyerCard đã nhận LawyerApiResponse - chỉ cần đảm bảo các field optional có default.
+  return lawyer;
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params;
-  const service = SERVICES.find((s) => s.slug === slug);
-  if (!service) return { title: 'Dịch vụ không tồn tại' };
-  return {
-    title: service.title,
-    description: service.shortDescription,
-    alternates: { canonical: `/services/${service.slug}` },
-  };
-}
+export default function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+  const { data: service, isLoading } = useServiceBySlug(slug);
+  const { data: lawyers = [] } = useLawyers(0, 3, slug);
 
-export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const service = SERVICES.find((s) => s.slug === slug);
-  if (!service) notFound();
+  if (isLoading) {
+    return (
+      <main className="service-detail">
+        <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+          <p>Đang tải dịch vụ...</p>
+        </div>
+      </main>
+    );
+  }
 
-  const related = SERVICES.filter((s) => s.slug !== service.slug && s.category === service.category).slice(0, 3);
-  const lawyerIds = (service as { lawyerIds?: string[] }).lawyerIds ?? [];
-  const lawyers = lawyerIds.map((id) => LAWYERS_BY_ID[id]).filter(Boolean);
+  if (!service) {
+    return (
+      <main className="service-detail">
+        <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+          <h1>Dịch vụ không tồn tại</h1>
+          <Link href="/services" className="btn btn--primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
+            <ArrowLeft size={18} /> Quay lại
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  const benefits = (service as { benefits?: string[] }).benefits ?? [];
+  const description = service.description || service.shortDescription || 'Đang cập nhật.';
 
   return (
     <main className="service-detail">
-      <PageHero
-        breadcrumb={[
-          { label: 'Trang chủ', href: '/' },
-          { label: 'Dịch vụ', href: '/services' },
-          { label: service.title ?? service.name },
-        ]}
-        title={service.title ?? service.name}
-        subtitle={service.shortDescription}
-        stats={[
-          { value: String(SERVICES_STATS.totalServices), label: 'Dịch vụ' },
-          { value: String(SERVICES_STATS.totalLawyers), label: 'Luật sư' },
-          { value: String(SERVICES_STATS.successRate) + '%', label: 'Tỷ lệ thành công' },
-        ]}
-      />
+      <section className="page-hero">
+        <div className="container">
+          <div className="page-hero__breadcrumbs">
+            <Link href="/">Trang chủ</Link>
+            <span>/</span>
+            <Link href="/services">Dịch vụ</Link>
+            <span>/</span>
+            <span>{service.name}</span>
+          </div>
+          <h1 className="page-hero__title">{service.name}</h1>
+          <p className="page-hero__subtitle">{service.shortDescription}</p>
+        </div>
+      </section>
 
       <section className="section">
         <div className="container service-detail__body">
           <div className="service-detail__content">
             <div className="service-detail__description">
               <h2>Tổng quan dịch vụ</h2>
-              <p>{service.description}</p>
+              <p>{description}</p>
             </div>
 
-            {service.benefits && service.benefits.length > 0 && (
+            {benefits.length > 0 && (
               <div className="service-detail__benefits">
                 <h2>Lợi ích khi sử dụng dịch vụ</h2>
                 <ul className="service-detail__benefits-list">
-                  {service.benefits.map((b) => (
+                  {benefits.map((b) => (
                     <li key={b}>
                       <CheckCircle2 className="service-detail__check" size={20} aria-hidden />
                       <span>{b}</span>
@@ -73,26 +83,19 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
               </div>
             )}
 
-            <div className="service-detail__process">
-              <h2>Quy trình thực hiện</h2>
-              <ol className="service-detail__process-list">
-                {PROCESS_STEPS.map((s) => (
-                  <li key={s.step}>
-                    <strong>Bước {s.step}:</strong> {s.title} — {s.description}
-                  </li>
-                ))}
-              </ol>
-            </div>
-
-            <div className="service-detail__faq">
-              <h2>Câu hỏi thường gặp</h2>
-              {SERVICES_FAQS.map((f) => (
-                <details key={f.id} className="service-detail__faq-item">
-                  <summary>{f.question}</summary>
-                  <p>{f.answer}</p>
-                </details>
-              ))}
-            </div>
+            {service.features && service.features.length > 0 && (
+              <div className="service-detail__benefits">
+                <h2>Chi tiết</h2>
+                <ul className="service-detail__benefits-list">
+                  {service.features.map((f) => (
+                    <li key={f}>
+                      <CheckCircle2 className="service-detail__check" size={20} aria-hidden />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <aside className="service-detail__sidebar">
@@ -100,14 +103,19 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
               <h3>Thông tin dịch vụ</h3>
               <ul className="service-detail__info-list">
                 <li>
-                  <strong>Danh mục:</strong> {service.category}
+                  <strong>Danh mục:</strong> {service.parentName || service.category}
                 </li>
-                <li>
-                  <strong>Thời gian xử lý:</strong> {service.duration}
-                </li>
-                <li>
-                  <strong>Phí tư vấn ban đầu:</strong> {service.fee}
-                </li>
+                {service.duration && (
+                  <li>
+                    <strong>Thời gian xử lý:</strong> {service.duration}
+                  </li>
+                )}
+                {service.price != null && (
+                  <li>
+                    <strong>Phí tư vấn ban đầu:</strong>{' '}
+                    {new Intl.NumberFormat('vi-VN').format(service.price)}đ
+                  </li>
+                )}
               </ul>
               <Link href="/contact" className="btn btn--primary btn--block">
                 Đăng ký tư vấn
@@ -139,34 +147,11 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
               <h2 className="section__title">Luật sư phụ trách</h2>
             </div>
             <div className="lawyers-grid">
-              {lawyers.map((l) => (
-                <LawyerCard key={l.id} lawyer={l} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {related.length > 0 && (
-        <section className="section">
-          <div className="container">
-            <div className="section__header">
-              <h2 className="section__title">Dịch vụ liên quan</h2>
-              <p className="section__subtitle">Các dịch vụ pháp lý khác có thể bạn quan tâm</p>
-            </div>
-            <div className="services-grid">
-              {related.map((rel) => (
-                <Link
-                  key={rel.slug}
-                  href={`/services/${rel.slug}`}
-                  className={`service-card service-card--${rel.color}`}
-                >
-                  <div className="service-card__icon">
-                    <i className={rel.icon} aria-hidden />
-                  </div>
-                  <h3 className="service-card__title">{rel.title}</h3>
-                  <p className="service-card__desc">{rel.shortDescription}</p>
-                </Link>
+              {lawyers.slice(0, 3).map((l) => (
+                <LawyerCard
+                  key={l.id}
+                  lawyer={toLawyerForCard(l)}
+                />
               ))}
             </div>
           </div>

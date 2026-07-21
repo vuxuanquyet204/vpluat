@@ -28,6 +28,9 @@ export interface ConversationStep {
   userMessage?: string;
   botMessages: ChatMessage[];
   nextState?: string;
+  /** When true the caller should forward the raw text to the BE chatbot
+   *  (so the AI model can produce a response instead of the local script). */
+  passthrough?: boolean;
 }
 
 export const GREETING_MESSAGE = makeBot(
@@ -148,8 +151,8 @@ export const CONVERSATION_SCRIPT: Record<string, (userInput: string) => { botMes
         { label: 'Hỏi thêm', icon: 'fa-solid fa-circle-question', reply: 'Hỏi thêm' },
       ])], nextState: 'service_selected' };
     }
-    if (lower.includes('dân sự')) {
-      return { botMessages: [makeBot('Về <strong>Luật Dân sự</strong>, tôi có thể hỗ trợ: thừa kế, hợp đồng, bồi thường thiệt hại, quyền sở hữu trí tuệ.', [
+    if (lower.includes('dân sự') || lower.includes('hôn nhân') || lower.includes('ly hôn') || lower.includes('lyhon')) {
+      return { botMessages: [makeBot('Về <strong>Luật Dân sự</strong>, tôi có thể hỗ trợ: thừa kế, hợp đồng, ly hôn & hôn nhân gia đình, bồi thường thiệt hại, quyền sở hữu trí tuệ.', [
         { label: 'Đặt lịch tư vấn', icon: 'fa-solid fa-calendar-check', reply: 'Đặt lịch tư vấn' },
         { label: 'Hỏi thêm', icon: 'fa-solid fa-circle-question', reply: 'Hỏi thêm' },
       ])], nextState: 'service_selected' };
@@ -160,7 +163,8 @@ export const CONVERSATION_SCRIPT: Record<string, (userInput: string) => { botMes
         { label: 'Hỏi thêm', icon: 'fa-solid fa-circle-question', reply: 'Hỏi thêm' },
       ])], nextState: 'service_selected' };
     }
-    return { botMessages: [SERVICE_PROMPT], nextState: 'greeting' };
+    // No local keyword match — fall through to BE so the AI can handle free-form input.
+    return { botMessages: [], nextState: 'greeting', passthrough: true };
   },
 
   'service_selected': (input) => {
@@ -207,7 +211,7 @@ export const CONVERSATION_SCRIPT: Record<string, (userInput: string) => { botMes
 export function processUserInput(
   state: string,
   input: string,
-): { botMessages: ChatMessage[]; nextState: string } {
+): { botMessages: ChatMessage[]; nextState: string; passthrough?: boolean } {
   const handler = CONVERSATION_SCRIPT[state];
   if (handler) {
     return handler(input);

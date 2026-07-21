@@ -13,10 +13,10 @@ import {
   type SubmitBookingPayload,
 } from '../api';
 
-export function useLawyersQuery() {
+export function useLawyersQuery(serviceSlug?: string) {
   return useQuery({
-    queryKey: ['booking-lawyers'],
-    queryFn: fetchLawyers,
+    queryKey: ['booking-lawyers', serviceSlug],
+    queryFn: () => fetchLawyers(serviceSlug),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

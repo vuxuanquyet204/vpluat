@@ -2,47 +2,45 @@
 
 import { useMemo } from 'react';
 import { FilterBar } from '@/components/layout/filter-bar';
-import { LAWYERS, SPECIALTY_FILTERS } from '../lib/data/lawyers-data';
-import type { LawyerSpecialty } from '../types';
 
-interface LawyersFilterChipsProps {
-  active: 'all' | LawyerSpecialty;
-  onChange: (value: 'all' | LawyerSpecialty) => void;
+interface ServiceInfo {
+  slug: string;
+  name: string;
+  icon?: string;
 }
 
-export function LawyersFilterChips({ active, onChange }: LawyersFilterChipsProps) {
+interface LawyersFilterChipsProps {
+  active: 'all' | string;
+  onChange: (value: 'all' | string) => void;
+  services: ServiceInfo[];
+  totalLawyers: number;
+  countByServiceSlug: Record<string, number>;
+}
+
+export function LawyersFilterChips({ active, onChange, services, totalLawyers, countByServiceSlug }: LawyersFilterChipsProps) {
   const options = useMemo(() => {
     const allOption = {
       id: 'all' as const,
       label: 'Tất cả',
       icon: 'fa-solid fa-users',
-      count: LAWYERS.length,
+      count: totalLawyers,
     };
-    const seen = new Set<string>(['all']);
-    const specialties = SPECIALTY_FILTERS.filter((s) => !seen.has(s.id))
-      .map((s) => {
-        seen.add(s.id);
-        return {
-          id: s.id as LawyerSpecialty,
-          label: s.label,
-          icon: s.icon,
-          count: LAWYERS.filter((l) => l.specialties.includes(s.id as LawyerSpecialty)).length,
-        };
-      });
-    return [allOption, ...specialties];
-  }, []);
+    const specialtyOptions = (services ?? []).map((s) => ({
+      id: s.slug,
+      label: s.name,
+      icon: s.icon || 'fa-solid fa-gavel',
+      count: countByServiceSlug[s.slug] ?? 0,
+    }));
+    return [allOption, ...specialtyOptions];
+  }, [services, totalLawyers, countByServiceSlug]);
 
   return (
     <FilterBar
-      label="Lọc theo chuyên môn"
+      label="Lọc theo dịch vụ"
       options={options}
       active={active}
       onChange={onChange}
-      resultCount={
-        active === 'all'
-          ? LAWYERS.length
-          : LAWYERS.filter((l) => l.specialties.includes(active as LawyerSpecialty)).length
-      }
+      resultCount={totalLawyers}
       resultLabel="luật sư"
     />
   );

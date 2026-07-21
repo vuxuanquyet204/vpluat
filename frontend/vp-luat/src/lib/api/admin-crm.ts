@@ -208,10 +208,15 @@ export const lawyerApi = {
 
 export interface ChatbotSession {
   id: string;
-  visitorId?: string;
-  status: 'ACTIVE' | 'CLOSED' | 'HANDOFF';
+  /** Public session key (UUID string) issued by the backend on first message. */
+  sessionId: string;
+  language?: string;
   startedAt: string;
   endedAt?: string;
+  status: 'ACTIVE' | 'CLOSED' | 'HANDOFF';
+  escalated?: boolean;
+  resolved?: boolean;
+  messageCount?: number;
   messages?: unknown[];
 }
 
@@ -242,10 +247,15 @@ export interface Campaign {
 
 export interface ChatbotSession {
   id: string;
-  visitorId?: string;
-  status: 'ACTIVE' | 'CLOSED' | 'HANDOFF';
+  /** Public session key (UUID string) issued by the backend on first message. */
+  sessionId: string;
+  language?: string;
   startedAt: string;
   endedAt?: string;
+  status: 'ACTIVE' | 'CLOSED' | 'HANDOFF';
+  escalated?: boolean;
+  resolved?: boolean;
+  messageCount?: number;
   messages?: unknown[];
 }
 
@@ -261,6 +271,9 @@ export const chatbotApi = {
   reply: (id: string, content: string) =>
     api.post<void>(`/admin/chatbot/sessions/${id}/reply`, { content }),
 
+  escalate: (id: string, note?: string) =>
+    api.post<void>(`/admin/chatbot/sessions/${id}/escalate`, { note }),
+
   intents: (params?: { from?: string; to?: string }) =>
     api.get<unknown[]>(`/admin/chatbot/intents`, params),
 
@@ -268,7 +281,56 @@ export const chatbotApi = {
     api.get<unknown>(`/admin/chatbot/stats`, params),
 
   closeSession: (id: string) =>
-    api.patch<ChatbotSession>(`/admin/chatbot/sessions/${id}/close`, {}),
+    api.post<ChatbotSession>(`/admin/chatbot/sessions/${id}/close`, {}),
+};
+
+// ============================================================
+// Chatbot FAQ suggestions (admin)
+// ============================================================
+
+export interface FaqTranslation {
+  locale: string;
+  question?: string;
+  answer?: string;
+}
+
+export interface AdminFaq {
+  id: string;
+  serviceId?: string;
+  serviceName?: string;
+  suggestedFor?: string;       // CSV intents
+  suggestionEnabled: boolean;
+  displayOrder?: number;
+  isPublished: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  translations: FaqTranslation[];
+}
+
+export interface FaqUpsertPayload {
+  serviceId?: string;
+  displayOrder?: number;
+  isPublished?: boolean;
+  suggestedFor?: string;
+  suggestionEnabled?: boolean;
+  translations: Array<{ locale: string; question: string; answer?: string }>;
+}
+
+export const faqApi = {
+  list: (params?: { page?: number; size?: number; isPublished?: boolean; search?: string }) =>
+    api.get<PageResponse<AdminFaq>>(`/admin/faqs`, params),
+
+  get: (id: string) => api.get<AdminFaq>(`/admin/faqs/${id}`),
+
+  create: (body: FaqUpsertPayload) => api.post<AdminFaq>(`/admin/faqs`, body),
+
+  update: (id: string, body: Partial<FaqUpsertPayload>) =>
+    api.put<AdminFaq>(`/admin/faqs/${id}`, body),
+
+  delete: (id: string) => api.del<void>(`/admin/faqs/${id}`),
+
+  toggleSuggestion: (id: string) =>
+    api.post<AdminFaq>(`/admin/faqs/${id}/toggle-suggestion`, {}),
 };
 
 // ============================================================

@@ -127,8 +127,11 @@ export async function submitBooking(payload: SubmitBookingPayload): Promise<Book
   return unwrap(response.data);
 }
 
-export async function fetchLawyers(): Promise<LawyerApiResponse[]> {
-  const response = await apiClient.get<{ data: { content: LawyerApiResponse[] } }>('/public/lawyers');
+export async function fetchLawyers(serviceSlug?: string): Promise<LawyerApiResponse[]> {
+  const params: Record<string, string> = {};
+  if (serviceSlug) params.serviceSlug = serviceSlug;
+
+  const response = await apiClient.get<{ data: { content: LawyerApiResponse[] } }>('/public/lawyers', { params });
   return unwrap(response.data).content;
 }
 

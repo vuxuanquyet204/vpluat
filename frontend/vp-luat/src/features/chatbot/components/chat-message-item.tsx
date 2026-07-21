@@ -1,6 +1,7 @@
 'use client';
 
 import type { ChatMessage } from '../types';
+import { ChatFaqSuggestions } from './chat-faq-suggestions';
 
 interface ChatMessageItemProps {
   message: ChatMessage;
@@ -58,6 +59,9 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
         </div>
         {isBot && (
           <span className="msg__time">{formatTime(message.timestamp)}</span>
+        )}
+        {isBot && message.suggestedFaqs && message.suggestedFaqs.length > 0 && (
+          <ChatFaqSuggestions items={message.suggestedFaqs} />
         )}
       </div>
 

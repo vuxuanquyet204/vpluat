@@ -22,6 +22,9 @@ export interface LawyerDTO {
   isFeatured?: boolean;
   workingHours?: string;
   createdAt?: string;
+  serviceIds?: string[];
+  serviceNames?: string[];
+  serviceSlugs?: string[];
 }
 
 export interface LawyerApiResponse {
@@ -45,14 +48,17 @@ export interface LawyerApiResponse {
   avatar?: string;
   isFeatured?: boolean;
   workingHours?: string;
+  serviceIds?: string[];
+  serviceNames?: string[];
+  serviceSlugs?: string[];
 }
 
 function mapLawyerDto(dto: LawyerDTO): LawyerApiResponse {
   const nameParts = dto.nameVi?.split(' ') || dto.nameEn?.split(' ') || [];
-  const initials = nameParts.length > 1 
+  const initials = nameParts.length > 1
     ? nameParts.map(n => n[0]).join('').toUpperCase().slice(-3)
     : (dto.nameVi || dto.nameEn || 'LS').slice(0, 2).toUpperCase();
-    
+
   return {
     id: dto.id,
     slug: dto.slug || '',
@@ -61,7 +67,7 @@ function mapLawyerDto(dto: LawyerDTO): LawyerApiResponse {
     bio: dto.bioVi || dto.bioEn || '',
     initials,
     avatarColor: 'linear-gradient(135deg, #1E3A5F, #C9A84C)',
-    specialties: [],
+    specialties: dto.serviceSlugs || [],
     experience: dto.experienceYears || 0,
     languages: dto.languages || ['Tiếng Việt'],
     isVerified: true,
@@ -69,13 +75,16 @@ function mapLawyerDto(dto: LawyerDTO): LawyerApiResponse {
     isFeatured: dto.isFeatured || false,
     workingHours: dto.workingHours,
     email: dto.userEmail,
+    serviceIds: dto.serviceIds,
+    serviceNames: dto.serviceNames,
+    serviceSlugs: dto.serviceSlugs,
   };
 }
 
-export async function getLawyers(page = 0, size = 20): Promise<LawyerApiResponse[]> {
+export async function getLawyers(page = 0, size = 20, serviceSlug?: string): Promise<LawyerApiResponse[]> {
   try {
     const { data } = await apiClient.get<ApiResponse<{ content: LawyerDTO[] }>>('/public/lawyers', {
-      params: { page, size },
+      params: { page, size, ...(serviceSlug ? { serviceSlug } : {}) },
     });
     if (data.success && data.data?.content) {
       return data.data.content.map(mapLawyerDto);

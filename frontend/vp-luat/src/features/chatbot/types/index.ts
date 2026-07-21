@@ -20,6 +20,7 @@ export interface ChatMessage {
   inputPrompt?: InputPrompt;
   isStreaming?: boolean;
   disclaimer?: string;
+  suggestedFaqs?: FaqSuggestion[];
 }
 
 export interface ChatContext {
@@ -54,6 +55,27 @@ export interface StreamChunk {
   inputPrompt?: InputPrompt;
   intent?: string;
   error?: string;
+  suggestedFaqs?: FaqSuggestion[];
+}
+
+/** Backend `/api/chatbot/message` response envelope (single-shot JSON). */
+export interface FaqSuggestion {
+  id: string;
+  question: string;
+  answer?: string;
+  relevance?: number;
+}
+
+export interface ChatbotStreamResponse {
+  sessionId?: string;
+  content?: string;
+  intent?: string;
+  confidence?: number;
+  escalated?: boolean;
+  action?: string;
+  done?: boolean;
+  timestamp?: string;
+  suggestedFaqs?: FaqSuggestion[];
 }
 
 export interface SendMessagePayload {

@@ -13,8 +13,8 @@ export type { Service, Lawyer } from './use-services';
 import type { Service, Lawyer } from './use-services';
 
 export function useAssignment() {
-  const { data: services = [], refetch: refetchServices } = useServices();
-  const { data: lawyers = [], refetch: refetchLawyers } = useLawyers();
+  const { data: services = [], refetch: refetchServices, error: servicesError } = useServices();
+  const { data: lawyers = [], refetch: refetchLawyers, error: lawyersError } = useLawyers();
 
   const qc = useQueryClient();
 
@@ -152,6 +152,8 @@ export function useAssignment() {
   return {
     services: services.filter((s) => s.isActive),
     lawyers: lawyers.filter((l) => l.isActive),
+    servicesError,
+    lawyersError,
     isAssigned,
     toggle,
     saveBatch,

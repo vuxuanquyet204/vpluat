@@ -1,9 +1,11 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { Calendar } from 'lucide-react';
+import { useFeaturedLawyers } from '@/features/lawyers/hooks/use-lawyers';
+import type { LawyerApiResponse } from '@/features/lawyers/api/lawyers-api';
 
-// Social icons as inline SVGs
 function FacebookIcon({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
@@ -20,38 +22,18 @@ function LinkedinIcon({ size = 16 }: { size?: number }) {
   );
 }
 
-const LAWYERS = [
-  {
-    name: 'Nguyễn Văn Hùng',
-    position: 'Luật sư - Giám đốc',
-    tags: ['Doanh nghiệp', 'M&A'],
-    experience: '18 năm kinh nghiệm',
-    image: '/images/lawyers/lawyer-1.jpg',
-  },
-  {
-    name: 'Trần Thị Mai Lan',
-    position: 'Luật sư cao cấp',
-    tags: ['Đất đai', 'Dân sự'],
-    experience: '15 năm kinh nghiệm',
-    image: '/images/lawyers/lawyer-2.jpg',
-  },
-  {
-    name: 'Lê Minh Đức',
-    position: 'Luật sư',
-    tags: ['Hình sự', 'Lao động'],
-    experience: '12 năm kinh nghiệm',
-    image: '/images/lawyers/lawyer-3.jpg',
-  },
-  {
-    name: 'Phạm Thu Hà',
-    position: 'Luật sư',
-    tags: ['Hành chính', 'Đất đai'],
-    experience: '10 năm kinh nghiệm',
-    image: '/images/lawyers/lawyer-4.jpg',
-  },
-];
+function getSpecialtyLabels(lawyer: LawyerApiResponse): string[] {
+  if (lawyer.serviceNames && lawyer.serviceNames.length > 0) {
+    return lawyer.serviceNames.filter((s): s is string => !!s);
+  }
+  return lawyer.specialties ?? [];
+}
 
 export function LawyersSection() {
+  const { data: lawyers = [], isLoading } = useFeaturedLawyers();
+
+  const featuredLawyers = useMemo(() => lawyers.slice(0, 4), [lawyers]);
+
   return (
     <section className="section section--gray">
       <div className="container">
@@ -64,18 +46,26 @@ export function LawyersSection() {
         </div>
 
         <div className="team__grid">
-          {LAWYERS.map((lawyer) => {
-            const lawyerInitials = lawyer.name
-              .split(' ')
-              .filter(Boolean)
-              .slice(-2)
-              .map((part) => part[0])
-              .join('');
-
+          {!isLoading && featuredLawyers.length === 0 && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#666' }}>
+              Đang cập nhật...
+            </p>
+          )}
+          {isLoading && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#666' }}>
+              Đang tải đội ngũ luật sư...
+            </p>
+          )}
+          {featuredLawyers.map((lawyer) => {
+            const tags = getSpecialtyLabels(lawyer);
             return (
-              <div key={lawyer.name} className="lawyer-card">
+              <div key={lawyer.id} className="lawyer-card">
                 <div className="lawyer-card__image lawyer-card__image--placeholder">
-                  <div className="lawyer-card__avatar lawyer-card__avatar--static">{lawyerInitials}</div>
+                  {lawyer.avatar ? (
+                    <img src={lawyer.avatar} alt={lawyer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div className="lawyer-card__avatar lawyer-card__avatar--static">{lawyer.initials}</div>
+                  )}
                   <div className="lawyer-card__overlay">
                     <div className="lawyer-card__socials">
                       <a href="#" className="lawyer-card__social" aria-label="Facebook">
@@ -91,8 +81,8 @@ export function LawyersSection() {
                   <h3 className="lawyer-card__name">{lawyer.name}</h3>
                   <p className="lawyer-card__position">{lawyer.position}</p>
                   <div className="lawyer-card__tags">
-                    {lawyer.tags.map((tag) => (
-                      <span key={tag} className="lawyer-card__tag">
+                    {tags.map((tag, i) => (
+                      <span key={`${tag}-${i}`} className="lawyer-card__tag">
                         {tag}
                       </span>
                     ))}
@@ -102,11 +92,11 @@ export function LawyersSection() {
                       <Calendar size={14} />
                     </span>
                     <span className="lawyer-card__exp-text">
-                      <strong>{lawyer.experience}</strong>
+                      <strong>{lawyer.experience} năm kinh nghiệm</strong>
                     </span>
                   </div>
                   <Link
-                    href={`/luat-su/${lawyer.name.toLowerCase().replace(/\s+/g, '-')}`}
+                    href={`/lawyers/${lawyer.id}`}
                     className="lawyer-card__btn"
                   >
                     Xem hồ sơ

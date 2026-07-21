@@ -172,10 +172,17 @@ export function LawyersTable({
           <span style={{ fontSize: '0.78rem', color: 'var(--gray-600)' }}>
             {l.serviceIds.length === 0
               ? '—'
-              : l.serviceIds
-                  .map((id) => serviceMap.get(id)?.name ?? id)
-                  .slice(0, 2)
-                  .join(', ') + (l.serviceIds.length > 2 ? ` +${l.serviceIds.length - 2}` : '')}
+              : (() => {
+                  // Ưu tiên serviceNames từ BE (tránh hiển thị UUID thô).
+                  // Fallback sang serviceMap khi backend cũ chưa populate.
+                  const names = (l.serviceNames && l.serviceNames.length === l.serviceIds.length)
+                    ? l.serviceNames
+                    : l.serviceIds.map((id) => serviceMap.get(id)?.name ?? null);
+                  return names
+                    .map((name, idx) => name ?? `#${l.serviceIds[idx].slice(0, 8)}`)
+                    .slice(0, 2)
+                    .join(', ') + (l.serviceIds.length > 2 ? ` +${l.serviceIds.length - 2}` : '');
+                })()}
           </span>
         </div>
       ),

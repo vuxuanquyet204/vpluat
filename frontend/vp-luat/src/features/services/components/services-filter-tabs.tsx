@@ -2,35 +2,50 @@
 
 import { useMemo } from 'react';
 import { FilterBar } from '@/components/layout/filter-bar';
-import { SERVICE_CATEGORIES, SERVICES } from '../lib/data/services-data';
-import type { ServiceCategory } from '../types';
+import { useServices } from '../hooks/use-services';
 
 interface ServicesFilterTabsProps {
-  active: 'all' | ServiceCategory;
-  onChange: (value: 'all' | ServiceCategory) => void;
+  active: string;
+  onChange: (value: string) => void;
 }
 
 export function ServicesFilterTabs({ active, onChange }: ServicesFilterTabsProps) {
+  const { data: services = [] } = useServices();
+
+  // Nhóm service theo `category` slug (BE trả về). Nếu service không có category
+  // (category = null) thì gom vào nhóm "other".
+  const grouped = useMemo(() => {
+    const groups = new Map<string, { label: string; icon: string; count: number }>();
+    services.forEach((s) => {
+      const key = s.category || 'other';
+      if (!groups.has(key)) {
+        groups.set(key, { label: s.parentName || key, icon: 'fa-solid fa-folder', count: 0 });
+      }
+      groups.get(key)!.count += 1;
+    });
+    return groups;
+  }, [services]);
+
   const options = useMemo(() => {
     const allOption = {
-      id: 'all' as const,
+      id: 'all',
       label: 'Tất cả',
       icon: 'fa-solid fa-layer-group',
-      count: SERVICES.length,
+      count: services.length,
     };
-    const seen = new Set<string>(['all']);
-    const categories = SERVICE_CATEGORIES.filter((c) => !seen.has(c.id))
-      .map((cat) => {
-        seen.add(cat.id);
-        return {
-          id: cat.id as ServiceCategory,
-          label: cat.label,
-          icon: cat.icon,
-          count: SERVICES.filter((s) => s.category === (cat.id as ServiceCategory)).length,
-        };
-      });
-    return [allOption, ...categories];
-  }, []);
+    const categoryOptions = Array.from(grouped.entries()).map(([slug, info]) => ({
+      id: slug,
+      label: info.label,
+      icon: info.icon,
+      count: info.count,
+    }));
+    return [allOption, ...categoryOptions];
+  }, [services, grouped]);
+
+  const resultCount = useMemo(() => {
+    if (active === 'all') return services.length;
+    return services.filter((s) => (s.category || 'other') === active).length;
+  }, [active, services]);
 
   return (
     <FilterBar
@@ -38,7 +53,7 @@ export function ServicesFilterTabs({ active, onChange }: ServicesFilterTabsProps
       options={options}
       active={active}
       onChange={onChange}
-      resultCount={active === 'all' ? SERVICES.length : SERVICES.filter((s) => s.category === active).length}
+      resultCount={resultCount}
       resultLabel="dịch vụ"
     />
   );

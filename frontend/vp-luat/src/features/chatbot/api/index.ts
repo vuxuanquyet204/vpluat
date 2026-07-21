@@ -1,1 +1,1 @@
-export { sendMessage, createSession, getSessionHistory } from './chatbot-api';
+export { sendMessage, getSessionHistory } from './chatbot-api';

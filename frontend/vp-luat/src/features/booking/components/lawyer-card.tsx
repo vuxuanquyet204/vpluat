@@ -53,10 +53,16 @@ export function LawyerCard({
         <Check className="h-3 w-3" />
       </span>
       <span
-        className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/30 font-heading text-[1.3rem] font-bold text-white"
-        style={{ background: lawyer.avatarGradient }}
+        className="relative mx-auto mb-3 block h-16 w-16 overflow-hidden rounded-full border-2 border-white/30"
+        style={!lawyer.avatarUrl ? { background: lawyer.avatarGradient } : undefined}
       >
-        {lawyer.initials}
+        {lawyer.avatarUrl ? (
+          <img src={lawyer.avatarUrl} alt={lawyer.name} className="h-full w-full object-cover" />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center font-heading text-[1.3rem] font-bold text-white">
+            {lawyer.initials}
+          </span>
+        )}
       </span>
       <span className="mb-1 block text-[0.875rem] font-bold text-[var(--primary)]">{lawyer.name}</span>
       <span className="mb-2 block text-[0.75rem] text-[var(--gray-500)]">{lawyer.specialty}</span>

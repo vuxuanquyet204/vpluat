@@ -7,7 +7,7 @@ import { useAdminUIStore } from '@/features/admin/store';
 import { ADMIN_NAV_SECTIONS } from '@/features/admin/constants';
 import { useSidebarBadges } from '@/features/admin/lib/use-sidebar-badges';
 import { Scale, LogOut } from 'lucide-react';
-import { clearAuthToken, setLoggingOut } from '@/lib/api/client';
+import { clearAuthToken, setLoggingOut, callServerLogout } from '@/lib/api/client';
 function LogoutButton() {
   const { closeSidebar } = useAdminUIStore();
 
@@ -16,13 +16,14 @@ function LogoutButton() {
     clearAuthToken();
     if (typeof window !== 'undefined') {
       try {
-        window.localStorage.removeItem('admin-impersonated-user');
-        window.localStorage.removeItem('vp-luat-admin-current-user');
+        window.sessionStorage.removeItem('admin-impersonated-user');
+        window.sessionStorage.removeItem('vp-luat-admin-current-user');
       } catch {
         // ignore
       }
     }
     closeSidebar();
+    await callServerLogout();
     await signOut({ callbackUrl: '/login', redirect: true });
   };
 

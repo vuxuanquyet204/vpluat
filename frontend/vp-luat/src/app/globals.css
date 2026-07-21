@@ -2806,6 +2806,108 @@
   color: white;
 }
 
+/* FAQ Suggestions (chatbot → admin-managed questions) */
+.chat-faq-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0 0;
+  padding: 0 14px;
+}
+
+.chat-faq-suggestions__header {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.chat-faq-suggestions__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-faq-suggestion {
+  background: white;
+  border: 1px solid var(--gray-100);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.chat-faq-suggestion__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 7px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  cursor: pointer;
+  text-align: left;
+}
+
+.chat-faq-suggestion__trigger:hover {
+  background: var(--gray-50);
+}
+
+.chat-faq-suggestion__question {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.chat-faq-suggestion__body {
+  padding: 0 10px 8px;
+  font-size: 0.78rem;
+  color: var(--gray-700);
+  border-top: 1px dashed var(--gray-100);
+}
+
+.chat-faq-suggestion__body p {
+  margin: 6px 0;
+  line-height: 1.45;
+}
+
+.chat-faq-suggestion__empty {
+  color: var(--gray-400);
+  font-style: italic;
+}
+
+.chat-faq-suggestion__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--primary-faint, #EFF3F8);
+  color: var(--primary);
+  border: none;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chat-faq-suggestion__cta:hover {
+  background: var(--primary);
+  color: white;
+}
+
 /* Input Area */
 .chat-input-area {
   background: white;
