@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin/posts")
 @RequiredArgsConstructor
+@Slf4j
 @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('EDITOR')")
 @Tag(name = "Admin - Posts", description = "Post management endpoints")
 public class PostController {
@@ -35,43 +38,58 @@ public class PostController {
 
     @PostMapping
     @Operation(summary = "Create a new post")
+    @CacheEvict(value = "posts", allEntries = true)
     public ResponseEntity<ApiResponse<PostDTO>> createPost(
             @Valid @RequestBody PostRequest request,
             @RequestAttribute("userId") UUID authorId) {
+        log.info("Creating post: {}", request.slug());
         PostDTO post = postService.createPost(request, authorId);
+        log.info("Post created, cache evicted");
         return ResponseEntity.ok(ApiResponse.success("Post created successfully", post));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a post")
+    @CacheEvict(value = "posts", allEntries = true)
     public ResponseEntity<ApiResponse<PostDTO>> updatePost(
             @PathVariable UUID id,
             @Valid @RequestBody PostRequest request) {
+        log.info("Updating post: {}", id);
         PostDTO post = postService.updatePost(id, request);
+        log.info("Post updated, cache evicted");
         return ResponseEntity.ok(ApiResponse.success("Post updated successfully", post));
     }
 
     @PatchMapping("/{id}/publish")
     @Operation(summary = "Publish a post")
+    @CacheEvict(value = "posts", allEntries = true)
     public ResponseEntity<ApiResponse<PostDTO>> publishPost(@PathVariable UUID id) {
+        log.info("Publishing post: {}", id);
         PostDTO post = postService.publishPost(id);
+        log.info("Post published, cache evicted");
         return ResponseEntity.ok(ApiResponse.success("Post published successfully", post));
     }
 
     @PatchMapping("/{id}/archive")
     @Operation(summary = "Archive a post")
+    @CacheEvict(value = "posts", allEntries = true)
     public ResponseEntity<ApiResponse<PostDTO>> archivePost(@PathVariable UUID id) {
+        log.info("Archiving post: {}", id);
         PostDTO post = postService.archivePost(id);
+        log.info("Post archived, cache evicted");
         return ResponseEntity.ok(ApiResponse.success("Post archived successfully", post));
     }
 
     @PatchMapping("/{id}/schedule")
     @Operation(summary = "Schedule a post for future publication")
+    @CacheEvict(value = "posts", allEntries = true)
     public ResponseEntity<ApiResponse<PostDTO>> schedulePost(
             @PathVariable UUID id,
             @RequestParam("at") String at) {
+        log.info("Scheduling post: {} at {}", id, at);
         Instant when = Instant.parse(at);
         PostDTO post = postService.schedulePost(id, when);
+        log.info("Post scheduled, cache evicted");
         return ResponseEntity.ok(ApiResponse.success("Post scheduled", post));
     }
 
@@ -98,18 +116,24 @@ public class PostController {
 
     @PostMapping("/{id}/revisions/{revisionId}/restore")
     @Operation(summary = "Restore the post to the state captured by the given revision")
+    @CacheEvict(value = "posts", allEntries = true)
     public ResponseEntity<ApiResponse<Void>> restoreRevision(
             @PathVariable UUID id,
             @PathVariable UUID revisionId) {
+        log.info("Restoring revision {} for post: {}", revisionId, id);
         postErpService.restoreRevision(id, revisionId);
+        log.info("Revision restored, cache evicted");
         return ResponseEntity.ok(ApiResponse.success("Post restored", null));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(summary = "Delete a post")
+    @CacheEvict(value = "posts", allEntries = true)
     public ResponseEntity<ApiResponse<Void>> deletePost(@PathVariable UUID id) {
+        log.info("Deleting post: {}", id);
         postService.deletePost(id);
+        log.info("Post deleted, cache evicted");
         return ResponseEntity.ok(ApiResponse.success("Post deleted successfully", null));
     }
 

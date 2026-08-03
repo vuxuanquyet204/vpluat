@@ -61,21 +61,21 @@ public class RedisConfig {
      * date/time types (Instant, LocalDateTime, etc.) serialize to ISO-8601
      * strings instead of causing {@link com.fasterxml.jackson.databind.exc.InvalidDefinitionException}.
      * <p>
-     * {@code OBJECT_AND_NON_CONCRETE} is used so that the serializer embeds
-     * {@code @class} metadata for any non-concrete type (e.g. {@code PageResponse},
-     * {@code ArrayList}) into the JSON.  When Redis deserializes, Jackson reads the
-     * metadata and instantiates the correct concrete class.  Without this the cache
-     * throws {@code ClassCastException: LinkedHashMap cannot be cast to PageResponse}.
+     * Default typing is enabled with {@code EVERYTHING} so the serializer
+     * embeds {@code @class} metadata for all non-final types — including
+     * plain {@code Object} fields. Without this, the cache throws
+     * {@code MismatchedInputException: Unexpected token (START_OBJECT),
+     * expected VALUE_STRING} when reading back values written under a
+     * different serializer configuration (e.g. across deployments with
+     * different module sets).
      */
     private static ObjectMapper redisObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        // Embed concrete-type metadata so GenericJackson2JsonRedisSerializer can
-        // deserialize back to the proper classes (e.g. PageResponseImpl, PostDTO).
         mapper.activateDefaultTyping(
             LaissezFaireSubTypeValidator.instance,
-            ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS,
+            ObjectMapper.DefaultTyping.EVERYTHING,
             JsonTypeInfo.As.PROPERTY
         );
         return mapper;

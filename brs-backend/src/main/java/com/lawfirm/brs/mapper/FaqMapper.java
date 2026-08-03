@@ -14,11 +14,15 @@ public interface FaqMapper {
 
     @Named("faqToDTO")
     @Mapping(target = "serviceId", source = "service.id")
+    @Mapping(target = "question", ignore = true)
+    @Mapping(target = "answer", ignore = true)
     FaqDTO toDTO(Faq faq);
 
     @Named("faqToDTOWithDetails")
     @Mapping(target = "serviceId", source = "service.id")
     @Mapping(target = "includeContent", constant = "true")
+    @Mapping(target = "question", ignore = true)
+    @Mapping(target = "answer", ignore = true)
     FaqDTO toDTOWithDetails(Faq faq);
 
     List<FaqDTO> toDTOList(List<Faq> faqs);

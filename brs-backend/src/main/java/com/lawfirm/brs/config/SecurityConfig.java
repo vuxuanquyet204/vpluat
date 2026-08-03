@@ -1,5 +1,6 @@
 package com.lawfirm.brs.config;
 
+import com.lawfirm.brs.security.AuthCookieHelper;
 import com.lawfirm.brs.security.RateLimitFilter;
 import com.lawfirm.brs.service.auth.JwtTokenProvider;
 import com.lawfirm.brs.service.auth.RefreshTokenStore;
@@ -38,6 +39,7 @@ public class SecurityConfig {
     private final RefreshTokenStore refreshTokenStore;
     private final RateLimitFilter rateLimitFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final AuthCookieHelper authCookieHelper;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
@@ -49,7 +51,7 @@ public class SecurityConfig {
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers("/api/auth/login", "/api/auth/refresh",
+                .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
                     "/api/auth/forgot-password", "/api/auth/reset-password",
                     "/api/auth/register").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
@@ -77,7 +79,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
-            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService),
+            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService, authCookieHelper),
                 UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(rateLimitFilter, JwtAuthenticationFilter.class)
             .build();

@@ -35,6 +35,16 @@ public class LawyerDTO {
     private List<String> languages;
     private String avatarUrl;
     private List<UUID> serviceIds;
+    /**
+     * Tên hiển thị của các dịch vụ tương ứng với {@link #serviceIds} theo cùng thứ tự.
+     * FE dùng để hiển thị tên dịch vụ thay vì UUID.
+     */
+    private List<String> serviceNames;
+    /**
+     * Slug của các dịch vụ tương ứng với {@link #serviceIds} theo cùng thứ tự.
+     * FE dùng để filter/lọc luật sư theo dịch vụ mà không phụ thuộc vào tên hiển thị.
+     */
+    private List<String> serviceSlugs;
     private Boolean isFeatured;
     private Map<String, Object> workingHours;
     private Instant createdAt;

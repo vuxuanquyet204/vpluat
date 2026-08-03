@@ -39,16 +39,18 @@ export function useLawyerSchedule(lawyerId: string | null | undefined) {
     Awaited<ReturnType<typeof lawyerScheduleApi.getSchedule>>
   >(
     ['lawyer-schedule', lawyerId],
-    lawyerId ? `/admin/lawyers/${lawyerId}/schedule` : '/admin/lawyers',
+    `/admin/lawyers/${lawyerId}/schedule`,
     undefined,
     { enabled: Boolean(lawyerId) },
   );
 
   const scheduleByDay = useMemo(() => {
     const map: Record<number, DaySchedule> = { ...DEFAULT_SCHEDULE };
-    if (!lawyerId) return map;
-    for (const s of queryResult.data ?? []) {
-      map[s.dayOfWeek] = { isOff: s.isOff, slots: s.slots };
+    if (!lawyerId || !queryResult.data) return map;
+    for (const s of queryResult.data) {
+      if (s && typeof s.dayOfWeek === 'number') {
+        map[s.dayOfWeek] = { isOff: s.isOff ?? true, slots: s.slots ?? [] };
+      }
     }
     return map;
   }, [lawyerId, queryResult.data]);

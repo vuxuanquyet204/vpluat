@@ -2,6 +2,7 @@ package com.lawfirm.brs.mapper;
 
 import com.lawfirm.brs.dto.response.AppointmentDTO;
 import com.lawfirm.brs.entity.Appointment;
+import org.mapstruct.IterableMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -33,5 +34,12 @@ public interface AppointmentMapper {
     @Mapping(target = "includeOtpDetails", constant = "false")
     AppointmentDTO toDTOWithDetails(Appointment appointment);
 
+    /** Convenience helper used by callers that only need the booked client + schedule
+     * (calendar view). Drop the OTP/internal fields by routing through {@link #toDTOWithDetails}. */
+    @IterableMapping(qualifiedByName = "appointmentToDTOWithDetails")
+    List<AppointmentDTO> toDTOListWithDetails(List<Appointment> appointments);
+
+    /** Default list mapping still resolves to the basic DTO. For calendar, prefer {@link #toDTOListWithDetails(List)}. */
+    @IterableMapping(qualifiedByName = "appointmentToDTO")
     List<AppointmentDTO> toDTOList(List<Appointment> appointments);
 }

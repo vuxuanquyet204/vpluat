@@ -13,6 +13,7 @@ import {
   LayoutTemplate,
   Bell,
   History,
+  Briefcase,
 } from 'lucide-react';
 
 export type SidebarBadgeSource = 'new-leads' | 'pending-bookings' | 'pending-reviews' | 'unread-notifications';
@@ -69,6 +70,13 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
         href: '/admin/blog',
       },
       {
+        id: 'case-studies',
+        labelKey: 'nav.case_studies',
+        label: 'Case Studies',
+        icon: Briefcase,
+        href: '/admin/case-studies',
+      },
+      {
         id: 'services',
         labelKey: 'nav.services',
         label: 'Dịch vụ & Luật sư',
@@ -89,20 +97,22 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
         icon: Bot,
         href: '/admin/chatbot',
       },
-      {
-        id: 'newsletter',
-        labelKey: 'nav.newsletter',
-        label: 'Newsletter',
-        icon: Mail,
-        href: '/admin/newsletter',
-      },
-      {
-        id: 'landing-pages',
-        labelKey: 'nav.landing_pages',
-        label: 'Landing Pages',
-        icon: LayoutTemplate,
-        href: '/admin/landing-pages',
-      },
+      // Hidden: chức năng Newsletter chưa cần thiết
+      // {
+      //   id: 'newsletter',
+      //   labelKey: 'nav.newsletter',
+      //   label: 'Newsletter',
+      //   icon: Mail,
+      //   href: '/admin/newsletter',
+      // },
+      // Hidden: chức năng Landing Pages chưa cần thiết
+      // {
+      //   id: 'landing-pages',
+      //   labelKey: 'nav.landing_pages',
+      //   label: 'Landing Pages',
+      //   icon: LayoutTemplate,
+      //   href: '/admin/landing-pages',
+      // },
     ],
   },
   {

@@ -1411,7 +1411,10 @@ export default function DashboardPage() {
       const resp = await fetch(`${base}/admin/dashboard/export/csv?range=${dateRange}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        throw new Error(`HTTP ${resp.status}: ${errorText || resp.statusText}`);
+      }
       const blob = await resp.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1423,8 +1426,10 @@ export default function DashboardPage() {
       URL.revokeObjectURL(url);
       notifySuccess('Đã xuất báo cáo (từ backend)', filename);
       return;
-    } catch {
+    } catch (err) {
       // Fallback xuong CSV client-side tu data dang hien thi
+      console.warn('Backend CSV export failed, using client-side fallback:', err);
+      notifyError('Export backend lỗi, dùng dữ liệu hiện tại', err instanceof Error ? err.message : 'Unknown error');
     }
     const lines: string[] = [];
     lines.push(`Báo cáo Dashboard — Văn Phòng Luật`);

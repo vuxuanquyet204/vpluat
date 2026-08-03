@@ -4,7 +4,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import type { User } from '@/features/auth/types/user';
 import { validateRole, validatePermissions } from '@/features/auth/utils/permissions';
-import { callServerLogout } from '@/lib/api/client';
+import { callServerLogout, clearAuthToken, setLoggingOut } from '@/lib/api/client';
 
 export interface AuthState {
   isAuthenticated: boolean;
@@ -34,11 +34,21 @@ export function useAuth(): AuthState & { logout: (callbackUrl?: string) => Promi
     isLoading: status === 'loading',
     user: status === 'authenticated' ? toAppUser(session?.user) : null,
     logout: async (callbackUrl = '/login') => {
-      // First revoke the refresh-token server-side (clears HttpOnly cookie
-      // and removes the token from Redis).  Then clear the NextAuth session
-      // so /login renders cleanly.  We always do NextAuth signOut even if
-      // the network call fails — otherwise the user is stranded.
+      // Mark that we're logging out so the interceptor won't try to
+      // refresh and redirect during the logout request.
+      setLoggingOut(true);
+
+      // Clear local tokens first so interceptor ignores any 401/403.
+      clearAuthToken();
+
+      // Revoke refresh token server-side (clears HttpOnly cookie
+      // and removes the token from Redis). Call this even if the
+      // access token is expired — the backend reads from the cookie
+      // as a fallback. Silently swallows network errors so signOut()
+      // always completes.
       await callServerLogout();
+
+      // Clear NextAuth session and redirect.
       await signOut({ redirect: true, callbackUrl });
     },
   };

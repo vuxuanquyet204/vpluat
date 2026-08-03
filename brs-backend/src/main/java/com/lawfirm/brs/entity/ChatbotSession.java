@@ -2,8 +2,11 @@ package com.lawfirm.brs.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -45,6 +48,21 @@ public class ChatbotSession {
     @Builder.Default
     private Boolean escalated = false;
 
+    /**
+     * Username of the staff member the session was handed off to.
+     * Captured when an admin/CSKH triggers the handoff via the admin UI.
+     */
+    @Column(name = "handoff_to")
+    private String handoffTo;
+
+    /** ISO-8601 timestamp of the original escalation. */
+    @Column(name = "handoff_at")
+    private Instant handoffAt;
+
+    /** User id of the admin/CSKH who performed the handoff (for audit). */
+    @Column(name = "handoff_by")
+    private UUID handoffBy;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lead_id")
     private Lead lead;
@@ -64,8 +82,9 @@ public class ChatbotSession {
     @Builder.Default
     private Boolean resolved = false;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "intent_summary", columnDefinition = "jsonb")
-    private String intentSummary;
+    private Map<String, Object> intentSummary;
 
     @PrePersist
     protected void onCreate() {

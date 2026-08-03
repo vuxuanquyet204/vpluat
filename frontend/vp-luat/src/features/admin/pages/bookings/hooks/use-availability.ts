@@ -10,9 +10,19 @@ export interface AvailabilitySlot {
   start: string; // HH:mm
   end: string;
   isAvailable: boolean;
-  bookingId?: string;
-  customerName?: string;
-  bookingTime?: string; // Original booking time for display
+  /** When `lawyerId === 'all'`, one cell can hold multiple conflicts. */
+  bookings: Array<{
+    bookingId: string;
+    customerName: string;
+    lawyerId: string | null;
+    lawyerName: string | null;
+    /** The booking's slot start (HH:mm) — used to label the cell. */
+    bookingTime: string;
+  }>;
+  /** How many lawyers are still bookable in this slot (0 means "all taken / off"). */
+  availableCount: number;
+  /** Lawyer IDs that are marked off for this date. */
+  offLawyerIds: string[];
 }
 
 export interface DayAvailability {
@@ -52,21 +62,34 @@ function getWeekDates(startDate: Date): string[] {
   return dates;
 }
 
-function getDayOfWeek(dateStr: string): number {
-  return new Date(dateStr + 'T00:00:00').getDay();
-}
-
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number);
   return h * 60 + m;
 }
 
-function isBookingInSlot(bookingTime: string, slotStart: string, slotEnd: string): boolean {
-  const bookingMinutes = timeToMinutes(bookingTime);
-  const slotStartMinutes = timeToMinutes(slotStart);
-  const slotEndMinutes = timeToMinutes(slotEnd);
-  // Booking overlaps with slot if it starts within the slot or spans across slot
-  return bookingMinutes >= slotStartMinutes && bookingMinutes < slotEndMinutes;
+/**
+ * Returns true iff [bookingStart, bookingStart + durationMinutes) intersects [slotStart, slotEnd).
+ * `durationMinutes` defaults to 60 when unknown.
+ */
+function isBookingInSlot(
+  bookingStart: number,
+  durationMinutes: number,
+  slotStart: number,
+  slotEnd: number,
+): boolean {
+  const bookingEnd = bookingStart + Math.max(durationMinutes, SLOT_INTERVAL_MINUTES);
+  return bookingStart < slotEnd && bookingEnd > slotStart;
+}
+
+/**
+ * Split a Date into local Y-M-D and H:M parts. Always uses the user's
+ * local timezone — booking dates are stored as UTC instants but the calendar
+ * grid should reflect local working hours.
+ */
+function splitLocal(date: Date): { ymd: string; hm: string } {
+  const ymd = format(date, 'yyyy-MM-dd');
+  const hm = format(date, 'HH:mm');
+  return { ymd, hm };
 }
 
 export function useAvailability(
@@ -95,7 +118,7 @@ export function useAvailability(
     staleTime: 30 * 1000,
   });
 
-  // Build lawyers list from schedules map
+  // Build lawyers list from schedules map (always has all lawyers with schedules).
   const lawyers = useMemo((): Lawyer[] => {
     return Object.entries(schedulesMap).map(([id, sched]) => ({
       id,
@@ -112,79 +135,108 @@ export function useAvailability(
     }));
   }, [schedulesMap]);
 
-  // Filter lawyers if specific one selected
-  const targetLawyers = useMemo(
-    () => (lawyerId === 'all' ? lawyers : lawyers.filter((l) => l.id === lawyerId)),
-    [lawyers, lawyerId],
-  );
+  // The lawyer IDs that the calendar needs to consider for "is this slot free":
+  //   - all lawyers when `lawyerId === 'all'`
+  //   - just the selected one otherwise
+  const targetLawyerIds = useMemo(() => {
+    if (lawyerId === 'all') {
+      return lawyers.map((l) => l.id);
+    }
+    return lawyers.filter((l) => l.id === lawyerId).map((l) => l.id);
+  }, [lawyers, lawyerId]);
 
   const days = useMemo((): DayAvailability[] => {
     const dates = getWeekDates(weekStart);
 
     return dates.map((date) => {
-      const dow = getDayOfWeek(date);
-      const slots: AvailabilitySlot[] = DEFAULT_SLOTS.map((slot) => {
-        // Get all bookings for this date that overlap with this slot
-        const overlappingBookings = bookings.filter((b) => {
-          if (!b.scheduledAt) return false;
-          
-          // Convert scheduledAt to local date/time for correct comparison
-          const scheduledDate = new Date(b.scheduledAt);
-          const bDate = format(scheduledDate, 'yyyy-MM-dd');
-          const bTime = format(scheduledDate, 'HH:mm');
-          
-          // Check date match
-          if (bDate !== date) return false;
-          
-          // Check if booking overlaps with this slot
-          if (!isBookingInSlot(bTime, slot.start, slot.end)) return false;
-          
-          // Check lawyer filter (b.lawyerId is UUID string from API)
-          if (lawyerId !== 'all' && b.lawyerId !== lawyerId) return false;
-          
-          // Skip cancelled bookings
-          if (b.status === 'CANCELLED') return false;
-          
-          return true;
-        });
+      const dow = (() => {
+        // 0=Sun .. 6=Sat — matches BE LawyerSchedule.dayOfWeek convention
+        const [y, m, d] = date.split('-').map(Number);
+        return new Date(y, m - 1, d).getDay();
+      })();
 
-        // Check if lawyer is off on this day (for the primary lawyer in filter)
-        let isOff = false;
-        if (targetLawyers.length > 0) {
-          const primaryLawyer = targetLawyers[0];
-          const lawyerSched = schedulesMap[primaryLawyer.id];
+      const slots: AvailabilitySlot[] = DEFAULT_SLOTS.map((slot) => {
+        const slotStart = timeToMinutes(slot.start);
+        const slotEnd = timeToMinutes(slot.end);
+
+        // Filter bookings down to: matching date, matching target lawyer(s),
+        // not cancelled, and overlapping this slot.
+        const overlappingBookings = bookings
+          .filter((b) => b.status !== 'CANCELLED' && b.scheduledAt)
+          .filter((b) => {
+            const { ymd, hm } = splitLocal(new Date(b.scheduledAt));
+            if (ymd !== date) return false;
+            const bookingStart = timeToMinutes(hm);
+            if (!isBookingInSlot(bookingStart, b.durationMinutes ?? 60, slotStart, slotEnd)) {
+              return false;
+            }
+            if (lawyerId !== 'all') {
+              // Specific lawyer: booking must belong to that lawyer.
+              if (!b.lawyerId || b.lawyerId !== lawyerId) return false;
+            } else {
+              // "All lawyers" view: bookings are split across all lawyers; we
+              // assign each to a specific cell only when there's no lawyerId
+              // mismatch with one of our tracked lawyers.
+              if (b.lawyerId && !targetLawyerIds.includes(b.lawyerId)) return false;
+            }
+            return true;
+          })
+          .map((b) => {
+            const { hm } = splitLocal(new Date(b.scheduledAt));
+            return {
+              bookingId: b.id,
+              customerName: b.clientName,
+              lawyerId: b.lawyerId ?? null,
+              lawyerName: b.lawyerName ?? null,
+              bookingTime: hm,
+            };
+          });
+
+        // Per-lawyer off-state map for the cell's date: { lawyerId: isOff }
+        const offState: Record<string, boolean> = {};
+        for (const lid of targetLawyerIds) {
+          const lawyerSched = schedulesMap[lid];
+          let isOff = false;
           if (lawyerSched) {
             const daySched = lawyerSched.regular?.find((s) => s.dayOfWeek === dow);
-            isOff = daySched?.isOff ?? false;
-            
-            // Check for override
-            const override = lawyerSched.overrides?.find(
-              (o) => o.overrideDate === date,
-            );
-            if (override?.type === 'off') {
-              isOff = true;
-            }
+            const override = lawyerSched.overrides?.find((o) => o.overrideDate === date);
+            // Off when: regular schedule marks it off, OR an override type=off exists.
+            isOff = Boolean(daySched?.isOff) || override?.type === 'off';
           }
+          offState[lid] = isOff;
         }
 
-        // If there are overlapping bookings, show the first one
-        const conflict = overlappingBookings[0];
-        
+        // Bookings that have a lawyerId (we know who owns them). For the
+        // "all lawyers" cell we only consider bookings whose lawyer is in the
+        // target set (overlappingBookings already filtered that above).
+        const bookedLawyerIds = new Set(
+          overlappingBookings
+            .map((b) => b.lawyerId)
+            .filter((id): id is string => Boolean(id)),
+        );
+
+        // Determine if there is at least one target lawyer that can still
+        // accept a new booking in this slot.
+        const availableLawyerIds = targetLawyerIds.filter(
+          (lid) => !offState[lid] && !bookedLawyerIds.has(lid),
+        );
+
+        const isAvailable = availableLawyerIds.length > 0;
+
         return {
           start: slot.start,
           end: slot.end,
-          isAvailable: !isOff && !conflict,
-          bookingId: conflict?.id,
-          customerName: conflict?.clientName,
-          bookingTime: conflict?.scheduledAt 
-            ? format(new Date(conflict.scheduledAt), 'HH:mm')
-            : undefined,
+          isAvailable,
+          bookings: overlappingBookings,
+          // Helpful metadata for the cell tooltip / labels.
+          availableCount: availableLawyerIds.length,
+          offLawyerIds: targetLawyerIds.filter((lid) => offState[lid]),
         };
       });
 
       return { date, dayOfWeek: dow, slots };
     });
-  }, [weekStart, schedulesMap, bookings, targetLawyers, lawyerId]);
+  }, [weekStart, schedulesMap, bookings, targetLawyerIds, lawyerId]);
 
   return { days, lawyers, isLoading: schedLoading };
 }

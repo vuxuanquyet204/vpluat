@@ -25,29 +25,35 @@ public class PublicFaqController {
 
     @GetMapping
     @Operation(summary = "Get all published FAQs")
-    public ResponseEntity<ApiResponse<List<FaqDTO>>> getAllFaqs() {
-        List<FaqDTO> faqs = faqService.getPublishedFaqs();
+    public ResponseEntity<ApiResponse<List<FaqDTO>>> getAllFaqs(
+            @RequestParam(defaultValue = "vi") String locale) {
+        List<FaqDTO> faqs = faqService.getPublishedFaqs(locale);
         return ResponseEntity.ok(ApiResponse.success(faqs));
     }
 
     @GetMapping("/featured")
     @Operation(summary = "Get featured FAQs")
-    public ResponseEntity<ApiResponse<List<FaqDTO>>> getFeaturedFaqs() {
-        List<FaqDTO> faqs = faqService.getFeaturedFaqs();
+    public ResponseEntity<ApiResponse<List<FaqDTO>>> getFeaturedFaqs(
+            @RequestParam(defaultValue = "vi") String locale) {
+        List<FaqDTO> faqs = faqService.getFeaturedFaqs(locale);
         return ResponseEntity.ok(ApiResponse.success(faqs));
     }
 
     @GetMapping("/service/{serviceId}")
     @Operation(summary = "Get FAQs by service")
-    public ResponseEntity<ApiResponse<List<FaqDTO>>> getFaqsByService(@PathVariable UUID serviceId) {
-        List<FaqDTO> faqs = faqService.getFaqsByService(serviceId);
+    public ResponseEntity<ApiResponse<List<FaqDTO>>> getFaqsByService(
+            @PathVariable UUID serviceId,
+            @RequestParam(defaultValue = "vi") String locale) {
+        List<FaqDTO> faqs = faqService.getFaqsByService(serviceId, locale);
         return ResponseEntity.ok(ApiResponse.success(faqs));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get FAQ by ID")
-    public ResponseEntity<ApiResponse<FaqDTO>> getFaqById(@PathVariable UUID id) {
-        FaqDTO faq = faqService.getFaqById(id);
+    public ResponseEntity<ApiResponse<FaqDTO>> getFaqById(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "vi") String locale) {
+        FaqDTO faq = faqService.getFaqById(id, locale);
         return ResponseEntity.ok(ApiResponse.success(faq));
     }
 }

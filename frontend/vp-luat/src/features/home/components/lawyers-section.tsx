@@ -96,7 +96,7 @@ export function LawyersSection() {
                     </span>
                   </div>
                   <Link
-                    href={`/lawyers/${lawyer.id}`}
+                    href={`/lawyers/${lawyer.slug || lawyer.id}`}
                     className="lawyer-card__btn"
                   >
                     Xem hồ sơ

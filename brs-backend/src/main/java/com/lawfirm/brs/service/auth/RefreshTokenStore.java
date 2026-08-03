@@ -20,6 +20,7 @@ public class RefreshTokenStore {
 
     private static final String REVOKE_PREFIX = "jwt:revoked:";
     private static final String USER_TOKENS_PREFIX = "jwt:user:";
+    private static final String USER_JTI_PREFIX = "jwt:user-jti:";
 
     /**
      * Revoke a specific token by JTI
@@ -52,11 +53,20 @@ public class RefreshTokenStore {
     }
 
     /**
-     * Save token JTI for a user
+     * Save token JTI for a user.
+     *
+     * <p>Each JTI is stored in its own short-lived key ({@code jwt:user-jti:<jti>})
+     * with the same TTL as the refresh token.  We then add the JTI to a
+     * per-user set so we can enumerate active tokens on reuse-attack detection.
+     * The set itself uses a sliding expiry (refreshed on every write) so that
+     * a user who keeps logging in doesn't see their set expire.
      */
     public void saveForUser(String userId, String jti) {
+        long ttl = 7 * 24 * 60 * 60; // 7 days, must match refresh-token expiry
+        // Track each JTI individually so it expires automatically.
+        redis.opsForValue().set(USER_JTI_PREFIX + jti, userId, Duration.ofSeconds(ttl));
         redis.opsForSet().add(USER_TOKENS_PREFIX + userId, jti);
-        redis.expire(USER_TOKENS_PREFIX + userId, Duration.ofDays(8));
+        redis.expire(USER_TOKENS_PREFIX + userId, Duration.ofSeconds(ttl));
     }
 
     /**

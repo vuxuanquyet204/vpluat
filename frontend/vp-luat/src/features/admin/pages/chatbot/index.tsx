@@ -55,20 +55,9 @@ export default function ChatbotPage() {
   const canRead = useCan('chatbot.read');
   const canWrite = useCan('chatbot.train');
   const canTrain = useCan('chatbot.train');
-  const canDelete = useCan('chatbot.read');
-
-  // DEBUG: log auth state
-  if (typeof window !== 'undefined') {
-    const stored = sessionStorage.getItem('vp-luat-admin-current-user');
-    if (stored) {
-      try {
-        const u = JSON.parse(stored);
-        console.log('[ChatbotPage] canRead:', canRead, '| user.role:', u.role, '| stored role:', stored ? JSON.parse(stored).role : null);
-      } catch {}
-    } else {
-      console.log('[ChatbotPage] canRead:', canRead, '| NO stored user');
-    }
-  }
+  // Sessions are never deleted from the UI — use "End session" instead.
+  // Keep canDelete=false here so the table never renders the delete action.
+  const canDelete = false;
 
   return (
     <div className="admin-view">

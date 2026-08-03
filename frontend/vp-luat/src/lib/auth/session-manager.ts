@@ -3,7 +3,6 @@
 
 import type { User } from '@/features/auth/types/user';
 import { validateRole, validatePermissions } from '@/features/auth/utils/permissions';
-import { clearAuthToken } from '@/lib/api/client';
 
 export interface AuthState {
   isAuthenticated: boolean;
@@ -25,8 +24,12 @@ export function toAppUser(sessionUser: { id?: string; email?: string | null; nam
   };
 }
 
-// Server-side helper to clear cached token reference.
-// Use this in server actions / route handlers before redirecting after sign-out.
-export function clearServerAuth() {
-  clearAuthToken();
+// Server-side helper. The previous implementation imported the client-side
+// axios-based token cache, which crashed when called from a server component
+// (axios reads `XMLHttpRequest` at import time). Token clearing on the server
+// is a no-op because the cache only ever lives in the browser; if any future
+// server-side action needs to invalidate auth state it should call NextAuth's
+// `signOut` instead.
+export function clearServerAuth(): void {
+  // no-op: clearAuthToken() requires the browser cache.
 }

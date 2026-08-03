@@ -19,13 +19,19 @@ export interface Appointment {
   serviceName?: string;
   scheduledAt: string;
   durationMinutes: number;
+  timezone?: string;
   meetingType: string;
+  meetingLink?: string;
   status: string;
   cancelReason?: string;
   internalNotes?: string;
   /** Client's description of their legal issue from the booking form. */
   issueSummary?: string;
   source?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  confirmedAt?: string;
   createdAt: string;
   updatedAt?: string;
 }

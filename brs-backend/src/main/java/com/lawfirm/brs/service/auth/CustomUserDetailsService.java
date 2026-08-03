@@ -32,6 +32,14 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User account is inactive");
         }
 
+        // Block locked accounts at the filter level too — otherwise an
+        // already-issued access token would keep working even after the
+        // user tripped the lockout threshold during /auth/login.
+        if (user.isLocked()) {
+            log.warn("User account is locked: {}", email);
+            throw new UsernameNotFoundException("User account is locked");
+        }
+
         return user;
     }
 }

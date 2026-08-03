@@ -69,7 +69,7 @@ public class BookingErpService {
         } else {
             appts = appointmentRepository.findByScheduledAtBetweenWithDetails(from, to);
         }
-        return appointmentMapper.toDTOList(appts);
+        return appointmentMapper.toDTOListWithDetails(appts);
     }
 
     /**

@@ -28,8 +28,10 @@ public class PublicLawyerController {
     @Operation(summary = "Get all lawyers with pagination")
     public ResponseEntity<ApiResponse<PageResponse<LawyerDTO>>> getAllLawyers(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        var lawyersPage = lawyerService.getLawyers(PageRequest.of(page, size));
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String serviceId,
+            @RequestParam(required = false) String serviceSlug) {
+        var lawyersPage = lawyerService.getLawyers(PageRequest.of(page, size), serviceId, serviceSlug);
         PageResponse<LawyerDTO> response = PageResponse.of(
             lawyersPage.getContent(),
             page,

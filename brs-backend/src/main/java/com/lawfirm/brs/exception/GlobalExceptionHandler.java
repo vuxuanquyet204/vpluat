@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
@@ -74,6 +75,41 @@ public class GlobalExceptionHandler {
             .body(ErrorResponse.of(ex.getErrorCode(), ex.getMessage()));
     }
 
+    /**
+     * Unparseable JSON body — e.g. a field sent by the client that's not on
+     * the DTO, or a syntactically broken payload. Without this handler Spring
+     * lets the exception bubble up and {@code @ExceptionHandler(Exception)}
+     * turns it into a 500, which masks what's actually a client-side mistake.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadableMessage(HttpMessageNotReadableException ex) {
+        // The wrapped Jackson exception carries the user-friendly detail
+        // (e.g. "Unrecognized field \"lawyerIds\"..."). Walking the cause
+        // chain keeps logs short without leaking internals to clients.
+        Throwable root = ex.getMostSpecificCause();
+        String message = root != null ? root.getMessage() : "Malformed JSON request body";
+        // Strip the source location JSON Jackson sometimes appends so the
+        // response stays tidy and doesn't echo internal field paths.
+        int sourceIdx = message.indexOf(" at [Source");
+        if (sourceIdx > 0) message = message.substring(0, sourceIdx);
+        log.warn("Rejected request: unparseable JSON body: {}", message);
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse.of("INVALID_REQUEST_BODY", message));
+    }
+
+    /**
+     * Argument-level validation that can't be expressed with {@code @Valid}
+     * annotations (e.g. cross-field checks done in the service layer).
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        log.warn("Rejected request: {}", ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse.of("INVALID_ARGUMENT", ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
@@ -82,7 +118,7 @@ public class GlobalExceptionHandler {
             String message = error.getDefaultMessage();
             errors.put(fieldName, message);
         });
-        
+
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(ErrorResponse.builder()

@@ -13,6 +13,7 @@ import {
   Briefcase,
   CalendarPlus,
   HandMetal,
+  Send,
 } from 'lucide-react';
 import { Drawer, ConfirmDialog } from '@/features/admin/components';
 import { StatusBadge, type StatusVariant } from '@/features/admin/shared';
@@ -25,6 +26,7 @@ import type {
 import {
   useHandoffSession,
   useEndSession,
+  useAdminReply,
   useCreateLeadFromSession,
   useCreateBookingFromSession,
   useSessionDetail,
@@ -348,6 +350,11 @@ export function ChatbotSessionDetail({ sessionId, onClose, onNavigate }: Chatbot
             </div>
           </div>
 
+          {/* Reply box — only enabled for sessions currently handed off */}
+          {session.status === 'handoff' && (
+            <ReplyComposer sessionId={session.id} onSent={() => undefined} />
+          )}
+
           {/* Actions */}
           <div>
             <div
@@ -531,5 +538,95 @@ function UserPlusIcon() {
       <line x1="20" y1="8" x2="20" y2="14" />
       <line x1="23" y1="11" x2="17" y2="11" />
     </svg>
+  );
+}
+
+function ReplyComposer({ sessionId, onSent }: { sessionId: string; onSent: () => void }) {
+  const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const reply = useAdminReply();
+  const trimmed = draft.trim();
+  const canSend = trimmed.length > 0 && !sending;
+
+  const submit = async () => {
+    if (!canSend) return;
+    setSending(true);
+    try {
+      await reply(sessionId, trimmed);
+      setDraft('');
+      onSent();
+    } catch {
+      // notifyError already fired inside the hook
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        padding: 10,
+        background: 'var(--blue-50, #EFF6FF)',
+        border: '1px solid #BFDBFE',
+        borderRadius: 8,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+      }}
+    >
+      <div
+        style={{
+          fontSize: '0.7rem',
+          fontWeight: 600,
+          color: 'var(--blue, #1D4ED8)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+        }}
+      >
+        <Briefcase size={11} /> Trả lời khách hàng (vai trò nhân viên)
+      </div>
+      <textarea
+        rows={3}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            void submit();
+          }
+        }}
+        placeholder="Nhập nội dung trả lời... (Cmd/Ctrl+Enter để gửi)"
+        style={{
+          width: '100%',
+          padding: '8px 10px',
+          border: '1.5px solid var(--gray-200)',
+          borderRadius: 6,
+          fontSize: '0.85rem',
+          outline: 'none',
+          resize: 'vertical',
+          boxSizing: 'border-box',
+          background: 'white',
+        }}
+        disabled={sending}
+      />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+        <button
+          type="button"
+          className="action-btn action-btn--primary"
+          onClick={submit}
+          disabled={!canSend}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            opacity: canSend ? 1 : 0.5,
+            cursor: canSend ? 'pointer' : 'not-allowed',
+          }}
+        >
+          <Send size={12} /> {sending ? 'Đang gửi...' : 'Gửi trả lời'}
+        </button>
+      </div>
+    </div>
   );
 }

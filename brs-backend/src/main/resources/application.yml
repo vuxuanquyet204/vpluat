@@ -125,6 +125,11 @@ app:
     allow-credentials: true
     max-age: 3600
 
+  # Cookie Security (HttpOnly refresh-token cookie)
+  # Set secure: true only in production (HTTPS).
+  cookie:
+    secure: ${COOKIE_SECURE:false}
+
   # Rate Limiting
   rate-limit:
     auth: 5

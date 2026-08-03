@@ -9,11 +9,6 @@ import { LawyerCard } from '@/features/lawyers/components/lawyer-card';
 import { ServicesCta } from '@/features/services/components/services-cta';
 import type { LawyerApiResponse } from '@/features/lawyers/api/lawyers-api';
 
-function toLawyerForCard(lawyer: LawyerApiResponse): LawyerApiResponse {
-  // LawyerCard đã nhận LawyerApiResponse - chỉ cần đảm bảo các field optional có default.
-  return lawyer;
-}
-
 export default function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const { data: service, isLoading } = useServiceBySlug(slug);
@@ -47,7 +42,8 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
 
   return (
     <main className="service-detail">
-      <section className="page-hero">
+      {/* Hero Section */}
+      <section className="page-hero service-detail-hero">
         <div className="container">
           <div className="page-hero__breadcrumbs">
             <Link href="/">Trang chủ</Link>
@@ -61,108 +57,134 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
         </div>
       </section>
 
+      {/* Main Content */}
       <section className="section">
-        <div className="container service-detail__body">
-          <div className="service-detail__content">
-            <div className="service-detail__description">
-              <h2>Tổng quan dịch vụ</h2>
-              <p>{description}</p>
+        <div className="container">
+          <div className="service-detail__grid">
+            {/* Left Column - Content */}
+            <div className="service-detail__main">
+              {/* Overview */}
+              <div className="service-detail__section">
+                <h2 className="service-detail__section-title">Tổng quan dịch vụ</h2>
+                <p className="service-detail__desc">{description}</p>
+              </div>
+
+              {/* Benefits */}
+              {benefits.length > 0 && (
+                <div className="service-detail__section">
+                  <h2 className="service-detail__section-title">Lợi ích khi sử dụng dịch vụ</h2>
+                  <div className="service-detail__features">
+                    {benefits.map((b) => (
+                      <div key={b} className="service-detail__feature">
+                        <div className="service-detail__feature-check">
+                          <CheckCircle2 size={14} />
+                        </div>
+                        <span>{b}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Features */}
+              {service.features && service.features.length > 0 && (
+                <div className="service-detail__section">
+                  <h2 className="service-detail__section-title">Chi tiết dịch vụ</h2>
+                  <div className="service-detail__features">
+                    {service.features.map((f) => (
+                      <div key={f} className="service-detail__feature">
+                        <div className="service-detail__feature-check">
+                          <CheckCircle2 size={14} />
+                        </div>
+                        <span>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {benefits.length > 0 && (
-              <div className="service-detail__benefits">
-                <h2>Lợi ích khi sử dụng dịch vụ</h2>
-                <ul className="service-detail__benefits-list">
-                  {benefits.map((b) => (
-                    <li key={b}>
-                      <CheckCircle2 className="service-detail__check" size={20} aria-hidden />
-                      <span>{b}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {service.features && service.features.length > 0 && (
-              <div className="service-detail__benefits">
-                <h2>Chi tiết</h2>
-                <ul className="service-detail__benefits-list">
-                  {service.features.map((f) => (
-                    <li key={f}>
-                      <CheckCircle2 className="service-detail__check" size={20} aria-hidden />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          <aside className="service-detail__sidebar">
-            <div className="service-detail__info-card">
-              <h3>Thông tin dịch vụ</h3>
-              <ul className="service-detail__info-list">
-                <li>
-                  <strong>Danh mục:</strong> {service.parentName || service.category}
-                </li>
+            {/* Right Column - Sidebar */}
+            <aside className="service-detail__sidebar">
+              {/* Info Card */}
+              <div className="service-detail__card">
+                <div className="service-detail__card-label">Thông tin dịch vụ</div>
+                {service.parentName && (
+                  <div className="service-detail__meta-row">
+                    <span style={{ color: 'var(--gray-500)', fontSize: '0.85rem' }}>Danh mục:</span>
+                    <span>{service.parentName}</span>
+                  </div>
+                )}
                 {service.duration && (
-                  <li>
-                    <strong>Thời gian xử lý:</strong> {service.duration}
-                  </li>
+                  <div className="service-detail__meta-row">
+                    <span style={{ color: 'var(--gray-500)', fontSize: '0.85rem' }}>Thời gian:</span>
+                    <span>{service.duration}</span>
+                  </div>
                 )}
                 {service.price != null && (
-                  <li>
-                    <strong>Phí tư vấn ban đầu:</strong>{' '}
-                    {new Intl.NumberFormat('vi-VN').format(service.price)}đ
-                  </li>
+                  <div className="service-detail__meta-row">
+                    <span style={{ color: 'var(--gray-500)', fontSize: '0.85rem' }}>Phí tư vấn:</span>
+                    <strong style={{ color: 'var(--accent)' }}>
+                      {new Intl.NumberFormat('vi-VN').format(service.price)}đ
+                    </strong>
+                  </div>
                 )}
-              </ul>
-              <Link href="/contact" className="btn btn--primary btn--block">
-                Đăng ký tư vấn
-              </Link>
-            </div>
+                <Link href="/contact" className="service-detail__cta">
+                  Đăng ký tư vấn
+                </Link>
+              </div>
 
-            <div className="service-detail__contact-card">
-              <h3>Liên hệ tư vấn</h3>
-              <ul className="service-detail__contact-list">
-                <li>
-                  <Phone size={16} aria-hidden /> <span>Hotline: 1900 1234</span>
-                </li>
-                <li>
-                  <Mail size={16} aria-hidden /> <span>tuvan@vuplat.vn</span>
-                </li>
-                <li>
-                  <MapPin size={16} aria-hidden /> <span>Hà Nội, TP.HCM, Đà Nẵng</span>
-                </li>
-              </ul>
-            </div>
-          </aside>
+              {/* Contact Card */}
+              <div className="service-detail__card">
+                <div className="service-detail__card-label">Liên hệ tư vấn</div>
+                <div className="service-detail__meta-row">
+                  <Phone size={16} />
+                  <span>Hotline: 1900 1234</span>
+                </div>
+                <div className="service-detail__meta-row">
+                  <Mail size={16} />
+                  <span>tuvan@vuplat.vn</span>
+                </div>
+                <div className="service-detail__meta-row">
+                  <MapPin size={16} />
+                  <span>Hà Nội, TP.HCM, Đà Nẵng</span>
+                </div>
+              </div>
+
+              {/* Related Lawyers */}
+              {lawyers.length > 0 && (
+                <div className="service-detail__card">
+                  <div className="service-detail__card-label">Luật sư phụ trách</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+                    {lawyers.slice(0, 3).map((l) => (
+                      <Link key={l.id} href={`/lawyers/${l.slug}`} className="service-detail__lawyer">
+                        <div className="service-detail__lawyer-avatar" style={{ background: 'var(--primary)' }}>
+                          {l.name?.charAt(0) || 'L'}
+                        </div>
+                        <div>
+                          <div className="service-detail__lawyer-name">{l.name}</div>
+                          <div className="service-detail__lawyer-position">{l.position}</div>
+                          {l.experience && (
+                            <div className="service-detail__lawyer-exp">{l.experience} năm kinh nghiệm</div>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </aside>
+          </div>
         </div>
       </section>
 
-      {lawyers.length > 0 && (
-        <section className="section section--gray">
-          <div className="container">
-            <div className="section__header">
-              <h2 className="section__title">Luật sư phụ trách</h2>
-            </div>
-            <div className="lawyers-grid">
-              {lawyers.slice(0, 3).map((l) => (
-                <LawyerCard
-                  key={l.id}
-                  lawyer={toLawyerForCard(l)}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
+      {/* CTA Section */}
       <ServicesCta />
 
-      <div className="container service-detail__back">
-        <Link href="/services" className="service-detail__back-link">
-          <ArrowLeft size={18} aria-hidden /> Quay lại danh sách dịch vụ
+      {/* Back Link */}
+      <div className="container" style={{ marginTop: '24px', marginBottom: '40px' }}>
+        <Link href="/services" className="btn btn--outline">
+          <ArrowLeft size={18} /> Quay lại danh sách dịch vụ
         </Link>
       </div>
     </main>

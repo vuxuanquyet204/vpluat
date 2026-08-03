@@ -11,8 +11,10 @@ export interface Post {
   excerpt?: string;
   content?: string;
   thumbnailUrl?: string;
+  ogImageUrl?: string;
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   publishedAt?: string;
+  scheduledAt?: string;
   authorId: string;
   authorName?: string;
   categoryId?: string;
@@ -21,6 +23,11 @@ export interface Post {
   readingTime?: number;
   isFeatured?: boolean;
   language?: string;
+  metaTitle?: string;
+  metaDesc?: string;
+  tags?: string[];
+  lawyerIds?: string[];
+  version?: number;
   createdAt: string;
   updatedAt: string;
 }

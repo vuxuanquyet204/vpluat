@@ -22,7 +22,9 @@ function fmtDate(d: Date): string {
 }
 
 function fmtTime(t: string): number {
+  if (!t || !t.includes(':')) return 0;
   const [h, m] = t.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return 0;
   return h * 60 + m;
 }
 

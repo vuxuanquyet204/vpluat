@@ -74,6 +74,16 @@ public class LawyerScheduleService {
             .orElseThrow(() -> new ResourceNotFoundException("Lawyer not found: " + lawyerId));
 
         for (LawyerScheduleDTO.SlotUpdate update : updates) {
+            validateDayOfWeek(update.dayOfWeek());
+            if (update.slots() != null) {
+                for (LawyerScheduleDTO.TimeSlot slot : update.slots()) {
+                    if (!isValidTimeOrder(slot.start(), slot.end())) {
+                        throw new IllegalArgumentException(
+                            "Slot start must be before end: " + slot.start() + " → " + slot.end());
+                    }
+                }
+            }
+
             Optional<LawyerSchedule> existingOpt = scheduleRepository.findByLawyerIdAndDayOfWeek(lawyerId, update.dayOfWeek());
 
             LawyerSchedule schedule;
@@ -106,6 +116,14 @@ public class LawyerScheduleService {
     public Map<UUID, LawyerScheduleResponse> getAllSchedules(LocalDate from, LocalDate to) {
         log.debug("Fetching all lawyer schedules from {} to {}", from, to);
 
+        if (from == null || to == null) {
+            throw new IllegalArgumentException("Both 'from' and 'to' are required");
+        }
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException(
+                "'from' must be before or equal to 'to' (got from=" + from + ", to=" + to + ")");
+        }
+
         List<LawyerProfile> lawyers = lawyerRepository.findAll();
         Map<UUID, LawyerScheduleResponse> result = new HashMap<>();
 
@@ -133,17 +151,32 @@ public class LawyerScheduleService {
         LawyerProfile lawyer = lawyerRepository.findById(lawyerId)
             .orElseThrow(() -> new ResourceNotFoundException("Lawyer not found: " + lawyerId));
 
+        if (overrideDate == null) {
+            throw new IllegalArgumentException("overrideDate is required");
+        }
+        if (type == null || (!type.equalsIgnoreCase("off") && !type.equalsIgnoreCase("custom"))) {
+            throw new IllegalArgumentException(
+                "type must be 'off' or 'custom' (got '" + type + "')");
+        }
+        boolean isOff = "off".equalsIgnoreCase(type);
+        if (!isOff && slots != null) {
+            for (LawyerScheduleDTO.TimeSlot slot : slots) {
+                if (!isValidTimeOrder(slot.start(), slot.end())) {
+                    throw new IllegalArgumentException(
+                        "Override slot start must be before end: " + slot.start() + " → " + slot.end());
+                }
+            }
+        }
+
         // Remove existing override for the same date
         overrideRepository.findByLawyerIdAndOverrideDate(lawyerId, overrideDate)
             .ifPresent(overrideRepository::delete);
-
-        boolean isOff = "off".equalsIgnoreCase(type);
 
         LawyerScheduleOverride override = LawyerScheduleOverride.builder()
             .lawyer(lawyer)
             .overrideDate(overrideDate)
             .isOff(isOff)
-            .slots(toJson(slots))
+            .slots(isOff ? "[]" : toJson(slots))
             .reason(reason)
             .createdAt(java.time.Instant.now())
             .build();
@@ -217,6 +250,35 @@ public class LawyerScheduleService {
             log.error("Failed to serialize to JSON", e);
             return "[]";
         }
+    }
+
+    /** Day of week must be 0 (Sunday) .. 6 (Saturday). */
+    private void validateDayOfWeek(int dayOfWeek) {
+        if (dayOfWeek < 0 || dayOfWeek > 6) {
+            throw new IllegalArgumentException(
+                "dayOfWeek must be between 0 and 6 (got " + dayOfWeek + ")");
+        }
+    }
+
+    /** Returns true when {@code start < end} and both are valid HH:mm strings. */
+    private boolean isValidTimeOrder(String start, String end) {
+        if (start == null || end == null || start.isBlank() || end.isBlank()) {
+            return false;
+        }
+        try {
+            int s = toMinutes(start);
+            int e = toMinutes(end);
+            return s < e;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    private int toMinutes(String hhmm) {
+        String[] parts = hhmm.split(":");
+        int h = Integer.parseInt(parts[0]);
+        int m = Integer.parseInt(parts[1]);
+        return h * 60 + m;
     }
 
     public record LawyerScheduleResponse(

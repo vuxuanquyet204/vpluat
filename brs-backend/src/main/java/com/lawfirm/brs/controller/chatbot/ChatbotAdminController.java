@@ -98,7 +98,10 @@ public class ChatbotAdminController {
     public ResponseEntity<ApiResponse<Void>> escalateSession(
             @PathVariable UUID id,
             @RequestBody(required = false) EscalateRequest request) {
-        chatbotAdminService.escalateSession(id, request != null ? request.note() : null);
+        String to = request != null ? request.to() : null;
+        UUID actorId = request != null ? request.actorId() : null;
+        String note = request != null ? request.note() : null;
+        chatbotAdminService.escalateSession(id, to, actorId, note);
         return ResponseEntity.ok(ApiResponse.success("Session escalated to human agent", null));
     }
 
@@ -131,6 +134,6 @@ public class ChatbotAdminController {
     // Request DTOs
     public record ChatbotConfigUpdateRequest(Map<String, Object> config) {}
 
-    public record EscalateRequest(String note) {}
+    public record EscalateRequest(String to, UUID actorId, String note) {}
     public record ManualReplyRequest(String content, UUID actorId) {}
 }

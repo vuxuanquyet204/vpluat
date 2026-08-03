@@ -8,14 +8,19 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface ChatbotSessionRepository extends JpaRepository<ChatbotSession, UUID> {
 
+    Optional<ChatbotSession> findBySessionId(String sessionId);
+
     Page<ChatbotSession> findByStartedAtBetween(Instant from, Instant to, Pageable pageable);
 
     Page<ChatbotSession> findByEscalatedTrue(Pageable pageable);
+
+    Page<ChatbotSession> findByEscalatedTrueAndStartedAtBetween(Instant from, Instant to, Pageable pageable);
 
     List<ChatbotSession> findByEscalatedTrueAndEndedAtIsNull();
 

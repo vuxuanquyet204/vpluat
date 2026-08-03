@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -111,11 +110,20 @@ public class AuthService {
      * Refresh access token using refresh token
      */
     public Map<String, Object> refreshToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new UnauthorizedException("MISSING_REFRESH_TOKEN", "Refresh token is required");
+        }
         JwtTokenProvider.TokenPair tokens = jwtTokenProvider.rotateRefreshToken(refreshToken);
 
         String email = jwtTokenProvider.getUsernameFromToken(tokens.accessToken());
+        // Always re-load the user from the DB so roles/permissions are
+        // up-to-date after a rotation (instead of inheriting whatever was in
+        // the JWT — which may have stale role claims).
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new UnauthorizedException("User not found"));
+            .orElseThrow(() -> new UnauthorizedException("USER_NOT_FOUND", "User not found"));
+        if (Boolean.FALSE.equals(user.getIsActive())) {
+            throw new UnauthorizedException("ACCOUNT_INACTIVE", "Account is inactive");
+        }
 
         return Map.of(
             "accessToken", tokens.accessToken(),

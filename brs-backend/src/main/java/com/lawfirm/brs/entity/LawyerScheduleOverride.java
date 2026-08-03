@@ -2,6 +2,8 @@ package com.lawfirm.brs.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -35,6 +37,7 @@ public class LawyerScheduleOverride {
     private Boolean isOff = true;
 
     @Column(name = "slots", nullable = false, columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private String slots = "[]";
 

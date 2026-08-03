@@ -2,7 +2,9 @@ package com.lawfirm.brs.controller.chatbot;
 
 import com.lawfirm.brs.dto.request.ChatbotMessageRequest;
 import com.lawfirm.brs.dto.response.ApiResponse;
-import com.lawfirm.brs.dto.response.ChatbotResponse;
+import com.lawfirm.brs.dto.response.ChatbotStreamResponse;
+import com.lawfirm.brs.entity.ChatbotSession;
+import com.lawfirm.brs.exception.ResourceNotFoundException;
 import com.lawfirm.brs.service.chatbot.ChatbotService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,14 +30,29 @@ public class ChatbotController {
 
     @PostMapping("/message")
     @Operation(summary = "Send message to chatbot")
-    public ResponseEntity<ApiResponse<ChatbotResponse>> sendMessage(
+    public ResponseEntity<ApiResponse<ChatbotStreamResponse>> sendMessage(
             @Valid @RequestBody ChatbotMessageRequest request,
             HttpServletRequest httpRequest) {
         String clientIp = getClientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
-        
-        ChatbotResponse response = chatbotService.processMessage(request, clientIp, userAgent);
-        return ResponseEntity.ok(ApiResponse.success(response));
+
+        ChatbotSession session = chatbotService.processMessage(request, clientIp, userAgent);
+
+        ChatbotService.IntentResultSnapshot intentResult = chatbotService.lastIntentResult();
+
+        ChatbotStreamResponse body = ChatbotStreamResponse.builder()
+            .sessionId(session.getSessionId())
+            .content(chatbotService.lastResponseText())
+            .intent(intentResult.intent())
+            .confidence(intentResult.confidence())
+            .escalated(Boolean.TRUE.equals(session.getEscalated()))
+            .action(chatbotService.lastAction())
+            .suggestedFaqs(chatbotService.lastSuggestedFaqs())
+            .done(true)
+            .timestamp(java.time.Instant.now())
+            .build();
+
+        return ResponseEntity.ok(ApiResponse.success(body));
     }
 
     @GetMapping("/history/{sessionId}")
@@ -47,18 +64,25 @@ public class ChatbotController {
             return ResponseEntity.status(403)
                 .body(ApiResponse.error("Access denied to this chat session"));
         }
-        
+
         List<Map<String, String>> history = chatbotService.getHistory(sessionId);
         return ResponseEntity.ok(ApiResponse.success(history));
     }
 
     @PostMapping("/handoff")
     @Operation(summary = "Request human handoff")
-    public ResponseEntity<ApiResponse<ChatbotResponse>> requestHandoff(
-            @RequestParam String sessionId) {
-        ChatbotResponse response = ChatbotResponse.handover(sessionId, 
-            "Đang chuyển bạn đến bộ phận chăm sóc khách hàng. Vui lòng đợi trong giây lát.");
-        return ResponseEntity.ok(ApiResponse.success(response));
+    public ResponseEntity<ApiResponse<ChatbotStreamResponse>> requestHandoff(@RequestParam String sessionId) {
+        chatbotService.requestHandoff(sessionId);
+        ChatbotStreamResponse body = ChatbotStreamResponse.builder()
+            .sessionId(sessionId)
+            .content("Đang chuyển bạn đến bộ phận chăm sóc khách hàng. Vui lòng đợi trong giây lát.")
+            .intent("HANDOVER")
+            .action("HANDOVER")
+            .escalated(true)
+            .done(true)
+            .timestamp(java.time.Instant.now())
+            .build();
+        return ResponseEntity.ok(ApiResponse.success(body));
     }
 
     private String getClientIp(HttpServletRequest request) {

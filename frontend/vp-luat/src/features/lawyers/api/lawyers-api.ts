@@ -20,11 +20,18 @@ export interface LawyerDTO {
   languages?: string[];
   avatarUrl?: string;
   isFeatured?: boolean;
-  workingHours?: string;
+  workingHours?: WorkingHours;
   createdAt?: string;
   serviceIds?: string[];
   serviceNames?: string[];
   serviceSlugs?: string[];
+}
+
+export interface WorkingHours {
+  [day: string]: {
+    start: string;
+    end: string;
+  } | null;
 }
 
 export interface LawyerApiResponse {
@@ -47,7 +54,7 @@ export interface LawyerApiResponse {
   isVerified: boolean;
   avatar?: string;
   isFeatured?: boolean;
-  workingHours?: string;
+  workingHours?: WorkingHours;
   serviceIds?: string[];
   serviceNames?: string[];
   serviceSlugs?: string[];

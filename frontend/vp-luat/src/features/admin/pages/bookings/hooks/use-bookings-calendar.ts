@@ -12,18 +12,24 @@ export interface UseBookingsCalendarOptions {
   lawyerFilter?: string;
 }
 
+const VIETNAM_TIMEZONE_OFFSET = 7 * 60; // minutes ahead of UTC
+
 function fmtDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
 function instantToLocalDate(isoString: string): string {
   const date = new Date(isoString);
-  return format(date, 'yyyy-MM-dd');
+  // Apply Vietnam timezone offset (UTC+7) for date display
+  const vietDate = new Date(date.getTime() + VIETNAM_TIMEZONE_OFFSET * 60 * 1000);
+  return format(vietDate, 'yyyy-MM-dd');
 }
 
 function instantToLocalTime(isoString: string): string {
   const date = new Date(isoString);
-  return format(date, 'HH:mm');
+  // Apply Vietnam timezone offset (UTC+7) for time display
+  const vietDate = new Date(date.getTime() + VIETNAM_TIMEZONE_OFFSET * 60 * 1000);
+  return format(vietDate, 'HH:mm');
 }
 
 export function useBookingsCalendar({
@@ -61,8 +67,8 @@ export function useBookingsCalendar({
         method: (appt.meetingType ?? 'OFFICE').toLowerCase() as Booking['method'],
         date: appt.scheduledAt ? instantToLocalDate(appt.scheduledAt) : '',
         time: appt.scheduledAt ? instantToLocalTime(appt.scheduledAt) : '',
-        status: appt.status?.toLowerCase() as BookingStatus,
-        notes: appt.internalNotes,
+        status: (appt.status ?? 'pending').toLowerCase() as BookingStatus,
+        notes: appt.issueSummary ?? '',
         cancelledReason: appt.cancelReason,
         createdAt: appt.createdAt ?? '',
         updatedAt: appt.updatedAt ?? '',

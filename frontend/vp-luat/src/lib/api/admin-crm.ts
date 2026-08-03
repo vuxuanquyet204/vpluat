@@ -218,6 +218,31 @@ export interface ChatbotSession {
   resolved?: boolean;
   messageCount?: number;
   messages?: unknown[];
+  handoffTo?: string;
+  handoffAt?: string;
+  handoffBy?: string;
+}
+
+export interface ChatbotSessionDetail {
+  id: string;
+  sessionId: string;
+  userIp?: string;
+  userAgent?: string;
+  language: string;
+  startedAt: string;
+  endedAt?: string;
+  escalated: boolean;
+  handoffTo?: string;
+  handoffAt?: string;
+  handoffBy?: string;
+  messages: Array<{
+    id: string;
+    content: string;
+    from: string;
+    intent?: string;
+    actorId?: string;
+    timestamp: string;
+  }>;
 }
 
 // ============================================================
@@ -241,38 +266,20 @@ export interface Campaign {
   clickRate?: number;
 }
 
-// ============================================================
-// Chatbot Sessions
-// ============================================================
-
-export interface ChatbotSession {
-  id: string;
-  /** Public session key (UUID string) issued by the backend on first message. */
-  sessionId: string;
-  language?: string;
-  startedAt: string;
-  endedAt?: string;
-  status: 'ACTIVE' | 'CLOSED' | 'HANDOFF';
-  escalated?: boolean;
-  resolved?: boolean;
-  messageCount?: number;
-  messages?: unknown[];
-}
-
 export const chatbotApi = {
   sessions: (params?: { page?: number; size?: number; escalated?: boolean }) =>
     api.get<PageResponse<ChatbotSession>>(`/admin/chatbot/sessions`, params),
 
-  session: (id: string) => api.get<ChatbotSession>(`/admin/chatbot/sessions/${id}`),
+  session: (id: string) => api.get<ChatbotSessionDetail>(`/admin/chatbot/sessions/${id}`),
 
   unresolved: (page = 0, size = 20) =>
     api.get<PageResponse<ChatbotSession>>(`/admin/chatbot/unresolved`, { page, size }),
 
-  reply: (id: string, content: string) =>
-    api.post<void>(`/admin/chatbot/sessions/${id}/reply`, { content }),
+  reply: (id: string, payload: { content: string; actorId?: string }) =>
+    api.post<void>(`/admin/chatbot/sessions/${id}/reply`, payload),
 
-  escalate: (id: string, note?: string) =>
-    api.post<void>(`/admin/chatbot/sessions/${id}/escalate`, { note }),
+  escalate: (id: string, payload: { to?: string; note?: string; actorId?: string } = {}) =>
+    api.post<void>(`/admin/chatbot/sessions/${id}/escalate`, payload),
 
   intents: (params?: { from?: string; to?: string }) =>
     api.get<unknown[]>(`/admin/chatbot/intents`, params),
@@ -341,8 +348,23 @@ export const newsletterApi = {
   listSubscribers: (params?: { page?: number; size?: number; status?: string }) =>
     api.get<PageResponse<Subscriber>>(`/admin/newsletter/subscribers`, params),
 
-  unsubscribe: (email: string) =>
+  counts: () =>
+    api.get<Record<string, number>>(`/admin/newsletter/subscribers/count`),
+
+  create: (body: { email: string; name?: string; source?: string }) =>
+    api.post<Subscriber>(`/admin/newsletter/subscribers`, body),
+
+  unsubscribe: (id: string) =>
+    api.patch<Subscriber>(`/admin/newsletter/subscribers/${id}/unsubscribe`, {}),
+
+  unsubscribeByEmail: (email: string) =>
     api.patch<Subscriber>(`/admin/newsletter/subscribers/unsubscribe`, { email }),
+
+  reactivate: (id: string) =>
+    api.patch<Subscriber>(`/admin/newsletter/subscribers/${id}/reactivate`, {}),
+
+  delete: (id: string) =>
+    api.del<void>(`/admin/newsletter/subscribers/${id}`),
 
   listCampaigns: () => api.get<Campaign[]>(`/admin/newsletter/campaigns`),
 

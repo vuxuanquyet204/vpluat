@@ -1,11 +1,8 @@
 package com.lawfirm.brs.controller.webhook;
 
 import com.lawfirm.brs.dto.response.ApiResponse;
-import com.lawfirm.brs.service.notification.SmsWebhookService;
-import com.lawfirm.brs.service.notification.OtpWebhookService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,47 +14,13 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/webhooks")
-@RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Webhooks", description = "Webhook endpoints for external services")
 public class SmsWebhookController {
 
-    private final SmsWebhookService smsWebhookService;
-    private final OtpWebhookService otpWebhookService;
-
-    @PostMapping("/sms")
-    @Operation(summary = "Handle SMS delivery webhook")
-    public ResponseEntity<ApiResponse<Void>> handleSmsWebhook(
-            @RequestBody SmsWebhookPayload payload) {
-        log.info("Received SMS webhook: provider={}, messageId={}, status={}",
-                payload.provider(), payload.messageId(), payload.status());
-        
-        smsWebhookService.handleDeliveryReport(
-                payload.messageId(),
-                payload.status(),
-                payload.timestamp()
-        );
-        
-        return ResponseEntity.ok(ApiResponse.success("Webhook processed successfully", null));
-    }
-
-    @PostMapping("/otp-callback")
-    @Operation(summary = "Handle OTP callback webhook")
-    public ResponseEntity<ApiResponse<Void>> handleOtpCallback(
-            @RequestBody OtpCallbackPayload payload) {
-        log.info("Received OTP callback: phone={}, status={}, code={}",
-                payload.phone(), payload.status(), payload.code());
-        
-        otpWebhookService.handleOtpCallback(
-                payload.phone(),
-                payload.status(),
-                payload.code(),
-                payload.attempts(),
-                payload.expiresAt()
-        );
-        
-        return ResponseEntity.ok(ApiResponse.success("OTP callback processed successfully", null));
-    }
+    // SMS and OTP webhook endpoints have been disabled due to errors
+    // Endpoint: POST /api/webhooks/sms - SMS delivery webhook
+    // Endpoint: POST /api/webhooks/otp-callback - OTP callback webhook
 
     @GetMapping("/health")
     @Operation(summary = "Webhook health check")
@@ -68,22 +31,23 @@ public class SmsWebhookController {
         )));
     }
 
-    public record SmsWebhookPayload(
-            String provider,
-            String messageId,
-            String status,
-            String phone,
-            Long timestamp,
-            String errorCode,
-            String errorMessage
-    ) {}
+    // Disabled records - kept for reference when re-enabling webhooks
+    // public record SmsWebhookPayload(
+    //         String provider,
+    //         String messageId,
+    //         String status,
+    //         String phone,
+    //         Long timestamp,
+    //         String errorCode,
+    //         String errorMessage
+    // ) {}
 
-    public record OtpCallbackPayload(
-            String phone,
-            String status,
-            String code,
-            Integer attempts,
-            Long expiresAt,
-            String provider
-    ) {}
+    // public record OtpCallbackPayload(
+    //         String phone,
+    //         String status,
+    //         String code,
+    //         Integer attempts,
+    //         Long expiresAt,
+    //         String provider
+    // ) {}
 }

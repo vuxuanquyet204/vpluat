@@ -1,70 +1,55 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import {
-  Building2,
-  Home,
   Scale,
-  Shield,
-  Briefcase,
-  Landmark,
-  FileText,
+  Gavel,
+  Flag,
+  Folder,
+  Lightbulb,
   Users,
+  Briefcase,
+  Home,
+  FileSignature,
+  Handshake,
+  Globe,
+  Shield,
   ArrowRight,
+  type LucideIcon,
 } from 'lucide-react';
+import { useFeaturedServices } from '@/features/services/hooks/use-services';
 
-const SERVICES = [
-  {
-    icon: Building2,
-    name: 'Luật Doanh nghiệp',
-    desc: 'Tư vấn thành lập, M&A, giải thể doanh nghiệp',
-    href: '/dich-vu/luat-doanh-nghiep',
-  },
-  {
-    icon: Home,
-    name: 'Luật Đất đai',
-    desc: 'Chuyển nhượng, thuê, thế chấp, tranh chấp đất đai',
-    href: '/dich-vu/luat-dat-dai',
-  },
-  {
-    icon: Scale,
-    name: 'Luật Dân sự',
-    desc: 'Hợp đồng, bồi thường, thừa kế, ly hôn',
-    href: '/dich-vu/luat-dan-su',
-  },
-  {
-    icon: Shield,
-    name: 'Luật Hình sự',
-    desc: 'Bào chữa, bảo vệ quyền lợi bị can, bị cáo',
-    href: '/dich-vu/luat-hinh-su',
-  },
-  {
-    icon: Briefcase,
-    name: 'Luật Lao động',
-    desc: 'Hợp đồng, tranh chấp, bảo hiểm xã hội',
-    href: '/dich-vu/luat-lao-dong',
-  },
-  {
-    icon: Landmark,
-    name: 'Luật Hành chính',
-    desc: 'Khiếu nại, tố cáo, thủ tục hành chính',
-    href: '/dich-vu/luat-hanh-chinh',
-  },
-  {
-    icon: FileText,
-    name: 'Soạn thảo hợp đồng',
-    desc: 'Hợp đồng thương mại, lao động, bất động sản',
-    href: '/dich-vu/soan-thao-hop-dong',
-  },
-  {
-    icon: Users,
-    name: 'Đại diện theo ủy quyền',
-    desc: 'Đại diện giải quyết tranh chấp tại tòa',
-    href: '/dich-vu/dai-dien-uy-quyen',
-  },
-];
+const ICON_MAP: Record<string, LucideIcon> = {
+  scale: Scale,
+  gavel: Gavel,
+  flag: Flag,
+  folder: Folder,
+  lightbulb: Lightbulb,
+  users: Users,
+  briefcase: Briefcase,
+  home: Home,
+  'file-signature': FileSignature,
+  handshake: Handshake,
+  globe: Globe,
+  shield: Shield,
+};
+
+const DEFAULT_DESCRIPTION = 'Tư vấn pháp lý chuyên nghiệp, tận tâm';
+
+function getServiceIcon(iconName?: string): LucideIcon {
+  if (!iconName) return Scale;
+  return ICON_MAP[iconName] ?? Scale;
+}
 
 export function ServicesSection() {
+  const { data: services = [], isLoading } = useFeaturedServices();
+
+  const displayServices = useMemo(() => {
+    if (services.length === 0) return [];
+    return services.slice(0, 8);
+  }, [services]);
+
   return (
     <section className="section">
       <div className="container">
@@ -77,22 +62,39 @@ export function ServicesSection() {
         </div>
 
         <div className="services__grid">
-          {SERVICES.map((service) => (
-            <Link
-              key={service.href}
-              href={service.href}
-              className="service-card"
-            >
-              <div className="service-card__icon-wrapper">
-                <service.icon size={48} strokeWidth={1.5} />
-              </div>
-              <h3 className="service-card__name">{service.name}</h3>
-              <p className="service-card__desc">{service.desc}</p>
-              <span className="service-card__link">
-                Tìm hiểu thêm <ArrowRight size={14} />
-              </span>
-            </Link>
-          ))}
+          {isLoading && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#666' }}>
+              Đang tải dịch vụ nổi bật...
+            </p>
+          )}
+          {!isLoading && displayServices.length === 0 && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#666' }}>
+              Đang cập nhật dịch vụ...
+            </p>
+          )}
+          {displayServices.map((service) => {
+            const Icon = getServiceIcon(
+              service.icon?.replace('fa-solid fa-', '').replace('fa-', ''),
+            );
+            return (
+              <Link
+                key={service.id}
+                href={`/services/${service.slug}`}
+                className="service-card"
+              >
+                <div className="service-card__icon-wrapper">
+                  <Icon size={48} strokeWidth={1.5} />
+                </div>
+                <h3 className="service-card__name">{service.name}</h3>
+                <p className="service-card__desc">
+                  {service.shortDescription || DEFAULT_DESCRIPTION}
+                </p>
+                <span className="service-card__link">
+                  Tìm hiểu thêm <ArrowRight size={14} />
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

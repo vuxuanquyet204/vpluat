@@ -82,10 +82,15 @@ public class DashboardErpController {
         @RequestParam(defaultValue = "month") String range
     ) {
         String csv = service.exportCsv(range);
+        // UTF-8 BOM for proper Vietnamese character display in Excel
+        byte[] bom = new byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF };
         byte[] body = csv.getBytes(StandardCharsets.UTF_8);
+        byte[] result = new byte[bom.length + body.length];
+        System.arraycopy(bom, 0, result, 0, bom.length);
+        System.arraycopy(body, 0, result, bom.length, body.length);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("text/csv; charset=utf-8"));
         headers.setContentDispositionFormData("attachment", "dashboard-" + range + ".csv");
-        return ResponseEntity.ok().headers(headers).body(body);
+        return ResponseEntity.ok().headers(headers).body(result);
     }
 }

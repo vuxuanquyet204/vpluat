@@ -39,6 +39,14 @@ public class ChatbotMessage {
     @Column(name = "confidence")
     private BigDecimal confidence;
 
+    /**
+     * User id of the staff member who authored this message. Persisted for
+     * ADMIN/AGENT messages so we can attribute replies to a real account.
+     * USER/SYSTEM/BOT messages leave this null.
+     */
+    @Column(name = "actor_id")
+    private UUID actorId;
+
     @Column(name = "retention_until", nullable = false)
     private Instant retentionUntil;
 

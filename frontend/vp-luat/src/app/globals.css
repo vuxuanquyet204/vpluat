@@ -4509,6 +4509,18 @@ body.has-open-chatbot .floating-widgets:hover {
   overflow: hidden;
   isolation: isolate;
 }
+
+.page-hero + .section {
+  padding-top: 0;
+}
+
+.service-detail .page-hero + .section {
+  padding-top: 48px;
+}
+
+.page-hero__breadcrumbs {
+  margin-bottom: 24px;
+}
 .page-hero::before {
   content: '';
   position: absolute;

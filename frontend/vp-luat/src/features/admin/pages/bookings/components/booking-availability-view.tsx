@@ -142,6 +142,8 @@ export function BookingAvailabilityView({ onCreateAt }: AvailabilityViewProps) {
                         textAlign: 'center',
                         borderBottom: '1px solid var(--gray-100)',
                         borderLeft: '1px solid var(--gray-100)',
+                        minWidth: 70,
+                        verticalAlign: 'top',
                       }}
                     >
                       {cell.isAvailable ? (
@@ -161,30 +163,56 @@ export function BookingAvailabilityView({ onCreateAt }: AvailabilityViewProps) {
                             justifyContent: 'center',
                             gap: 2,
                           }}
-                          title="Click để tạo lịch hẹn"
+                          title={
+                            cell.offLawyerIds.length > 0
+                              ? `Còn ${cell.availableCount}/${cell.availableCount + cell.offLawyerIds.length} LS rảnh`
+                              : 'Click để tạo lịch hẹn'
+                          }
                         >
                           <Plus size={10} /> Rảnh
                         </button>
-                      ) : cell.bookingId ? (
+                      ) : cell.bookings.length === 0 ? (
                         <span
-                          style={{
-                            display: 'inline-block',
-                            padding: '2px 6px',
-                            background: '#FEF3C7',
-                            color: '#92400E',
-                            borderRadius: 4,
-                            fontSize: '0.68rem',
-                            maxWidth: '100%',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                          title={cell.bookingTime ? `${cell.bookingTime} - ${cell.customerName}` : cell.customerName}
+                          style={{ color: 'var(--gray-300)', fontSize: '0.7rem' }}
+                          title={
+                            cell.offLawyerIds.length > 0
+                              ? `Tất cả luật sư đều nghỉ`
+                              : '—'
+                          }
                         >
-                          {cell.bookingTime ? `${cell.bookingTime} ` : ''}{cell.customerName}
+                          —
                         </span>
                       ) : (
-                        <span style={{ color: 'var(--gray-300)', fontSize: '0.7rem' }}>—</span>
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2,
+                            alignItems: 'stretch',
+                          }}
+                        >
+                          {cell.bookings.map((b) => (
+                            <span
+                              key={b.bookingId}
+                              style={{
+                                display: 'block',
+                                padding: '2px 4px',
+                                background: '#FEF3C7',
+                                color: '#92400E',
+                                borderRadius: 4,
+                                fontSize: '0.66rem',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                              title={[b.bookingTime, b.customerName, b.lawyerName ? `LS: ${b.lawyerName}` : null]
+                                .filter(Boolean)
+                                .join(' - ')}
+                            >
+                              <strong>{b.bookingTime}</strong> {b.customerName}
+                            </span>
+                          ))}
+                        </div>
                       )}
                     </td>
                   );

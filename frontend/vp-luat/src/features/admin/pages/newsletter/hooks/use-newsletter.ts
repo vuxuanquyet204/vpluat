@@ -83,10 +83,19 @@ export function useSubscribers() {
 export function useCreateSubscriber() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (vars: { email: string; name?: string; source?: string }) => {
-      void vars;
-      notifyError('Chưa hỗ trợ', 'Tạo subscriber chưa được triển khai trên backend');
-      throw new Error('Not implemented');
+    mutationFn: async (vars: { email: string; name?: string; source?: string; status?: string }) => {
+      const created = await newsletterApi.create({
+        email: vars.email,
+        name: vars.name,
+        source: vars.source,
+      });
+      ghiAudit({
+        action: 'create',
+        entity: 'subscriber',
+        entityId: created.id,
+        entityLabel: created.email,
+      });
+      return created;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'subscribers'] }),
   });
@@ -96,10 +105,12 @@ export function useUpdateSubscriber() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<Subscriber> }) => {
-      void id;
-      void patch;
-      notifyError('Chưa hỗ trợ', 'Cập nhật subscriber chưa được triển khai trên backend');
-      throw new Error('Not implemented');
+      if (patch.status === 'active') {
+        await newsletterApi.reactivate(id);
+      } else if (patch.status === 'unsubscribed') {
+        await newsletterApi.unsubscribe(id);
+      }
+      return { id };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'subscribers'] }),
   });
@@ -108,16 +119,16 @@ export function useUpdateSubscriber() {
 export function useDeleteSubscriber() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (email: string) => {
-      await newsletterApi.unsubscribe(email);
-      return email;
+    mutationFn: async (id: string) => {
+      await newsletterApi.unsubscribe(id);
+      return id;
     },
-    onSuccess: (email) => {
+    onSuccess: (id) => {
       ghiAudit({
         action: 'delete',
         entity: 'subscriber',
-        entityId: email,
-        entityLabel: email,
+        entityId: id,
+        entityLabel: id,
       });
       qc.invalidateQueries({ queryKey: ['admin', 'subscribers'] });
     },
@@ -141,7 +152,7 @@ export function useDeleteManySubscribers() {
     },
     onSuccess: (results) => {
       qc.invalidateQueries({ queryKey: ['admin', 'subscribers'] });
-      notifySuccess(`Đã xóa ${results.succeeded} subscribers`);
+      notifySuccess(`Đã hủy đăng ký ${results.succeeded} subscribers`);
       if (results.failed > 0) {
         notifyError('Lỗi', `${results.failed} subscribers thất bại`);
       }
@@ -155,22 +166,21 @@ export function useDeleteManySubscribers() {
 export function useToggleSubscriber() {
   const qc = useQueryClient();
   const mutation = useMutation({
-    mutationFn: async ({ email, status }: { email: string; status: SubscriberStatus }) => {
+    mutationFn: async ({ id, status }: { id: string; status: SubscriberStatus }) => {
       if (status === 'active') {
-        await newsletterApi.unsubscribe(email);
+        await newsletterApi.unsubscribe(id);
       } else {
-        notifyError('Chưa hỗ trợ', 'Kích hoạt lại subscriber chưa được triển khai trên backend');
-        throw new Error('Re-subscribing not implemented');
+        await newsletterApi.reactivate(id);
       }
-      return email;
+      return id;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'subscribers'] }),
   });
 
-  // Wrapper so page can call: toggle(email, status)
+  // Wrapper so page can call: toggle(id, status)
   const call = useCallback(
-    async (email: string, status: SubscriberStatus) => {
-      return mutation.mutateAsync({ email, status });
+    async (id: string, status: SubscriberStatus) => {
+      return mutation.mutateAsync({ id, status });
     },
     [mutation],
   );
@@ -185,7 +195,7 @@ export function useImportSubscribers() {
       let skipped = 0;
       for (const row of rows) {
         try {
-          await newsletterApi.unsubscribe(row.email.trim());
+          await newsletterApi.unsubscribeByEmail(row.email.trim());
           skipped += 1;
         } catch {
           added += 1;

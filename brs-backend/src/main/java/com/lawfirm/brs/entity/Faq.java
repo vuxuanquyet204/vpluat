@@ -34,6 +34,22 @@ public class Faq {
     @Builder.Default
     private Boolean isPublished = true;
 
+    /**
+     * Comma-separated chatbot intents for which this FAQ is a fallback suggestion,
+     * e.g. {@code "BOOKING,SERVICE_INQUIRY,FAQ"}. Empty/null means the FAQ is only
+     * surfaced via semantic search (pg_trgm similarity).
+     */
+    @Column(name = "suggested_for", length = 500)
+    private String suggestedFor;
+
+    /**
+     * Kill-switch: when false this FAQ is excluded from chatbot suggestions even if
+     * it matches. Admin can disable suggestions without un-publishing the FAQ.
+     */
+    @Column(name = "suggestion_enabled", nullable = false)
+    @Builder.Default
+    private Boolean suggestionEnabled = true;
+
     @Version
     @Column(name = "version")
     private Long version;

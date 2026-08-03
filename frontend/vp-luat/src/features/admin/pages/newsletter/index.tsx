@@ -201,9 +201,9 @@ function SubscribersTab({ canWrite, canDelete }: { canWrite: boolean; canDelete:
     async (s: Subscriber) => {
       try {
         await removeSub.mutateAsync(s.id);
-        notifySuccess('Đã xóa subscriber');
+        notifySuccess('Đã hủy đăng ký subscriber');
       } catch (e) {
-        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');
+        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể hủy');
       }
     },
     [removeSub],

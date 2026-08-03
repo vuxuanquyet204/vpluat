@@ -11,7 +11,6 @@ export function useSendMessage() {
   const {
     sessionId,
     conversationState,
-    context,
     setError,
     addMessage,
     appendStreamContent,
@@ -20,32 +19,24 @@ export function useSendMessage() {
 
   const send = useCallback(
     async (userText: string) => {
+      if (!userText || !userText.trim()) return;
       if (abortRef.current) {
         abortRef.current.abort();
       }
 
-      const userMsg = makeUser(userText);
-      addMessage(userMsg);
-
-      // Lead collection states — collect name/phone
-      if (conversationState === 'lead_name') {
-        const result = processUserInput('lead_name', userText);
-        result.botMessages.forEach((m) => addMessage(m));
-        return;
-      }
-
-      if (conversationState === 'lead_phone') {
-        const result = processUserInput('lead_phone', userText);
-        result.botMessages.forEach((m) => addMessage(m));
-        return;
-      }
-
-      // Handoff → booking
+      // Handoff: client-side redirect to booking prefill flow. The user
+      // message is intentionally NOT sent to /api/chatbot/message because
+      // `handoff:...` is a frontend-only protocol string, not a real query.
       if (userText.startsWith('handoff:')) {
         const [, name, phone] = userText.split(':');
-        window.location.href = `/booking?prefill_name=${encodeURIComponent(name ?? '')}&prefill_phone=${encodeURIComponent(phone ?? '')}`;
+        window.location.href =
+          `/booking?prefill_name=${encodeURIComponent(name ?? '')}` +
+          `&prefill_phone=${encodeURIComponent(phone ?? '')}`;
         return;
       }
+
+      // Always optimistically render the user message in the local store.
+      addMessage(makeUser(userText));
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -62,6 +53,19 @@ export function useSendMessage() {
           },
           controller.signal,
         );
+
+        // Lead collection states are purely a frontend walk-through to
+        // validate name/phone format before the user actually triggers an
+        // escalation. We append the synthetic bot response locally so the
+        // customer keeps moving through the flow; nothing is sent to the
+        // backend during these intermediate steps.
+        if (conversationState === 'lead_name') {
+          const result = processUserInput('lead_name', userText);
+          result.botMessages.forEach((m) => addMessage(m));
+        } else if (conversationState === 'lead_phone') {
+          const result = processUserInput('lead_phone', userText);
+          result.botMessages.forEach((m) => addMessage(m));
+        }
       } catch (err) {
         if ((err as Error).name === 'AbortError') return;
         setError(
@@ -70,7 +74,7 @@ export function useSendMessage() {
         );
       }
     },
-    [sessionId, conversationState, context, addMessage, appendStreamContent, finishStream, setError],
+    [sessionId, conversationState, addMessage, appendStreamContent, finishStream, setError],
   );
 
   return send;

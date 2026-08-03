@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useCallback } from 'react';
-import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { chatbotApi, faqApi, type AdminFaq, type FaqUpsertPayload } from '@/lib/api/admin-crm';
 import { useApiQuery } from '@/lib/api/hooks';
 import {
@@ -9,8 +9,9 @@ import {
   notifySuccess,
   notifyError,
 } from '@/features/admin/lib';
+import { useAdminAuth } from '@/features/admin/pages/users/hooks/use-admin-auth';
 import type { ChatbotSession } from '@/lib/api/admin-crm';
-import type { ChatbotSession as ChatbotSessionUI, ChatbotIntent, ChatbotMessage, ChatbotSessionStatus } from '@/features/admin/types';
+import type { ChatbotSession as ChatbotSessionUI, ChatbotIntent, ChatbotMessage, ChatbotHandoff } from '@/features/admin/types';
 
 type SessionStatus = ChatbotSessionUI['status'];
 
@@ -63,7 +64,17 @@ export function useSessionDetail(sessionId: string | null) {
     startedAt: string;
     endedAt?: string;
     escalated: boolean;
-    messages: Array<{ id: string; content: string; from: string; intent?: string; timestamp: string }>;
+    handoffTo?: string;
+    handoffAt?: string;
+    handoffBy?: string;
+    messages: Array<{
+      id: string;
+      content: string;
+      from: string;
+      intent?: string;
+      actorId?: string;
+      timestamp: string;
+    }>;
   }>(
     ['admin', 'chatbot_session_detail', sessionId ?? ''],
     `/admin/chatbot/sessions/${sessionId ?? '___invalid___'}`,
@@ -72,6 +83,13 @@ export function useSessionDetail(sessionId: string | null) {
   );
 
   if (!rawDetail) return { data: null, isLoading, error };
+
+  const handoffInfo: ChatbotHandoff | undefined = rawDetail.handoffTo
+    ? {
+        to: rawDetail.handoffTo,
+        at: rawDetail.handoffAt ?? rawDetail.startedAt,
+      }
+    : undefined;
 
   // Merge detail data into a full UI session object
   const detail: ChatbotSessionUI = {
@@ -86,6 +104,7 @@ export function useSessionDetail(sessionId: string | null) {
     userPhone: undefined,
     userEmail: undefined,
     intent: undefined,
+    handoff: handoffInfo,
   };
 
   return { data: detail, isLoading, error };
@@ -135,9 +154,14 @@ export function useDeleteSession() {
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: async (sessionId: string) => {
-      void sessionId;
-      notifyError('Lỗi', 'Xóa session chatbot chưa được hỗ trợ từ backend');
-      throw new Error('Not implemented');
+      // Backend does not expose a delete endpoint for chatbot sessions — they
+      // are intentionally retained for audit/compliance. Surface a clear
+      // message instead of a generic 500 so admins know to use "End session".
+      notifyError(
+        'Không thể xóa',
+        'Session chatbot chỉ có thể đóng (End session). Backend không hỗ trợ xóa vĩnh viễn để giữ lịch sử audit.',
+      );
+      throw new Error('Chatbot session delete is not supported — use End session instead');
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ['admin', 'chatbot_sessions'] }),
   });
@@ -147,11 +171,18 @@ export function useDeleteSession() {
 
 export function useHandoffSession() {
   const qc = useQueryClient();
+  const { effectiveUser } = useAdminAuth();
   return useCallback(async (sessionId: string, to: string, reason?: string) => {
     try {
-      await chatbotApi.escalate(sessionId, reason ? `→ ${to}: ${reason}` : `→ ${to}`);
+      const actorId = effectiveUser?.id;
+      await chatbotApi.escalate(sessionId, {
+        to,
+        note: reason,
+        ...(actorId ? { actorId } : {}),
+      });
       qc.invalidateQueries({ queryKey: ['admin', 'chatbot_sessions'] });
       qc.invalidateQueries({ queryKey: ['admin', 'chatbot_session_detail'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'chatbot_session_detail', sessionId] });
       ghiAudit({
         action: 'update',
         entity: 'chatbot_session',
@@ -163,7 +194,36 @@ export function useHandoffSession() {
       notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể chuyển session');
       throw e;
     }
-  }, [qc]);
+  }, [qc, effectiveUser]);
+}
+
+export function useAdminReply() {
+  const qc = useQueryClient();
+  const { effectiveUser } = useAdminAuth();
+  return useCallback(async (sessionId: string, content: string) => {
+    const trimmed = content?.trim();
+    if (!trimmed) {
+      throw new Error('Nội dung trả lời trống');
+    }
+    const actorId = effectiveUser?.id;
+    try {
+      await chatbotApi.reply(sessionId, {
+        content: trimmed,
+        ...(actorId ? { actorId } : {}),
+      });
+      qc.invalidateQueries({ queryKey: ['admin', 'chatbot_session_detail', sessionId] });
+      qc.invalidateQueries({ queryKey: ['admin', 'chatbot_sessions'] });
+      ghiAudit({
+        action: 'create',
+        entity: 'chatbot_message',
+        entityId: sessionId,
+        diff: { before: {}, after: { content: trimmed, role: 'ADMIN' } },
+      });
+    } catch (e) {
+      notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể gửi trả lời');
+      throw e;
+    }
+  }, [qc, effectiveUser]);
 }
 
 export function useEndSession() {
@@ -175,6 +235,8 @@ export function useEndSession() {
     },
     onSuccess: (sessionId) => {
       qc.invalidateQueries({ queryKey: ['admin', 'chatbot_sessions'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'chatbot_session_detail'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'chatbot_session_detail', sessionId] });
       ghiAudit({
         action: 'update',
         entity: 'chatbot_session',

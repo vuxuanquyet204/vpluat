@@ -5,6 +5,7 @@ import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
@@ -51,9 +52,15 @@ public class JwtTokenProvider {
     private PublicKey publicKey;
 
     private final RefreshTokenStore refreshTokenStore;
+    private final org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
 
-    public JwtTokenProvider(RefreshTokenStore refreshTokenStore) {
+    public JwtTokenProvider(
+        RefreshTokenStore refreshTokenStore,
+        @org.springframework.beans.factory.annotation.Qualifier("customUserDetailsService")
+        org.springframework.security.core.userdetails.UserDetailsService userDetailsService
+    ) {
         this.refreshTokenStore = refreshTokenStore;
+        this.userDetailsService = userDetailsService;
     }
 
     @PostConstruct
@@ -183,26 +190,46 @@ public class JwtTokenProvider {
     }
 
     /**
-     * Rotate refresh token - invalidate old and generate new pair
+     * Rotate refresh token - invalidate old and generate new pair.
+     *
+     * <p>The incoming token <strong>must</strong> be a refresh token.  We
+     * enforce the {@code type=refresh} claim so an attacker can't use a
+     * (short-lived) access token to mint a fresh long-lived refresh token.
      */
     public TokenPair rotateRefreshToken(String oldRefreshToken) {
         Claims claims = parseToken(oldRefreshToken);
         String jti = claims.getId();
-        
+
+        // Reject access tokens masquerading as refresh tokens.
+        Object typeClaim = claims.get("type");
+        if (!"refresh".equals(typeClaim)) {
+            throw new io.jsonwebtoken.JwtException("Not a refresh token");
+        }
+
         // Check for reuse attack
         if (refreshTokenStore.isRevoked(jti)) {
             // Token reuse detected - revoke all user tokens
             refreshTokenStore.revokeAllForUser(claims.getSubject());
             throw new SecurityException("Refresh token reuse detected");
         }
-        
+
         // Revoke old token
         refreshTokenStore.revoke(jti);
-        
+
+        // Load user from DB to keep roles/permissions fresh. If the user
+        // no longer exists or is locked/inactive, fail fast so we don't
+        // issue a token that bypasses account state.
+        UserDetails userDetails;
+        try {
+            userDetails = userDetailsService.loadUserByUsername(claims.getSubject());
+        } catch (UsernameNotFoundException e) {
+            throw new io.jsonwebtoken.JwtException("User not found for refresh");
+        }
+
         // Generate new token pair
-        String newAccessToken = generateAccessToken(loadUserDetails(claims.getSubject()));
-        String newRefreshToken = generateRefreshToken(loadUserDetails(claims.getSubject()));
-        
+        String newAccessToken = generateAccessToken(userDetails);
+        String newRefreshToken = generateRefreshToken(userDetails);
+
         return new TokenPair(
             newAccessToken,
             newRefreshToken,
@@ -216,15 +243,6 @@ public class JwtTokenProvider {
      */
     public void revokeAllUserTokens(String username) {
         refreshTokenStore.revokeAllForUser(username);
-    }
-
-    private UserDetails loadUserDetails(String username) {
-        // This should delegate to UserDetailsService
-        return org.springframework.security.core.userdetails.User.builder()
-            .username(username)
-            .password("")
-            .authorities("ROLE_USER")
-            .build();
     }
 
     private Instant calculateExpiry(String expiry) {

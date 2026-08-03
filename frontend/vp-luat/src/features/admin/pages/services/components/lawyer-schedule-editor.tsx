@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Save, RotateCcw, Plus, X } from 'lucide-react';
 import { DAYS_OF_WEEK, DAY_LABELS, useLawyerSchedule, type DaySchedule } from '../hooks/use-schedule';
 import type { SlotUpdate } from '@/lib/api/admin-booking';
@@ -39,8 +39,8 @@ export function LawyerScheduleEditor({
   );
   const [saving, setSaving] = useState(false);
 
-  // Reset local khi đổi luật sư
-  useMemo(() => {
+  // Reset local when lawyer changes
+  useEffect(() => {
     if (lawyer) {
       setLocal(
         DAYS_OF_WEEK.reduce(
