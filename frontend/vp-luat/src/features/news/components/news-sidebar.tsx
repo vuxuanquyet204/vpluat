@@ -4,7 +4,6 @@ import { SidebarSearch } from './sidebar-search';
 import { SidebarCategories } from './sidebar-categories';
 import { SidebarPopular } from './sidebar-popular';
 import { SidebarTags } from './sidebar-tags';
-import { SidebarNewsletter } from './sidebar-newsletter';
 import { SidebarCta } from './sidebar-cta';
 import type { NewsCategory } from '../types';
 
@@ -40,7 +39,6 @@ export function NewsSidebar({
         <SidebarCategories active={activeCategory} onChange={onCategoryChange ?? (() => {})} />
       )}
       <SidebarPopular />
-      <SidebarNewsletter />
       <SidebarTags />
       <SidebarCta />
     </aside>

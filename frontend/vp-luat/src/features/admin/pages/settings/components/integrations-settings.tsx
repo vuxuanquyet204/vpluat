@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plug, Save, ExternalLink, Activity, BarChart3, MessageSquare } from 'lucide-react';
+import { Plug, Save, ExternalLink, Activity, BarChart3 /*, MessageSquare */ } from 'lucide-react';
 import { FormFieldInput } from '@/features/admin/components';
 import {
   integrationsSettingsSchema,
@@ -50,6 +50,7 @@ const INTEGRATIONS: Array<{
     icon: <BarChart3 size={14} />,
     docsUrl: 'https://analytics.google.com',
   },
+  /* chatbotWebhookUrl disabled - webhook not configured
   {
     field: 'chatbotWebhookUrl',
     label: 'Chatbot Webhook URL',
@@ -57,6 +58,7 @@ const INTEGRATIONS: Array<{
     desc: 'Webhook để forward tin nhắn chatbot',
     icon: <MessageSquare size={14} />,
   },
+  */
 ];
 
 export function IntegrationsSettingsForm({ value, loaded, onSubmit, isSubmitting }: Props) {

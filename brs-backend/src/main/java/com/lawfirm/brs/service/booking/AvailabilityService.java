@@ -36,10 +36,29 @@ public class AvailabilityService {
     private final AvailabilitySlotRepository slotRepository;
     private final LawyerProfileRepository lawyerRepository;
     private final AvailabilitySlotMapper slotMapper;
+    private final AvailabilitySlotGeneratorService slotGeneratorService;
 
+    /**
+     * Fetch available slots for a lawyer in a date range. If no slots are
+     * materialized yet for this range, we lazily synthesize working-hours
+     * slots on demand so customers never see an empty grid just because the
+     * nightly scheduler hasn't run (or the backend was freshly started).
+     */
+    @Transactional
     public List<AvailabilitySlotDTO> getAvailableSlots(UUID lawyerId, LocalDate fromDate, LocalDate toDate) {
         log.debug("Fetching available slots for lawyer: {} from {} to {}", lawyerId, fromDate, toDate);
-        
+
+        if (slotRepository.countByLawyerIdAndSlotDateBetween(lawyerId, fromDate, toDate) == 0) {
+            try {
+                log.info("No slots materialized for lawyer {} in {}..{} — generating on demand",
+                    lawyerId, fromDate, toDate);
+                slotGeneratorService.generateSlotsForLawyer(lawyerId, fromDate, toDate);
+            } catch (RuntimeException e) {
+                log.warn("On-demand slot generation failed for lawyer {}: {}",
+                    lawyerId, e.getMessage());
+            }
+        }
+
         return slotMapper.toDTOList(
             slotRepository.findAvailableSlots(lawyerId, fromDate, toDate)
         );

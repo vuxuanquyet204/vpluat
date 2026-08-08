@@ -36,12 +36,17 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", Instant.now().toString());
-        body.put("status", 401);
-        body.put("error", "Unauthorized");
-        body.put("message", authException.getMessage());
-        body.put("path", request.getRequestURI());
+        // Use the same ApiResponse envelope as GlobalExceptionHandler so
+        // the frontend's unwrap() helper gets a consistent {success, error}
+        // shape regardless of which exception handler handles the response.
+        Map<String, Object> body = Map.of(
+            "success", false,
+            "errorCode", "UNAUTHORIZED",
+            "message", authException.getMessage() != null
+                ? authException.getMessage()
+                : "Authentication required",
+            "timestamp", Instant.now().toString()
+        );
 
         objectMapper.writeValue(response.getWriter(), body);
     }

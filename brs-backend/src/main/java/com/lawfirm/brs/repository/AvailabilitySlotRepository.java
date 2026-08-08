@@ -21,9 +21,13 @@ import java.util.UUID;
 public interface AvailabilitySlotRepository extends JpaRepository<AvailabilitySlot, UUID> {
 
     @Query("SELECT s FROM AvailabilitySlot s WHERE s.lawyer.id = :lawyerId " +
-           "AND s.slotDate >= :fromDate AND s.slotDate <= :toDate AND s.isAvailable = true " +
+           "AND s.slotDate >= :fromDate AND s.slotDate <= :toDate " +
            "ORDER BY s.slotDate, s.startTime")
     List<AvailabilitySlot> findAvailableSlots(@Param("lawyerId") UUID lawyerId, @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT COUNT(s) FROM AvailabilitySlot s WHERE s.lawyer.id = :lawyerId " +
+           "AND s.slotDate >= :fromDate AND s.slotDate <= :toDate")
+    long countByLawyerIdAndSlotDateBetween(@Param("lawyerId") UUID lawyerId, @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM AvailabilitySlot s JOIN FETCH s.lawyer WHERE s.id = :id")

@@ -93,6 +93,9 @@ public record BookingRequest(
                 // Try common aliases
                 if (consultationType.equalsIgnoreCase("IN_PERSON")) {
                     meetingType = MeetingType.OFFLINE;
+                } else if (consultationType.equalsIgnoreCase("VIDEO")) {
+                    // FE sends "video" for ONLINE meetings (VIDEO is not in MeetingType)
+                    meetingType = MeetingType.ONLINE;
                 }
             }
         }

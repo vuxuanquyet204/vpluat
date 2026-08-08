@@ -54,7 +54,7 @@ const TYPE_COLOR: Record<string, string> = {
 const CHANNEL_LABEL: Record<string, string> = {
   in_app: 'In-app',
   email: 'Email',
-  sms: 'SMS',
+  // sms: 'SMS', // disabled - webhook not configured
 };
 
 function timeAgo(iso?: string): string {
@@ -168,7 +168,7 @@ export function NotificationItem({ notification, onMarkRead, onRemove, compact }
                     fontWeight: 600,
                   }}
                 >
-                  {c === 'email' ? <Mail size={9} /> : c === 'sms' ? <MessageSquare size={9} /> : <Bell size={9} />}
+                  {c === 'email' ? <Mail size={9} /> : <Bell size={9} />}
                 </span>
               ))}
             </div>

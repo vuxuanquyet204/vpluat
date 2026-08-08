@@ -33,13 +33,13 @@ const TYPE_TABS: Array<{ value: string; label: string; types: AdminNotification[
 const CHANNEL_ICONS: Record<string, React.ReactNode> = {
   in_app: <Bell size={12} />,
   email: <Mail size={12} />,
-  sms: <Smartphone size={12} />,
+  // sms: <Smartphone size={12} />, // disabled - webhook not configured
 };
 
 const CHANNEL_LABELS: Record<string, string> = {
   in_app: 'In-app',
   email: 'Email',
-  sms: 'SMS',
+  // sms: 'SMS', // disabled - webhook not configured
 };
 
 export default function NotificationsPage() {
@@ -197,7 +197,7 @@ export default function NotificationsPage() {
               <option value="all">Tất cả kênh</option>
               <option value="in_app">In-app</option>
               <option value="email">Email</option>
-              <option value="sms">SMS</option>
+              {/* <option value="sms">SMS</option> disabled - webhook not configured */}
             </select>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.72rem', color: 'var(--gray-500)' }}>

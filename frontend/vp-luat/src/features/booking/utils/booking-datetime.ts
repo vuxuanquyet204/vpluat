@@ -1,6 +1,19 @@
 import type { BookingTimeSlot } from '../types';
 import { BOOKING_TIME_SLOTS, DEMO_BOOKED_TIMES } from '../lib';
 
+/**
+ * Format a Date as `YYYY-MM-DD` using the *local* timezone. Unlike
+ * `toISOString().slice(0, 10)` (which converts to UTC and can drift by one
+ * day for users in UTC+offset), this preserves the date the user actually
+ * clicked on the calendar.
+ */
+export function toLocalDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export function formatBookingDateLabel(date: Date) {
   const dayNames = [
     'Chủ Nhật',

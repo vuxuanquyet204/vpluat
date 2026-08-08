@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { BOOKING_CONSULTATION_TYPES } from '../lib';
 import { trackBookingDateSelected, trackBookingSlotConflict, trackBookingSlotReserved } from '../analytics';
 import { useAvailabilityQuery, useBookingStore, useReleaseReservationMutation, useReserveSlotMutation } from '../hooks';
-import { createDayMatrix, createMonthLabel, formatBookingDateLabel } from '../utils';
+import { createDayMatrix, createMonthLabel, formatBookingDateLabel, toLocalDateString } from '../utils';
 import { BookingIcon } from './booking-icon';
 
 const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
@@ -15,6 +15,18 @@ const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 function parseDateValue(value: string | null) {
   if (!value) {
     return null;
+  }
+
+  // value is a YYYY-MM-DD string in the user's local timezone. Build a
+  // local-midnight Date so subsequent toISOString() round-trips don't drift.
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const [, y, m, d] = match;
+    const date = new Date(Number(y), Number(m) - 1, Number(d));
+    if (!Number.isNaN(date.getTime())) {
+      date.setHours(0, 0, 0, 0);
+      return date;
+    }
   }
 
   const date = new Date(value);
@@ -73,8 +85,8 @@ export function StepDatetime({
 
     setReservation(null);
     setTimeSlot(null);
-    setDate(nextDate.toISOString());
-    trackBookingDateSelected(nextDate.toISOString().slice(0, 10));
+    setDate(toLocalDateString(nextDate));
+    trackBookingDateSelected(toLocalDateString(nextDate));
   };
 
   const handleSelectSlot = async (slotId: string) => {
@@ -95,7 +107,7 @@ export function StepDatetime({
 
       const nextReservation = await reserveSlotMutation.mutateAsync({
         lawyerId: lawyer.id,
-        date: selectedDate.toISOString().slice(0, 10),
+        date: toLocalDateString(selectedDate),
         slotId,
       });
 
@@ -217,6 +229,16 @@ export function StepDatetime({
             availabilityQuery.isLoading ? (
               <div className="py-8 text-center text-[0.875rem] text-[var(--gray-400)]">
                 Đang tải khung giờ...
+              </div>
+            ) : availabilityQuery.isError ? (
+              <div className="py-8 text-center text-[0.875rem] text-[var(--gray-400)]">
+                <CalendarDays className="mx-auto mb-2 h-8 w-8 text-[var(--gray-300)]" />
+                <span>Không thể tải khung giờ. Vui lòng thử lại.</span>
+              </div>
+            ) : slots.length === 0 ? (
+              <div className="py-8 text-center text-[0.875rem] text-[var(--gray-400)]">
+                <CalendarDays className="mx-auto mb-2 h-8 w-8 text-[var(--gray-300)]" />
+                <span>Luật sư chưa có lịch trống cho ngày này. Vui lòng chọn ngày khác.</span>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-2 min-[769px]:grid-cols-3 max-md:grid-cols-4 max-[480px]:grid-cols-3">
