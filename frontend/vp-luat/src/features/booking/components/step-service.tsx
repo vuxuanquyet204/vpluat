@@ -9,7 +9,17 @@ import { ServiceGrid } from './service-grid';
 import { LawyerSection } from './lawyer-section';
 import type { BookingLawyerOption } from '../types';
 
-function toBookingLawyerOption(lawyer: { id: string; nameVi?: string; nameEn?: string; positionVi?: string; avatarUrl?: string; isFeatured?: boolean }): BookingLawyerOption {
+function toBookingLawyerOption(lawyer: {
+  id: string;
+  nameVi?: string;
+  nameEn?: string;
+  positionVi?: string;
+  avatarUrl?: string;
+  isFeatured?: boolean;
+  rating?: number | null;
+  reviewCount?: number;
+  isAvailableToday?: boolean;
+}): BookingLawyerOption {
   const name = lawyer.nameVi || lawyer.nameEn || 'Luật sư';
   const initials = name
     .split(' ')
@@ -27,16 +37,30 @@ function toBookingLawyerOption(lawyer: { id: string; nameVi?: string; nameEn?: s
   ];
   const gradientIndex = parseInt(lawyer.id.replace(/-/g, '').slice(0, 8), 16) % gradients.length;
 
-  return {
+  const result: BookingLawyerOption = {
     id: lawyer.id,
     name,
     initials,
     specialty: lawyer.positionVi || '',
-    rating: 5.0,
-    availabilityLabel: 'Còn lịch hôm nay',
     avatarGradient: gradients[gradientIndex],
     avatarUrl: lawyer.avatarUrl,
   };
+
+  // Only attach rating/availability when the API actually returned them —
+  // never fabricate "5.0" or "Còn lịch hôm nay" for every lawyer.
+  if (typeof lawyer.rating === 'number' && Number.isFinite(lawyer.rating)) {
+    result.rating = lawyer.rating;
+  }
+  if (typeof lawyer.reviewCount === 'number') {
+    result.reviewCount = lawyer.reviewCount;
+  }
+  if (lawyer.isAvailableToday === true) {
+    result.availabilityLabel = 'Còn lịch hôm nay';
+  } else if (lawyer.isAvailableToday === false) {
+    result.availabilityLabel = 'Hết lịch hôm nay';
+  }
+
+  return result;
 }
 
 export function StepService({ onNext }: { onNext: () => void }) {

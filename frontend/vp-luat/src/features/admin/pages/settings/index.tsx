@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { AdminPageHeader, FilterTabs } from '@/features/admin/shared';
 import { useCan } from '@/features/admin/lib';
+import { ConfirmDialog } from '@/features/admin/components';
 import {
   useSetting,
   useUpdateSetting,
@@ -178,6 +179,20 @@ function SystemTab({
   onReset: () => void;
   canWrite: boolean;
 }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  const handleConfirm = async () => {
+    setResetting(true);
+    try {
+      onReset();
+    } finally {
+      // Close immediately; mutation state is managed inside the hook.
+      setConfirmOpen(false);
+      setResetting(false);
+    }
+  };
+
   return (
     <div
       style={{
@@ -245,13 +260,25 @@ function SystemTab({
         <button
           type="button"
           className="action-btn action-btn--danger"
-          onClick={onReset}
+          onClick={() => setConfirmOpen(true)}
           disabled={!canWrite}
           style={{ display: 'flex', alignItems: 'center', gap: 4 }}
         >
           <RefreshCw size={12} /> Reset toàn bộ về seed
         </button>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => (resetting ? undefined : setConfirmOpen(false))}
+        title="Reset toàn bộ dữ liệu?"
+        message="Hành động này sẽ xóa toàn bộ leads, bookings, blog, users... trong MockDB và tr� về seed ban đầu. Không thể hoàn tác."
+        confirmLabel="Reset"
+        cancelLabel="Huỷ"
+        variant="danger"
+        isLoading={resetting}
+        onConfirm={handleConfirm}
+      />
     </div>
   );
 }

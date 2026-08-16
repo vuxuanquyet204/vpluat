@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { usePopularPosts } from '../hooks/use-news';
 
 function formatDate(iso: string) {
@@ -44,13 +45,13 @@ export function SidebarPopular() {
       </h3>
       <div className="popular-list">
         {popularPosts.map((p, i) => (
-          <a key={p.id} href={`/news/${p.slug}`} className="popular-item">
+          <Link key={p.id} href={`/news/${p.slug}`} className="popular-item">
             <span className="popular-item__num">{String(i + 1).padStart(2, '0')}</span>
             <div className="popular-item__body">
               <div className="popular-item__title">{p.title}</div>
               <div className="popular-item__meta">{formatDate(p.publishedAt)}</div>
             </div>
-          </a>
+          </Link>
         ))}
       </div>
     </div>

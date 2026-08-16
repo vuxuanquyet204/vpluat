@@ -8,12 +8,11 @@ import { ContactMap } from '../../components/contact-map';
 import { ContactFaq } from '../../components/contact-faq';
 import { ContactOffices } from '../../components/contact-offices';
 import type { ContactFormValues } from '../../types';
+import { submitContactMessage } from '../../api/contact-api';
 
 export default function ContactPage() {
   const handleSubmit = async (values: ContactFormValues) => {
-    if (typeof window !== 'undefined') {
-      console.info('[contact] submitted', values);
-    }
+    await submitContactMessage(values, 'contact-page');
   };
 
   return (

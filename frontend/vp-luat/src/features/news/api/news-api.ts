@@ -67,7 +67,7 @@ function mapPostDto(dto: PostDTO): PostApiResponse {
   const authorInitials = dto.authorName
     ? dto.authorName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'A';
-    
+
   let publishedAt = '';
   if (dto.publishedAt) {
     if (typeof dto.publishedAt === 'string') {
@@ -79,15 +79,28 @@ function mapPostDto(dto: PostDTO): PostApiResponse {
   if (!publishedAt) {
     publishedAt = new Date().toISOString();
   }
-    
+
+  // BE PostMapper currently maps `categoryName` from `category.slug` rather
+  // than a display name. Treat the slug as the category identifier and surface
+  // the raw value so the UI can decide how to render it (e.g. capitalize
+  // after the hyphen, or look up the human label).
+  const rawCategoryName = dto.categoryName ?? '';
+  const looksLikeSlug = /[-_]/.test(rawCategoryName) && rawCategoryName === rawCategoryName.toLowerCase();
+  const categoryDisplayName = looksLikeSlug
+    ? rawCategoryName
+        .split('-')
+        .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ''))
+        .join(' ')
+    : rawCategoryName || 'Tin tức';
+
   return {
     id: dto.id,
     slug: dto.slug || '',
     title: dto.title || '',
     excerpt: dto.excerpt || '',
     content: dto.content || '',
-    category: dto.categoryName?.toLowerCase().replace(/\s+/g, '-') || 'tin-tuc',
-    categoryName: dto.categoryName,
+    category: rawCategoryName.toLowerCase().replace(/\s+/g, '-') || 'tin-tuc',
+    categoryName: categoryDisplayName,
     tags: Array.isArray((dto as unknown as Record<string, unknown>).tags) ? ((dto as unknown as Record<string, unknown>).tags as string[]) : [],
     author: {
       name: dto.authorName || 'Author',

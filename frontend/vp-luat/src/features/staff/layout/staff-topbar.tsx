@@ -50,10 +50,10 @@ export function StaffTopbar() {
           {roleDisplayName}
         </div>
 
-        <button className="admin-topbar__btn" type="button" aria-label="Hôm nay">
+        <div className="admin-topbar__date" aria-label="Ngày hôm nay">
           <Calendar size={14} aria-hidden="true" />
           <span>{today}</span>
-        </button>
+        </div>
 
         <LanguageMenu />
 

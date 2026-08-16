@@ -116,16 +116,40 @@ export function FooterBrand() {
         nhân và doanh nghiệp. Cam kết bảo vệ quyền lợi hợp pháp của khách hàng.
       </p>
       <div className="footer__socials">
-        <a href="#" className="footer__social" aria-label="Facebook">
+        <a
+          href="https://facebook.com/vpluat"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="footer__social"
+          aria-label="Facebook"
+        >
           <FacebookIcon size={18} />
         </a>
-        <a href="#" className="footer__social" aria-label="LinkedIn">
+        <a
+          href="https://linkedin.com/company/vpluat"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="footer__social"
+          aria-label="LinkedIn"
+        >
           <LinkedinIcon size={18} />
         </a>
-        <a href="#" className="footer__social" aria-label="YouTube">
+        <a
+          href="https://youtube.com/@vpluat"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="footer__social"
+          aria-label="YouTube"
+        >
           <YoutubeIcon size={18} />
         </a>
-        <a href="#" className="footer__social" aria-label="Instagram">
+        <a
+          href="https://instagram.com/vpluat"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="footer__social"
+          aria-label="Instagram"
+        >
           <InstagramIcon size={18} />
         </a>
       </div>

@@ -6,7 +6,10 @@ import { FooterBrand, FooterColumns } from './footer-columns';
 
 export function Footer() {
   const pathname = usePathname();
-  const hidden = pathname?.startsWith('/admin') ?? false;
+  const hidden =
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/staff') ||
+    false;
   if (hidden) return null;
 
   return (
@@ -22,8 +25,8 @@ export function Footer() {
             &copy; {new Date().getFullYear()} VP Luật Hùng & Cộng sự. Giữ bản quyền.
           </p>
           <div className="footer__legal">
-            <Link href="/contact">Chính sách bảo mật</Link>
-            <Link href="/contact">Điều khoản sử dụng</Link>
+            <Link href="/contact" aria-label="Liên hệ về chính sách bảo mật">Chính sách bảo mật</Link>
+            <Link href="/contact" aria-label="Liên hệ về điều khoản sử dụng">Điều khoản sử dụng</Link>
           </div>
         </div>
       </div>

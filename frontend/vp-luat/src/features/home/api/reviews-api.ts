@@ -35,33 +35,67 @@ export interface ReviewApiResponse {
   avatarColor?: string;
 }
 
-function mapReviewDto(dto: ReviewDTO): ReviewApiResponse {
+function mapReviewDto(dto: ReviewDTO): ReviewApiResponse | null {
   const nameParts = dto.clientName?.split(' ') || [];
   const initials = nameParts.length > 1
     ? nameParts.map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : dto.clientName?.slice(0, 2).toUpperCase() || 'CL';
-    
+
+  // Backend's ReviewMapper doesn't currently populate `content` (the entity
+  // stores `contentVi` / `contentEn` but the mapper ignores them). Filter
+  // reviews without content out so the testimonials UI never shows blanks.
+  const trimmedContent = (dto.content ?? '').trim();
+  if (!trimmedContent) {
+    return null;
+  }
+
+  // BE maps `serviceName` from `service.slug`; turn the slug into a
+  // human-readable label so the UI doesn't show raw kebab-case identifiers.
+  const rawServiceName = dto.serviceName ?? '';
+  const looksLikeSlug = /[-_]/.test(rawServiceName) && rawServiceName === rawServiceName.toLowerCase();
+  const serviceDisplayName = looksLikeSlug
+    ? rawServiceName
+        .split('-')
+        .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ''))
+        .join(' ')
+    : rawServiceName;
+
   return {
     id: dto.id,
     clientName: dto.clientName || 'Khách hàng',
     clientRole: dto.clientRole || '',
-    content: dto.content || '',
+    content: trimmedContent,
     rating: dto.rating || 5,
     lawyerId: dto.lawyerId,
     lawyerName: dto.lawyerName,
     serviceId: dto.serviceId,
-    serviceName: dto.serviceName,
+    serviceName: serviceDisplayName,
     isFeatured: dto.isFeatured || false,
     initials,
     avatarColor: 'linear-gradient(135deg, #1E3A5F, #C9A84C)',
   };
 }
 
+function mapAndFilter<T extends { id: string }, U>(
+  items: T[] | undefined,
+  map: (dto: T) => U | null,
+): U[] {
+  if (!Array.isArray(items)) return [];
+  const result: U[] = [];
+  for (const item of items) {
+    const mapped = map(item);
+    if (mapped !== null) {
+      result.push(mapped);
+    }
+  }
+  return result;
+}
+
 export async function getReviews(): Promise<ReviewApiResponse[]> {
   try {
     const { data } = await apiClient.get<ApiResponse<ReviewDTO[]>>('/public/reviews');
     if (data.success && data.data) {
-      return data.data.map(mapReviewDto);
+      return mapAndFilter(data.data, mapReviewDto);
     }
     return [];
   } catch (error) {
@@ -74,7 +108,7 @@ export async function getFeaturedReviews(): Promise<ReviewApiResponse[]> {
   try {
     const { data } = await apiClient.get<ApiResponse<ReviewDTO[]>>('/public/reviews/featured');
     if (data.success && data.data) {
-      return data.data.map(mapReviewDto);
+      return mapAndFilter(data.data, mapReviewDto);
     }
     return [];
   } catch (error) {
@@ -89,7 +123,7 @@ export async function getRecentReviews(limit = 10): Promise<ReviewApiResponse[]>
       params: { limit },
     });
     if (data.success && data.data) {
-      return data.data.map(mapReviewDto);
+      return mapAndFilter(data.data, mapReviewDto);
     }
     return [];
   } catch (error) {

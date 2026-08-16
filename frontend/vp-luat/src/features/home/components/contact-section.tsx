@@ -1,7 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { MapPin, Phone, Mail, Clock, Send } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { toast } from 'sonner';
+import { apiClient } from '@/lib/api/client';
+import type { ApiResponse } from '@/types/api';
+
+const SERVICE_OPTIONS = [
+  { value: 'doanh-nghiep', label: 'Luật Doanh nghiệp' },
+  { value: 'dat-dai', label: 'Luật Đất đai' },
+  { value: 'dan-su', label: 'Luật Dân sự' },
+  { value: 'hinh-su', label: 'Luật Hình sự' },
+  { value: 'lao-dong', label: 'Luật Lao động' },
+  { value: 'dau-tu', label: 'Đầu tư nước ngoài (FDI)' },
+  { value: 'shtt', label: 'Sở hữu trí tuệ' },
+  { value: 'hon-nhan', label: 'Hôn nhân & Gia đình' },
+  { value: 'khac', label: 'Khác' },
+];
 
 // Paper plane icon as inline SVG
 function PaperPlaneIcon({ size = 18 }: { size?: number }) {
@@ -13,12 +28,17 @@ function PaperPlaneIcon({ size = 18 }: { size?: number }) {
   );
 }
 
+const PHONE_RE = /^(0|\+84)[0-9]{9,10}$/;
+
 export function ContactSection() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     service: '',
   });
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; service?: string }>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -27,11 +47,41 @@ export function ContactSection() {
       ...prev,
       [e.target.name]: e.target.value,
     }));
+    setErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validate = () => {
+    const next: typeof errors = {};
+    if (formData.name.trim().length < 2) next.name = 'Họ tên phải có ít nhất 2 ký tự';
+    if (!PHONE_RE.test(formData.phone.replace(/\s+/g, ''))) {
+      next.phone = 'Số điện thoại không hợp lệ';
+    }
+    if (!formData.service) next.service = 'Vui lòng chọn lĩnh vực';
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    if (!validate()) return;
+
+    setSubmitting(true);
+    try {
+      await apiClient.post<ApiResponse<unknown>>('/public/contact-messages', {
+        name: formData.name.trim(),
+        phone: formData.phone.replace(/\s+/g, ''),
+        subject: `Yêu cầu tư vấn nhanh: ${formData.service}`,
+        message: `Khách hàng quan tâm đến lĩnh vực ${formData.service}. Vui lòng liên hệ lại trong vòng 30 phút.`,
+        source: 'home-contact-section',
+      });
+      setSubmitted(true);
+      setFormData({ name: '', phone: '', service: '' });
+      toast.success('Đã gửi yêu cầu! Chúng tôi sẽ liên hệ lại trong 30 phút.');
+    } catch {
+      toast.error('Không thể gửi yêu cầu. Vui lòng thử lại hoặc gọi hotline 1900 1234.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -47,63 +97,88 @@ export function ContactSection() {
 
         <div className="contact__grid">
           {/* Form */}
-          <form className="contact-form" onSubmit={handleSubmit}>
+          <form className="contact-form" onSubmit={handleSubmit} noValidate>
             <h3 className="contact-form__title">Yêu cầu tư vấn</h3>
             <p className="contact-form__subtitle">
               Tư vấn miễn phí lần đầu · Phản hồi trong 30 phút
             </p>
 
+            {submitted && (
+              <div className="contact-form__alert contact-form__alert--success">
+                <span>Yêu cầu của bạn đã được gửi. Chúng tôi sẽ liên hệ lại trong vòng 30 phút.</span>
+              </div>
+            )}
+
             <div className="form-group">
-              <label htmlFor="name">Họ và tên *</label>
+              <label htmlFor="contact-home-name">Họ và tên *</label>
               <input
                 type="text"
-                id="name"
+                id="contact-home-name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Nhập họ và tên của bạn"
+                aria-invalid={!!errors.name}
+                aria-describedby={errors.name ? 'contact-home-name-error' : undefined}
                 required
               />
+              {errors.name && (
+                <div id="contact-home-name-error" className="contact-form__error">{errors.name}</div>
+              )}
             </div>
 
             <div className="form-group">
-              <label htmlFor="phone">Số điện thoại *</label>
+              <label htmlFor="contact-home-phone">Số điện thoại *</label>
               <input
                 type="tel"
-                id="phone"
+                id="contact-home-phone"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="0xxx xxx xxx"
+                aria-invalid={!!errors.phone}
+                aria-describedby={errors.phone ? 'contact-home-phone-error' : undefined}
                 required
               />
+              {errors.phone && (
+                <div id="contact-home-phone-error" className="contact-form__error">{errors.phone}</div>
+              )}
             </div>
 
             <div className="form-group">
-              <label htmlFor="service">Lĩnh vực pháp lý *</label>
+              <label htmlFor="contact-home-service">Lĩnh vực pháp lý *</label>
               <select
-                id="service"
+                id="contact-home-service"
                 name="service"
                 value={formData.service}
                 onChange={handleChange}
+                aria-invalid={!!errors.service}
+                aria-describedby={errors.service ? 'contact-home-service-error' : undefined}
                 required
               >
                 <option value="">-- Chọn lĩnh vực cần tư vấn --</option>
-                <option value="doanh-nghiep">Luật Doanh nghiệp</option>
-                <option value="dat-dai">Luật Đất đai</option>
-                <option value="dan-su">Luật Dân sự</option>
-                <option value="hinh-su">Luật Hình sự</option>
-                <option value="lao-dong">Luật Lao động</option>
-                <option value="dau-tu">Đầu tư nước ngoài (FDI)</option>
-                <option value="shtt">Sở hữu trí tuệ</option>
-                <option value="hon-nhan">Hôn nhân & Gia đình</option>
-                <option value="khac">Khác</option>
+                {SERVICE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
+              {errors.service && (
+                <div id="contact-home-service-error" className="contact-form__error">{errors.service}</div>
+              )}
             </div>
 
-            <button type="submit" className="btn btn--primary btn--lg btn--full">
-              <PaperPlaneIcon size={18} />
-              Gửi Yêu Cầu Tư Vấn
+            <button
+              type="submit"
+              className="btn btn--primary btn--lg btn--full"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>Đang gửi...</>
+              ) : (
+                <>
+                  <PaperPlaneIcon size={18} />
+                  Gửi Yêu Cầu Tư Vấn
+                </>
+              )}
             </button>
           </form>
 
@@ -144,7 +219,7 @@ export function ContactSection() {
                 </div>
                 <div>
                   <div className="contact-info__label">Hotline</div>
-                  <div className="contact-info__value">1900 6789</div>
+                  <div className="contact-info__value">1900 1234</div>
                 </div>
               </div>
 
@@ -161,7 +236,9 @@ export function ContactSection() {
 
             <div className="contact-info__cta">
               <a
-                href="#"
+                href="https://zalo.me/19001234"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="contact-info__cta-btn contact-info__cta-btn--zalo"
               >
                 <svg
@@ -175,11 +252,11 @@ export function ContactSection() {
                 Chat Zalo ngay
               </a>
               <a
-                href="tel:19006789"
+                href="tel:19001234"
                 className="contact-info__cta-btn contact-info__cta-btn--phone"
               >
                 <Phone size={18} />
-                Gọi 1900 6789
+                Gọi 1900 1234
               </a>
             </div>
           </div>

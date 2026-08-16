@@ -13,6 +13,7 @@ interface NewsSidebarProps {
   onSearchSubmit?: () => void;
   activeCategory?: 'all' | NewsCategory;
   onCategoryChange?: (v: 'all' | NewsCategory) => void;
+  onSelectTag?: (tag: string) => void;
   hideSearch?: boolean;
   hideCategories?: boolean;
 }
@@ -23,6 +24,7 @@ export function NewsSidebar({
   onSearchSubmit,
   activeCategory = 'all',
   onCategoryChange,
+  onSelectTag,
   hideSearch,
   hideCategories,
 }: NewsSidebarProps) {
@@ -39,7 +41,7 @@ export function NewsSidebar({
         <SidebarCategories active={activeCategory} onChange={onCategoryChange ?? (() => {})} />
       )}
       <SidebarPopular />
-      <SidebarTags />
+      <SidebarTags onSelectTag={onSelectTag} />
       <SidebarCta />
     </aside>
   );

@@ -96,8 +96,9 @@ export const leadApi = {
   notes: (id: string) =>
     api.get<Array<{ createdAt: string; content: string }>>(`/crm/leads/${id}/notes`),
 
+  // BE expects {note: string} — see LeadController.AddNoteRequest.
   addNote: (id: string, note: string) =>
-    api.post<unknown>(`/crm/leads/${id}/notes`, { content: note }),
+    api.post<unknown>(`/crm/leads/${id}/notes`, { note }),
 
   bookings: (id: string) =>
     api.get<import('./admin-booking').Appointment[]>(`/crm/leads/${id}/bookings`),

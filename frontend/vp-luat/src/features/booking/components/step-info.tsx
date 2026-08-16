@@ -101,7 +101,20 @@ export function StepInfo({
     } catch (err) {
       const errorCode = err instanceof Error ? err.message : 'UNKNOWN';
       trackBookingSubmitFailed(errorCode);
-      toast.error('Không thể hoàn tất đặt lịch. Vui lòng thử lại sau ít phút.');
+
+      // Try to surface the real backend error message instead of a generic toast.
+      // Axios errors attach `response.data` with our standard { success, message, data } wrapper.
+      const axiosErr = err as { response?: { data?: { message?: string; data?: { message?: string } } }; message?: string };
+      const backendMessage =
+        axiosErr.response?.data?.data?.message ||
+        axiosErr.response?.data?.message ||
+        axiosErr.message;
+
+      toast.error(
+        backendMessage
+          ? `Đặt lịch thất bại: ${backendMessage}`
+          : 'Không thể hoàn tất đặt lịch. Vui lòng thử lại sau ít phút.',
+      );
     }
   };
 

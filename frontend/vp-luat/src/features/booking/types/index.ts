@@ -11,8 +11,12 @@ export interface BookingLawyerOption {
   name: string;
   initials: string;
   specialty: string;
-  rating: number;
-  availabilityLabel: string;
+  /** Real rating from API; omitted when not available so we don't fake 5.0. */
+  rating?: number;
+  /** Real review count from API. */
+  reviewCount?: number;
+  /** Pre-formatted label e.g. "Còn lịch hôm nay" / "Hết lịch hôm nay". */
+  availabilityLabel?: string;
   avatarGradient: string;
   avatarUrl?: string;
 }
@@ -43,7 +47,11 @@ export interface BookingCustomerInfo {
   agreedToTerms: boolean;
 }
 
+// Backend returns the full `AppointmentDTO` for POST /bookings; the only
+// field we keep in the booking store is the appointment id, status, and
+// creation timestamp. See AppointmentDTO.
 export interface BookingConfirmation {
+  /** UUID of the appointment (BE field: `id`). */
   bookingId: string;
   status: 'confirmed' | 'pending_confirmation';
   createdAt: string;

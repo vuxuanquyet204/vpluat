@@ -22,6 +22,14 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function NewsFilterTabs({ active, onChange, posts = [] }: NewsFilterTabsProps) {
   const options = useMemo(() => {
+    // Derive counts from the live posts list instead of trusting the
+    // hardcoded `count` field on NEWS_CATEGORIES (it drifts when posts are
+    // added or removed by editors).
+    const counts: Record<string, number> = {};
+    posts.forEach((p) => {
+      counts[p.category] = (counts[p.category] ?? 0) + 1;
+    });
+
     const seen = new Set<string>(['all']);
     const rest = NEWS_CATEGORIES.filter((c) => !seen.has(c.id)).map((c) => {
       seen.add(c.id);
@@ -29,7 +37,7 @@ export function NewsFilterTabs({ active, onChange, posts = [] }: NewsFilterTabsP
         id: c.id as NewsCategory,
         label: c.label,
         icon: c.icon,
-        count: c.count,
+        count: counts[c.id] ?? 0,
       };
     });
     const all = NEWS_CATEGORIES.find((c) => c.id === 'all');
@@ -42,7 +50,7 @@ export function NewsFilterTabs({ active, onChange, posts = [] }: NewsFilterTabsP
       },
       ...rest,
     ];
-  }, [posts.length]);
+  }, [posts]);
 
   const totalForActive =
     active === 'all'

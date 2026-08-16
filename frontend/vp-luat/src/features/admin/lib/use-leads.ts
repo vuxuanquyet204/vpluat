@@ -8,6 +8,8 @@ import { useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { leadApi, type Lead } from '@/lib/api/admin-crm';
 import type { Appointment } from '@/lib/api/admin-booking';
+import { api } from '@/lib/api/hooks';
+import type { PageResponse } from '@/types/api';
 import { notifyError, notifySuccess, ghiAudit } from './index';
 import { getCurrentUser } from './rbac';
 
@@ -278,13 +280,29 @@ export function useBulkAssign() {
   });
 }
 
-/** Assign leads by user full name (uses PATCH endpoint with assignedTo string). */
+/**
+ * Assign leads by user full name. The BE `/crm/leads/{id}/assign` endpoint
+ * expects a UUID, so we look up the user by name via `/admin/users` first.
+ */
 export function useBulkAssignByName() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ ids, assigneeName }: { ids: string[]; assigneeName: string }) => {
+      // Find the user id for this assignee name. We request a single large
+      // page (the admin user list is small) and filter client-side.
+      const lookup = await api.get<PageResponse<{ id: string; fullName?: string; name?: string }>>(
+        '/admin/users',
+        { size: 200, page: 0 },
+      );
+      const target = lookup.content.find(
+        (u: { id: string; fullName?: string; name?: string }) =>
+          (u.fullName ?? u.name ?? '').trim() === assigneeName.trim(),
+      );
+      if (!target) {
+        throw new Error(`Không tìm thấy nhân viên "${assigneeName}"`);
+      }
       await Promise.allSettled(
-        ids.map((id) => leadApi.update(id, { assignedTo: assigneeName })),
+        ids.map((id) => leadApi.assign(id, target.id)),
       );
       ghiAudit({ action: 'assign', entity: 'lead', entityId: ids.join(','), entityLabel: `${ids.length} leads → ${assigneeName}` });
     },

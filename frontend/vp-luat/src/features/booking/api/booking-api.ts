@@ -122,9 +122,25 @@ export async function verifyReservation(reservationId: string): Promise<BookingR
   return unwrap(response.data);
 }
 
+// Backend returns the full AppointmentDTO (which has `id`, not `bookingId`).
+// Map the response into the slim shape the booking store expects.
+interface AppointmentResponse {
+  id?: string;
+  status?: string;
+  createdAt?: string;
+}
+
 export async function submitBooking(payload: SubmitBookingPayload): Promise<BookingConfirmation> {
-  const response = await apiClient.post<{ data: BookingConfirmation }>('/bookings', payload);
-  return unwrap(response.data);
+  const response = await apiClient.post<{ data: AppointmentResponse }>('/bookings', payload);
+  const appt = unwrap(response.data) ?? {};
+  return {
+    bookingId: appt.id ?? '',
+    status:
+      appt.status === 'CONFIRMED'
+        ? 'confirmed'
+        : 'pending_confirmation',
+    createdAt: appt.createdAt ?? new Date().toISOString(),
+  };
 }
 
 export async function fetchLawyers(serviceSlug?: string): Promise<LawyerApiResponse[]> {

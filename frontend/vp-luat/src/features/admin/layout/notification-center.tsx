@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Bell, Check, Trash2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminUIStore } from '@/features/admin/store';
+import { ConfirmDialog } from '@/features/admin/components';
 import { NotificationItem } from './notification-item';
 
 export function NotificationCenter() {
@@ -15,6 +16,7 @@ export function NotificationCenter() {
     clearNotifications,
   } = useAdminUIStore();
   const [open, setOpen] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const unread = notifications.filter((n) => !n.read).length;
@@ -134,11 +136,7 @@ export function NotificationCenter() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (typeof window !== 'undefined' && window.confirm('Xóa tất cả thông báo?')) {
-                      clearNotifications();
-                    }
-                  }}
+                  onClick={() => setConfirmClear(true)}
                   disabled={notifications.length === 0}
                   className="action-btn"
                   style={{
@@ -150,6 +148,7 @@ export function NotificationCenter() {
                     gap: 3,
                   }}
                   title="Xóa tất cả"
+                  aria-label="Xóa tất cả thông báo"
                 >
                   <Trash2 size={11} />
                 </button>
@@ -220,6 +219,20 @@ export function NotificationCenter() {
           </div>
         </>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmClear}
+        onClose={() => setConfirmClear(false)}
+        title="Xóa tất cả thông báo?"
+        message="Hành động này sẽ xóa toàn bộ thông báo hiện có. Bạn không thể hoàn tác."
+        confirmLabel="Xóa tất cả"
+        cancelLabel="Huỷ"
+        variant="danger"
+        onConfirm={() => {
+          clearNotifications();
+          setConfirmClear(false);
+        }}
+      />
     </div>
   );
 }

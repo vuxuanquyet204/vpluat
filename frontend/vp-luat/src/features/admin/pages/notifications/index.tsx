@@ -120,6 +120,18 @@ export default function NotificationsPage() {
     setConfirmClearRead(false);
   };
 
+  const handleRefresh = () => {
+    if (typeof window === 'undefined') return;
+    // Clear the dedupe flag so the upcoming-booking alert fires again,
+    // then reload so the page refetches everything from the API.
+    try {
+      window.localStorage.removeItem('vp-luat-booking-upcoming-alert');
+    } catch {
+      // ignore
+    }
+    window.location.reload();
+  };
+
   return (
     <div className="admin-view">
       <AdminPageHeader
@@ -130,8 +142,9 @@ export default function NotificationsPage() {
             <button
               type="button"
               className="action-btn"
-              onClick={() => useBookingUpcomingAlerts() as unknown as void}
-              title="Refresh từ mock data"
+              onClick={handleRefresh}
+              title="Làm mới"
+              aria-label="Làm mới"
               style={{ display: 'flex', alignItems: 'center', gap: 4 }}
             >
               <RefreshCw size={12} />

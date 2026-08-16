@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Star } from 'lucide-react';
 import type { Lawyer } from '../types';
 import type { LawyerApiResponse } from '../api/lawyers-api';
@@ -42,16 +43,24 @@ export function LawyerCard({ lawyer, onViewProfile, onBook }: LawyerCardProps) {
   const reviewCount = lawyer.reviewCount ?? 0;
   const experience = lawyer.experience ?? 0;
   const successfulCases = lawyer.successfulCases ?? 0;
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(lawyer.avatar) && !imageFailed;
 
   return (
     <article className="lawyer-card">
       <div className="lawyer-avatar-wrap">
         <div
           className="lawyer-avatar-placeholder"
-          style={lawyer.avatar ? undefined : { background: lawyer.avatarColor }}
+          style={showImage ? undefined : { background: lawyer.avatarColor }}
         >
-          {lawyer.avatar ? (
-            <img src={lawyer.avatar} alt={lawyer.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+          {showImage ? (
+            <img
+              src={lawyer.avatar}
+              alt={lawyer.name}
+              loading="lazy"
+              onError={() => setImageFailed(true)}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+            />
           ) : (
             lawyer.initials
           )}

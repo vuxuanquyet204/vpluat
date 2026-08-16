@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Check, Circle, Star, StarHalf } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { BookingLawyerOption } from '../types';
@@ -32,6 +33,9 @@ export function LawyerCard({
   selected: boolean;
   onSelect: (lawyer: BookingLawyerOption) => void;
 }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(lawyer.avatarUrl) && !imageFailed;
+
   return (
     <button
       type="button"
@@ -54,10 +58,16 @@ export function LawyerCard({
       </span>
       <span
         className="relative mx-auto mb-3 block h-16 w-16 overflow-hidden rounded-full border-2 border-white/30"
-        style={!lawyer.avatarUrl ? { background: lawyer.avatarGradient } : undefined}
+        style={!showImage ? { background: lawyer.avatarGradient } : undefined}
       >
-        {lawyer.avatarUrl ? (
-          <img src={lawyer.avatarUrl} alt={lawyer.name} className="h-full w-full object-cover" />
+        {showImage ? (
+          <img
+            src={lawyer.avatarUrl}
+            alt={lawyer.name}
+            loading="lazy"
+            onError={() => setImageFailed(true)}
+            className="h-full w-full object-cover"
+          />
         ) : (
           <span className="flex h-full w-full items-center justify-center font-heading text-[1.3rem] font-bold text-white">
             {lawyer.initials}
@@ -66,14 +76,33 @@ export function LawyerCard({
       </span>
       <span className="mb-1 block text-[0.875rem] font-bold text-[var(--primary)]">{lawyer.name}</span>
       <span className="mb-2 block text-[0.75rem] text-[var(--gray-500)]">{lawyer.specialty}</span>
-      <span className="mb-2 flex items-center justify-center gap-[3px] text-[0.75rem] text-[var(--gray-500)]">
-        {ratingIcons(lawyer.rating)}
-        <span>{lawyer.rating.toFixed(1)}</span>
-      </span>
-      <span className="inline-flex items-center gap-[5px] rounded-[var(--radius-full)] bg-[var(--success-bg)] px-[10px] py-[3px] text-[0.72rem] font-semibold text-[var(--success)]">
-        <Circle className="h-[0.55rem] w-[0.55rem] fill-current" />
-        {lawyer.availabilityLabel}
-      </span>
+      {typeof lawyer.rating === 'number' && (
+        <span
+          className="mb-2 flex items-center justify-center gap-[3px] text-[0.75rem] text-[var(--gray-500)]"
+          aria-label={`Đánh giá ${lawyer.rating.toFixed(1)} trên 5${lawyer.reviewCount ? `, ${lawyer.reviewCount} lượt` : ''}`}
+        >
+          {ratingIcons(lawyer.rating)}
+          <span>{lawyer.rating.toFixed(1)}</span>
+          {typeof lawyer.reviewCount === 'number' && (
+            <span className="text-[var(--gray-400)]">({lawyer.reviewCount})</span>
+          )}
+        </span>
+      )}
+      {lawyer.availabilityLabel && (
+        <span
+          className={cn(
+            'inline-flex items-center gap-[5px] rounded-[var(--radius-full)] px-[10px] py-[3px] text-[0.72rem] font-semibold',
+            lawyer.availabilityLabel === 'Hết lịch hôm nay'
+              ? 'bg-[var(--gray-100)] text-[var(--gray-500)]'
+              : 'bg-[var(--success-bg)] text-[var(--success)]',
+          )}
+        >
+          <Circle
+            className="h-[0.55rem] w-[0.55rem] fill-current"
+          />
+          {lawyer.availabilityLabel}
+        </span>
+      )}
     </button>
   );
 }

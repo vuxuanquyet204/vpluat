@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { useAdminUIStore } from '@/features/admin/store';
@@ -8,6 +9,22 @@ import { ADMIN_NAV_SECTIONS } from '@/features/admin/constants';
 import { useSidebarBadges } from '@/features/admin/lib/use-sidebar-badges';
 import { Scale, LogOut } from 'lucide-react';
 import { clearAuthToken, setLoggingOut, callServerLogout } from '@/lib/api/client';
+
+function getInitials(name?: string | null) {
+  if (!name) return 'AD';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'AD';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  SUPER_ADMIN: 'Super Admin',
+  ADMIN: 'Quản trị viên',
+  STAFF: 'Nhân viên',
+  LAWYER: 'Luật sư',
+};
+
 function LogoutButton() {
   const { closeSidebar } = useAdminUIStore();
 
@@ -44,6 +61,20 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const { isSidebarOpen, closeSidebar } = useAdminUIStore();
   const badges = useSidebarBadges();
+  const { data: session } = useSession();
+  const sessionUser = (session?.user as
+    | {
+        name?: string | null;
+        fullName?: string | null;
+        role?: string;
+        avatarUrl?: string | null;
+      }
+    | undefined) ?? undefined;
+
+  const userName = sessionUser?.fullName || sessionUser?.name || 'Quản trị viên';
+  const userRole = ROLE_LABELS[sessionUser?.role ?? ''] || 'Quản trị viên';
+  const userInitials = getInitials(sessionUser?.fullName || sessionUser?.name);
+  const userAvatar = sessionUser?.avatarUrl;
 
   const getBadge = (item: { badge?: number; badgeSource?: keyof typeof badges }) => {
     if (item.badgeSource) return badges[item.badgeSource] ?? 0;
@@ -116,10 +147,19 @@ export function AdminSidebar() {
         {/* User footer */}
         <div className="admin-sidebar__footer">
           <div className="admin-sidebar__user">
-            <div className="admin-sidebar__avatar">HT</div>
+            {userAvatar ? (
+              <img
+                className="admin-sidebar__avatar"
+                src={userAvatar}
+                alt={userName}
+                style={{ objectFit: 'cover' }}
+              />
+            ) : (
+              <div className="admin-sidebar__avatar" aria-hidden="true">{userInitials}</div>
+            )}
             <div className="admin-sidebar__user-info">
-              <span className="admin-sidebar__user-name">Hoàng Minh</span>
-              <span className="admin-sidebar__user-role">Quản trị viên</span>
+              <span className="admin-sidebar__user-name">{userName}</span>
+              <span className="admin-sidebar__user-role">{userRole}</span>
             </div>
           </div>
           <LogoutButton />

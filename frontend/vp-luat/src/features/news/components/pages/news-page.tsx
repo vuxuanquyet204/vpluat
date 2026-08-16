@@ -64,7 +64,10 @@ export default function NewsPage() {
   }, [allArticles, activeCategory, appliedQuery, featured]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const paginated = filtered.slice(0, PER_PAGE);
+  // When the user filters or changes page, clamp the page number to the
+  // available range so pagination never lands on a phantom page.
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const paginated = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
   const isLoading = featuredLoading || postsLoading;
 
@@ -105,7 +108,7 @@ export default function NewsPage() {
                 </div>
               )}
 
-              <NewsPagination page={page} totalPages={totalPages} onPageChange={setPage} />
+              <NewsPagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
             </main>
 
             <NewsSidebar
@@ -114,6 +117,11 @@ export default function NewsPage() {
               onSearchSubmit={() => { setAppliedQuery(searchQuery); setPage(1); }}
               activeCategory={activeCategory}
               onCategoryChange={(v) => { setActiveCategory(v); setPage(1); }}
+              onSelectTag={(tag) => {
+                setSearchQuery(tag);
+                setAppliedQuery(tag);
+                setPage(1);
+              }}
             />
           </div>
         </div>

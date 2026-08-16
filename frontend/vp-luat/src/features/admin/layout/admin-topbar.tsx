@@ -13,13 +13,7 @@ export function AdminTopbar() {
   const pathname = usePathname();
   const { toggleSidebar } = useAdminUIStore();
 
-  const navItem = getNavItemByHref(
-    Object.keys(
-      Object.fromEntries(
-        pathname === '/admin' ? [['/admin/dashboard', '']] : [],
-      ),
-    )[0] ?? pathname,
-  );
+  const navItem = pathname === '/admin' ? getNavItemByHref('/admin/dashboard') : getNavItemByHref(pathname);
 
   const displayTitle = navItem?.label ?? 'Admin Panel';
 
@@ -47,10 +41,10 @@ export function AdminTopbar() {
       </div>
 
       <div className="admin-topbar__right">
-        <button className="admin-topbar__btn" type="button" aria-label="Hôm nay">
+        <div className="admin-topbar__date" aria-label="Ngày hôm nay">
           <Calendar size={14} aria-hidden="true" />
           <span>{today}</span>
-        </button>
+        </div>
 
         <ReportsMenu />
 

@@ -1,44 +1,27 @@
 'use client';
 
 import { useState } from 'react';
-import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
 import { useRecentReviews } from '@/features/home/hooks/use-reviews';
 
-// Fallback testimonials when API fails
-const FALLBACK_TESTIMONIALS = [
-  {
-    text: 'Tôi rất hài lòng với dịch vụ tư vấn luật của VP Luật. Đội ngũ luật sư chuyên nghiệp, tận tâm và giải quyết vụ việc của tôi nhanh chóng.',
-    name: 'Nguyễn Thị Lan',
-    role: 'Giám đốc, Công ty TNHH ABC',
-    initials: 'NL',
-  },
-  {
-    text: 'VP Luật đã hỗ trợ chúng tôi trong vụ tranh chấp đất đai kéo dài nhiều năm. Nhờ sự tận tâm của đội ngũ luật sư, chúng tôi đã giành chiến thắng.',
-    name: 'Trần Văn Minh',
-    role: 'Chủ tịch HĐQT, Tập đoàn XYZ',
-    initials: 'TM',
-  },
-  {
-    text: 'Dịch vụ tư vấn M&A của VP Luật giúp chúng tôi hoàn tất thương vụ mua lại một cách suôn sẻ. Đội ngũ am hiểu sâu về luật doanh nghiệp.',
-    name: 'Lê Hoàng Nam',
-    role: 'CFO, Tập đoàn DEF',
-    initials: 'HN',
-  },
-];
+// Empty-state copy when the backend has no reviews yet (or the call failed).
+// We intentionally do NOT ship hard-coded Vietnamese names / companies as
+// fallback data — that would put fake testimonials in front of users.
+const EMPTY_MESSAGE = 'Chưa có đánh giá nào từ khách hàng. Hãy là người đầu tiên chia sẻ trải nghiệm của bạn.';
 
 export function TestimonialsSection() {
   const [current, setCurrent] = useState(0);
-  const { data: reviews = [], isLoading } = useRecentReviews(10);
+  const { data: reviews = [], isLoading, isError } = useRecentReviews(10);
 
-  // Use API data if available, otherwise fallback
-  const testimonials = reviews.length > 0
-    ? reviews.slice(0, 5).map((review) => ({
-        text: review.content,
-        name: review.clientName,
-        role: review.clientRole || `${review.serviceName ? 'Khách hàng ' + review.serviceName : 'Khách hàng'}`,
-        initials: review.initials || review.clientName?.slice(0, 2).toUpperCase() || 'CL',
-      }))
-    : FALLBACK_TESTIMONIALS;
+  // Only use real reviews from the API — never fall back to hard-coded names.
+  const testimonials = reviews.slice(0, 5).map((review) => ({
+    text: review.content,
+    name: review.clientName,
+    role:
+      review.clientRole ||
+      (review.serviceName ? `Khách hàng ${review.serviceName}` : 'Khách hàng'),
+    initials: review.initials || review.clientName?.slice(0, 2).toUpperCase() || 'CL',
+  }));
 
   const total = testimonials.length;
 
@@ -56,7 +39,29 @@ export function TestimonialsSection() {
         <div className="container">
           <div className="loading-container">
             <div className="loading-spinner" />
-            <p>Đang tải đánh giá...</p>
+            <p>�ang tải đánh giá...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (total === 0) {
+    return (
+      <section className="section">
+        <div className="container">
+          <div className="section__header">
+            <span className="section__label">Đánh giá</span>
+            <h2 className="section__title">Khách Hàng Nói Gì Về Chúng Tôi</h2>
+            <p className="section__subtitle">
+              Những đánh giá chân thực từ khách hàng đã sử dụng dịch vụ
+            </p>
+          </div>
+          <div className="testimonial-card testimonial-card--empty" role="status">
+            <Quote className="testimonial-card__quote-icon" aria-hidden="true" />
+            <p className="testimonial-card__text">
+              {isError ? 'Không thể tải đánh giá. Vui lòng thử lại sau.' : EMPTY_MESSAGE}
+            </p>
           </div>
         </div>
       </section>
@@ -111,7 +116,8 @@ export function TestimonialsSection() {
           <button
             className="testimonials__arrow"
             onClick={prev}
-            aria-label="Previous testimonial"
+            disabled={total <= 1}
+            aria-label="Đánh giá trước"
           >
             <ChevronLeft size={20} />
           </button>
@@ -121,14 +127,16 @@ export function TestimonialsSection() {
                 key={index}
                 className={`testimonials__dot ${index === current ? 'active' : ''}`}
                 onClick={() => setCurrent(index)}
-                aria-label={`Go to testimonial ${index + 1}`}
+                aria-label={`Đánh giá ${index + 1}`}
+                aria-current={index === current ? 'true' : undefined}
               />
             ))}
           </div>
           <button
             className="testimonials__arrow"
             onClick={next}
-            aria-label="Next testimonial"
+            disabled={total <= 1}
+            aria-label="Đánh giá tiếp theo"
           >
             <ChevronRight size={20} />
           </button>

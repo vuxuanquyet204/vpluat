@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Star } from 'lucide-react';
 import type { LandingBlock, LandingPageConfig, LandingPageVariantConfig } from '@/features/landing-pages';
+import { PublicFaqBlock } from './public-faq-block';
 
 interface PublicPageRendererProps {
   page: LandingPageConfig;
@@ -101,25 +102,11 @@ function renderBlock(block: LandingBlock, index: number) {
       );
     case 'faq':
       return (
-        <section key={`${block.type}-${index}`} className="section section--gray">
-          <div className="container">
-            <div className="section__header">
-              <h2 className="section__title">{block.title}</h2>
-            </div>
-            <div className="faq__container">
-              {block.items.map((item) => (
-                <article key={item.question} className="faq-item active public-faq-item">
-                  <div className="faq-item__question public-faq-item__question">
-                    <span>{item.question}</span>
-                  </div>
-                  <div className="faq-item__answer active">
-                    <div className="faq-item__answer-inner">{item.answer}</div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
+        <PublicFaqBlock
+          key={`${block.type}-${index}`}
+          title={block.title}
+          items={block.items}
+        />
       );
     case 'testimonials':
       return (

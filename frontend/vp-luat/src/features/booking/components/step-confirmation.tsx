@@ -50,6 +50,36 @@ export function StepConfirmation({ onReset }: { onReset: () => void }) {
     return formatBookingDateLabel(new Date(date));
   }, [date]);
 
+  const handleAddToGoogleCalendar = () => {
+    if (!confirmation || !date || !timeSlot) return;
+    const start = new Date(date);
+    const [hh, mm] = timeSlot.startTime.split(':').map(Number);
+    if (!Number.isFinite(hh)) return;
+    start.setHours(hh, mm ?? 0, 0, 0);
+    const end = new Date(start.getTime() + 30 * 60 * 1000);
+
+    const toGcal = (d: Date) =>
+      d
+        .toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\.\d{3}/, '');
+
+    const title = encodeURIComponent(`Tư vấn pháp lý - ${service?.name ?? 'VP Luật'}`);
+    const details = encodeURIComponent(
+      `Buổi tư vấn với luật sư ${lawyer?.name ?? ''}.\nMã đặt lịch: ${confirmation.bookingId}`,
+    );
+    const location = encodeURIComponent(
+      consultationType === 'office'
+        ? 'Văn phòng VP Luật - Tầng 15, Landmark 72, Hà Nội'
+        : consultationType === 'video'
+          ? 'Google Meet (liên kết sẽ được gửi qua email)'
+          : 'Trao đổi qua điện thoại',
+    );
+
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${toGcal(start)}/${toGcal(end)}&details=${details}&location=${location}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <section className="mx-auto max-w-[600px] animate-in fade-in slide-in-from-right-1 py-5 text-center duration-300">
       <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--success-bg)] text-[var(--success)]">
@@ -87,13 +117,15 @@ export function StepConfirmation({ onReset }: { onReset: () => void }) {
 
       <div className="mb-6 flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--primary-faint)] px-5 py-3 text-[0.85rem] text-[var(--gray-500)]">
         <Bell className="h-4 w-4 text-[var(--primary)]" />
-        <span>Chúng tôi sẽ xác nhận qua SMS và email trong vòng 15 phút.</span>
+        <span>Chúng tôi sẽ xác nhận qua email trong vòng 15 phút.</span>
       </div>
 
       <div className="flex flex-wrap justify-center gap-3 max-md:flex-col">
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--primary)] px-6 py-3 text-[0.875rem] font-bold text-white transition hover:-translate-y-px hover:bg-[var(--primary-dark)]"
+          onClick={handleAddToGoogleCalendar}
+          disabled={!confirmation}
+          className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--primary)] px-6 py-3 text-[0.875rem] font-bold text-white transition hover:-translate-y-px hover:bg-[var(--primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CalendarPlus className="h-4 w-4" />
           <span>Thêm vào Google Calendar</span>

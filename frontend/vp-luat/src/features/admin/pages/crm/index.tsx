@@ -88,6 +88,9 @@ export default function CRMPage() {
   const entries: Lead[] = useMemo(() => (pageData?.content ?? []).map(normalise), [pageData]);
   const total = pageData?.totalElements ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+  // Clamp `page` so a stale page index (e.g. from a previous filter that
+  // returned more rows) can never show an empty table or out-of-range label.
+  const safePage = Math.min(Math.max(0, page), Math.max(0, totalPages - 1));
 
   const { stats } = useLeadStats({ ...backendParams, size: LIMIT, page: 0 });
   const sourceCounts = useLeadSourceCounts(advancedFilters);
@@ -299,14 +302,14 @@ export default function CRMPage() {
         {totalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, fontSize: '0.82rem', color: 'var(--gray-500)' }}>
             <span>
-              Trang {page + 1} / {totalPages} · {total} kết quả
+              Trang {safePage + 1} / {totalPages} · {total} kết quả
             </span>
             <div style={{ display: 'flex', gap: 4 }}>
               <button
                 type="button"
                 className="action-btn"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
+                disabled={safePage === 0}
               >
                 ‹ Trước
               </button>
@@ -314,7 +317,7 @@ export default function CRMPage() {
                 type="button"
                 className="action-btn"
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
+                disabled={safePage >= totalPages - 1}
               >
                 Sau ›
               </button>

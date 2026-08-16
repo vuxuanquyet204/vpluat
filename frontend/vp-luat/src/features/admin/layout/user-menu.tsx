@@ -11,17 +11,23 @@ import { notifyInfo } from '@/features/admin/lib';
 import { clearAuthToken, setLoggingOut, callServerLogout } from '@/lib/api/client';
 
 const ROLE_LABEL: Record<string, string> = {
-  super_admin: 'Super Admin',
-  admin: 'Admin',
-  lawyer: 'Luật sư',
-  staff: 'Nhân viên',
+  SUPER_ADMIN: 'Super Admin',
+  ADMIN: 'Admin',
+  LAWYER: 'Luật sư',
+  STAFF: 'Nhân viên',
+  EDITOR: 'Biên tập viên',
+  CSKH: 'Chăm sóc khách hàng',
+  USER: 'Người dùng',
 };
 
 const ROLE_COLOR: Record<string, string> = {
-  super_admin: '#DC2626',
-  admin: '#2563EB',
-  lawyer: '#10B981',
-  staff: '#6B7280',
+  SUPER_ADMIN: '#DC2626',
+  ADMIN: '#2563EB',
+  LAWYER: '#10B981',
+  STAFF: '#6B7280',
+  EDITOR: '#8B5CF6',
+  CSKH: '#EC4899',
+  USER: '#94A3B8',
 };
 
 function getInitials(name: string): string {

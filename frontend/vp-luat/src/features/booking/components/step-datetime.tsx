@@ -241,7 +241,7 @@ export function StepDatetime({
                 <span>Luật sư chưa có lịch trống cho ngày này. Vui lòng chọn ngày khác.</span>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2 min-[769px]:grid-cols-3 max-md:grid-cols-4 max-[480px]:grid-cols-3">
+              <div className="grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-3">
                 {slots.map((slot) => {
                   const isSelected = timeSlot?.slotId === slot.slotId;
                   const isBooked = slot.status === 'booked';

@@ -52,7 +52,7 @@ export function HeroSection() {
           <Link href="/booking" className="btn btn--primary btn--lg">
             Đặt lịch tư vấn ngay
           </Link>
-          <Link href="/dich-vu" className="btn btn--outline btn--lg">
+          <Link href="/services" className="btn btn--outline btn--lg">
             Khám phá dịch vụ
           </Link>
         </div>

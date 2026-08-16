@@ -11,24 +11,53 @@ import { AlertCircle, Lock, Mail, Scale, ShieldCheck, Phone, MapPin } from 'luci
 import { getDashboardPath } from '@/features/auth/utils/permissions';
 import type { Role } from '@/features/auth/utils/permissions';
 
+// Map of every NextAuth error code we want to surface in Vietnamese.
+// Anything else falls back to the generic message.
+const NEXTAUTH_ERROR_MESSAGES: Record<string, string> = {
+  CredentialsSignin: 'Email hoặc mật khẩu không đúng',
+  SessionRequired: 'Vui lòng đăng nhập để tiếp tục.',
+  AccessDenied: 'Bạn không có quyền truy cập trang này.',
+  Verification: 'Liên kết xác thực đã hết hạn hoặc đã được sử dụng.',
+  Configuration: 'Lỗi cấu hình máy chủ. Liên hệ quản trị viên.',
+  OAuthSignin: 'Không thể bắt đầu phiên đăng nhập với nhà cung cấp.',
+  OAuthCallback: 'Đăng nhập qua nhà cung cấp thất bại.',
+  OAuthCreateAccount: 'Không thể tạo tài khoản từ nhà cung cấp.',
+  EmailCreateAccount: 'Không thể tạo tài khoản bằng email này.',
+  Callback: 'Đăng nhập thất bại khi gọi lại nhà cung cấp.',
+  OAuthAccountNotLinked:
+    'Email này đã được dùng với nhà cung cấp khác. Hãy đăng nhập bằng phương thức ban đầu.',
+  EmailSignin: 'Không thể gửi email đăng nhập.',
+  SessionError: 'Phiên đăng nhập đã hết hạn. Vui lòng thử lại.',
+  default: 'Đăng nhập thất bại. Vui lòng thử lại.',
+};
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [remember, setRemember] = useState(false);
 
   useEffect(() => {
     const errorParam = searchParams.get('error');
     if (errorParam) {
-      const messages: Record<string, string> = {
-        CredentialsSignin: 'Email hoặc mật khẩu không đúng',
-        undefined: 'Đăng nhập thất bại. Vui lòng thử lại.',
-        Configuration: 'Lỗi cấu hình máy chủ. Liên hệ quản trị viên.',
-      };
-      setError(messages[errorParam] || `Đăng nhập thất bại (${errorParam})`);
+      const message =
+        NEXTAUTH_ERROR_MESSAGES[errorParam] ??
+        `Đăng nhập thất bại (${errorParam})`;
+      setError(message);
     }
   }, [searchParams]);
+
+  // Restore the "remember me" preference so the checkbox survives a reload.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      setRemember(window.localStorage.getItem('vp-luat-login-remember') === '1');
+    } catch {
+      // ignore
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -36,8 +65,9 @@ function LoginForm() {
     setError('');
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
+    const email = (formData.get('email') as string) ?? '';
+    const password = (formData.get('password') as string) ?? '';
+    const remember = formData.get('remember') === 'on';
 
     try {
       const result = await signIn('credentials', {
@@ -47,12 +77,31 @@ function LoginForm() {
       });
 
       if (!result || result.error) {
-        setError('Email hoặc mật khẩu không đúng');
+        const message =
+          result?.error && NEXTAUTH_ERROR_MESSAGES[result.error]
+            ? NEXTAUTH_ERROR_MESSAGES[result.error]
+            : NEXTAUTH_ERROR_MESSAGES.default;
+        setError(message);
         setIsLoading(false);
         return;
       }
 
       if (result.ok) {
+        // Persist "remember-me" preference across tabs/sessions. The actual
+        // session lifetime is controlled by the backend cookie; we just store
+        // a UI hint so the checkbox stays checked on reload.
+        if (typeof window !== 'undefined') {
+          try {
+            if (remember) {
+              window.localStorage.setItem('vp-luat-login-remember', '1');
+            } else {
+              window.localStorage.removeItem('vp-luat-login-remember');
+            }
+          } catch {
+            // ignore (storage may be unavailable in private mode)
+          }
+        }
+
         // Fetch session to get user role
         const sessionRes = await fetch('/api/auth/session');
         const sessionData = await sessionRes.json();
@@ -221,6 +270,8 @@ function LoginForm() {
                 <input
                   type="checkbox"
                   name="remember"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
                 />
                 Ghi nhớ đăng nhập trên thiết bị này

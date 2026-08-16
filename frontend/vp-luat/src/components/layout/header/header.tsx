@@ -9,7 +9,7 @@ import { NavLinks } from './nav-links';
 import { LanguageSwitcher } from './language-switcher';
 import { MobileMenu } from './mobile-menu';
 
-const HIDDEN_PREFIXES = ['/admin', '/login', '/landing-builder'];
+const HIDDEN_PREFIXES = ['/admin', '/staff', '/login', '/landing-builder'];
 
 function shouldHide(pathname: string | null) {
   if (!pathname) return false;

@@ -12,7 +12,7 @@ const NEWS_ITEMS = [
     title: 'Nghị định mới về đăng ký doanh nghiệp: 5 điểm cần lưu ý trong năm 2026',
     excerpt:
       'Những thay đổi quan trọng trong thủ tục đăng ký kinh doanh, giấy phép con và nghĩa vụ báo cáo mà doanh nghiệp cần nắm rõ...',
-    href: '/tin-tuc/nghi-dinh-moi-dang-ky-doanh-nghiep-2026',
+    href: '/news/nghi-dinh-moi-dang-ky-doanh-nghiep-2026',
   },
   {
     icon: Home,
@@ -22,7 +22,7 @@ const NEWS_ITEMS = [
     title: 'Hướng dẫn mới về bồi thường GPMB: Quyền lợi của người dân được tăng cường',
     excerpt:
       'Cập nhật chính sách bồi thường, hỗ trợ tái định cư và giải quyết khiếu nại trong các dự án hạ tầng giai đoạn 2026-2030...',
-    href: '/tin-tuc/huong-dan-boi-thuong-giai-phong-mat-bang-2026',
+    href: '/news/huong-dan-boi-thuong-giai-phong-mat-bang-2026',
   },
   {
     icon: Scale,
@@ -32,7 +32,7 @@ const NEWS_ITEMS = [
     title: 'Top 10 câu hỏi thường gặp về ly hôn: Luật sư giải đáp chi tiết',
     excerpt:
       'Từ thủ tục ly hôn, phân chia tài sản, quyền nuôi con đến các vấn đề liên quan khi kết hôn có yếu tố nước ngoài...',
-    href: '/tin-tuc/top-10-cau-hoi-thuong-gap-ve-ly-hon',
+    href: '/news/top-10-cau-hoi-thuong-gap-ve-ly-hon',
   },
 ];
 
