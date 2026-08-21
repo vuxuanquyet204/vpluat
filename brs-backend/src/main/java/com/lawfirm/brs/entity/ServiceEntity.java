@@ -3,6 +3,7 @@ package com.lawfirm.brs.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -27,6 +28,32 @@ public class ServiceEntity {
 
     @Column(name = "name", nullable = false)
     private String name;
+
+    /**
+     * Short / long-form description shown on the public service detail page.
+     * Nullable so the admin can leave it blank during initial seeding.
+     */
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    /**
+     * Consultation fee in VND. Optional — when null the UI shows "Liên hệ".
+     */
+    @Column(name = "price", precision = 15, scale = 2)
+    private BigDecimal price;
+
+    /**
+     * Estimated delivery time in days. Used by the booking flow for context.
+     */
+    @Column(name = "duration")
+    private Integer duration;
+
+    /**
+     * Display category label (e.g. "Doanh nghiệp", "Nhà đất"). Distinct from
+     * the {@code parent} FK which represents the hierarchical parent service.
+     */
+    @Column(name = "category", length = 100)
+    private String category;
 
     @Column(name = "icon")
     private String icon;

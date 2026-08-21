@@ -5,9 +5,22 @@ import Link from 'next/link';
 import { CheckCircle2, ArrowLeft, Phone, Mail, MapPin } from 'lucide-react';
 import { useServiceBySlug } from '@/features/services/hooks/use-services';
 import { useLawyers } from '@/features/lawyers/hooks/use-lawyers';
-import { LawyerCard } from '@/features/lawyers/components/lawyer-card';
 import { ServicesCta } from '@/features/services/components/services-cta';
-import type { LawyerApiResponse } from '@/features/lawyers/api/lawyers-api';
+
+function safeName(value: unknown, fallback = 'L'): string {
+  if (typeof value !== 'string' || value.length === 0) return fallback;
+  return value;
+}
+
+function safeInitials(value: unknown, fallback = 'L'): string {
+  if (typeof value !== 'string') return fallback;
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return fallback;
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return fallback;
+  const chars = parts.map((p) => p[0] ?? '').join('').slice(0, 2).toUpperCase();
+  return chars || fallback;
+}
 
 export default function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -39,6 +52,8 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
 
   const benefits = (service as { benefits?: string[] }).benefits ?? [];
   const description = service.description || service.shortDescription || 'Đang cập nhật.';
+  const features = (service as { features?: string[] }).features ?? [];
+  const serviceName = safeName(service.name, 'Dịch vụ');
 
   return (
     <main className="service-detail">
@@ -50,9 +65,9 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
             <span>/</span>
             <Link href="/services">Dịch vụ</Link>
             <span>/</span>
-            <span>{service.name}</span>
+            <span>{serviceName}</span>
           </div>
-          <h1 className="page-hero__title">{service.name}</h1>
+          <h1 className="page-hero__title">{serviceName}</h1>
           <p className="page-hero__subtitle">{service.shortDescription}</p>
         </div>
       </section>
@@ -87,11 +102,11 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
               )}
 
               {/* Features */}
-              {service.features && service.features.length > 0 && (
+              {features.length > 0 && (
                 <div className="service-detail__section">
                   <h2 className="service-detail__section-title">Chi tiết dịch vụ</h2>
                   <div className="service-detail__features">
-                    {service.features.map((f) => (
+                    {features.map((f) => (
                       <div key={f} className="service-detail__feature">
                         <div className="service-detail__feature-check">
                           <CheckCircle2 size={14} />
@@ -159,11 +174,11 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                     {lawyers.slice(0, 3).map((l) => (
                       <Link key={l.id} href={`/lawyers/${l.slug}`} className="service-detail__lawyer">
                         <div className="service-detail__lawyer-avatar" style={{ background: 'var(--primary)' }}>
-                          {l.name?.charAt(0) || 'L'}
+                          {safeInitials(l.name)}
                         </div>
                         <div>
-                          <div className="service-detail__lawyer-name">{l.name}</div>
-                          <div className="service-detail__lawyer-position">{l.position}</div>
+                          <div className="service-detail__lawyer-name">{safeName(l.name, 'Luật sư')}</div>
+                          <div className="service-detail__lawyer-position">{safeName(l.position, 'Luật sư')}</div>
                           {l.experience && (
                             <div className="service-detail__lawyer-exp">{l.experience} năm kinh nghiệm</div>
                           )}

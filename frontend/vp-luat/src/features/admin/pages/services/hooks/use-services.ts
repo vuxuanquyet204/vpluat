@@ -69,10 +69,14 @@ function mapToService(raw: Record<string, unknown>): Service {
   return {
     id: String(raw.id ?? ''),
     name: String(raw.name ?? raw.slug ?? ''),
-    description: '',
-    price: raw.price as number | undefined,
-    duration: raw.duration as number | undefined,
-    category: String(raw.parentName ?? ''),
+    description: typeof raw.description === 'string' ? raw.description : '',
+    price: typeof raw.price === 'number' || typeof raw.price === 'string'
+      ? Number(raw.price)
+      : undefined,
+    duration: typeof raw.duration === 'number' || typeof raw.duration === 'string'
+      ? Number(raw.duration)
+      : undefined,
+    category: String(raw.category ?? raw.parentName ?? ''),
     isActive: Boolean(raw.isActive ?? true),
     lawyerIds: (Array.isArray(raw.lawyerIds) ? raw.lawyerIds : []) as string[],
     createdAt: String(raw.createdAt ?? new Date().toISOString()),

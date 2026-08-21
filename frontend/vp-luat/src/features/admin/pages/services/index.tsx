@@ -179,12 +179,29 @@ function ServicesTab() {
   const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
 
   const handleSubmit = async (values: ServiceFormValues) => {
-    const payload: Omit<Service, 'id' | 'createdAt'> = {
-      name: values.name,
+    // Tự sinh slug từ name khi không có sẵn (BE yêu cầu @NotBlank).
+    // Trùng slug với service hiện tại khi edit thì giữ nguyên slug cũ.
+    const trimmedName = values.name.trim();
+    const slugify = (input: string) =>
+      input
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .slice(0, 80) || `service-${Date.now()}`;
+    const nextSlug = editing && editing.name === trimmedName
+      ? (editing as unknown as { slug?: string }).slug ?? slugify(trimmedName)
+      : slugify(trimmedName);
+
+    const payload: Record<string, unknown> = {
+      slug: nextSlug,
+      name: trimmedName,
       description: values.description ?? '',
       category: values.category,
-      price: values.price,
-      duration: values.duration,
+      price: values.price ?? null,
+      duration: values.duration ?? null,
       isActive: values.isActive,
       lawyerIds: values.lawyerIds,
     };
@@ -193,7 +210,7 @@ function ServicesTab() {
         await updateSvc.mutateAsync({ id: editing.id, patch: payload });
         notifySuccess('Đã cập nhật dịch vụ');
       } else {
-        await createSvc.mutateAsync(payload);
+        await createSvc.mutateAsync(payload as Omit<Service, 'id'>);
         notifySuccess('Đã tạo dịch vụ');
       }
       setFormOpen(false);

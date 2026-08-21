@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +36,28 @@ public class ServiceDTO {
     private Instant createdAt;
 
     private String parentName;
+
+    /**
+     * Detailed description rendered on the public service detail page.
+     * Nullable so older rows that pre-date this column still serialize fine.
+     */
+    private String description;
+
+    /**
+     * Consultation fee in VND. {@code null} ⇒ UI shows "Liên hệ".
+     */
+    private BigDecimal price;
+
+    /**
+     * Estimated delivery time in days.
+     */
+    private Integer duration;
+
+    /**
+     * Display category label (e.g. "Doanh nghiệp", "Nhà đất"). Independent
+     * from the {@code parent} FK so admins can label services freely.
+     */
+    private String category;
 
     /**
      * IDs of lawyers assigned to this service. Populated from the

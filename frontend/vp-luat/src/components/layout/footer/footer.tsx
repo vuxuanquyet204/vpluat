@@ -9,6 +9,7 @@ export function Footer() {
   const hidden =
     pathname?.startsWith('/admin') ||
     pathname?.startsWith('/staff') ||
+    pathname === '/booking' ||
     false;
   if (hidden) return null;
 

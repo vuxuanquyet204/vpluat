@@ -10,9 +10,11 @@ import { LanguageSwitcher } from './language-switcher';
 import { MobileMenu } from './mobile-menu';
 
 const HIDDEN_PREFIXES = ['/admin', '/staff', '/login', '/landing-builder'];
+const HIDDEN_EXACT = ['/booking'];
 
 function shouldHide(pathname: string | null) {
   if (!pathname) return false;
+  if (HIDDEN_EXACT.includes(pathname)) return true;
   return HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 

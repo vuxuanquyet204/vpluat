@@ -236,6 +236,10 @@ public class ServiceManagementService {
                 .isFeatured(request.isFeatured() != null ? request.isFeatured() : false)
                 .isActive(request.isActive() != null ? request.isActive() : true)
                 .displayOrder(request.displayOrder() != null ? request.displayOrder() : 0)
+                .description(request.description())
+                .price(request.price())
+                .duration(request.duration())
+                .category(request.category())
                 .build();
 
         if (request.parentId() != null) {
@@ -285,6 +289,21 @@ public class ServiceManagementService {
 
         if (request.isActive() != null) {
             service.setIsActive(request.isActive());
+        }
+
+        // Description / price / duration / category are PATCH-style:
+        // null leaves the existing value untouched, empty string clears it.
+        if (request.description() != null) {
+            service.setDescription(request.description());
+        }
+        if (request.price() != null) {
+            service.setPrice(request.price());
+        }
+        if (request.duration() != null) {
+            service.setDuration(request.duration());
+        }
+        if (request.category() != null) {
+            service.setCategory(request.category());
         }
 
         if (request.parentId() != null) {

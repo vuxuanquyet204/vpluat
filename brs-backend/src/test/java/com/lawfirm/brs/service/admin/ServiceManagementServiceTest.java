@@ -72,7 +72,11 @@ class ServiceManagementServiceTest {
                 0,
                 false,
                 true,
-                lawyerIds
+                lawyerIds,
+                "Mô tả dịch vụ",
+                null,
+                null,
+                "Doanh nghiệp"
         );
     }
 
@@ -197,7 +201,8 @@ class ServiceManagementServiceTest {
                 "Tên khác",
                 null,
                 null, 0, false, true,
-                List.of(lawyerA)
+                List.of(lawyerA),
+                null, null, null, null
         );
 
         assertThatThrownBy(() -> service.updateService(serviceId, req))

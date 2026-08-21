@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,5 +42,27 @@ public record ServiceRequest(
 
         Boolean isActive,
 
-        List<UUID> lawyerIds
+        List<UUID> lawyerIds,
+
+        /**
+         * Detailed description shown on the public service detail page.
+         * Optional — leaving it null keeps the existing value on update.
+         */
+        String description,
+
+        /**
+         * Consultation fee in VND. Optional. Pass null to clear on update.
+         */
+        BigDecimal price,
+
+        /**
+         * Estimated delivery time in days. Optional.
+         */
+        Integer duration,
+
+        /**
+         * Display category label (e.g. "Doanh nghiệp"). Optional.
+         */
+        @Size(max = 100, message = "Category is too long")
+        String category
 ) {}
