@@ -5,7 +5,7 @@ import { useAdminUIStore } from '@/features/admin/store';
 import { getNavItemByHref } from '@/features/admin/constants';
 import { Menu, Calendar } from 'lucide-react';
 import { NotificationCenter } from './notification-center';
-import { ReportsMenu } from './reports-menu';
+// import { ReportsMenu } from './reports-menu'; // Hidden: chưa cần thiết
 import { LanguageMenu } from './language-menu';
 import { UserMenu } from './user-menu';
 
@@ -46,7 +46,8 @@ export function AdminTopbar() {
           <span>{today}</span>
         </div>
 
-        <ReportsMenu />
+        {/* Hidden: nút xuất báo cáo chưa cần thiết */}
+        {/* <ReportsMenu /> */}
 
         <LanguageMenu />
 

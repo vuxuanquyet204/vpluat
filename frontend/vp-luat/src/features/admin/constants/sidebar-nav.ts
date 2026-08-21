@@ -69,13 +69,14 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
         icon: Newspaper,
         href: '/admin/blog',
       },
-      {
-        id: 'case-studies',
-        labelKey: 'nav.case_studies',
-        label: 'Case Studies',
-        icon: Briefcase,
-        href: '/admin/case-studies',
-      },
+      // Hidden: chức năng Case Studies chưa cần thiết
+      // {
+      //   id: 'case-studies',
+      //   labelKey: 'nav.case_studies',
+      //   label: 'Case Studies',
+      //   icon: Briefcase,
+      //   href: '/admin/case-studies',
+      // },
       {
         id: 'services',
         labelKey: 'nav.services',
