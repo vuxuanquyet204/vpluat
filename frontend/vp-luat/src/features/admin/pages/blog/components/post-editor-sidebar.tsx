@@ -104,12 +104,17 @@ export function PostEditorSidebar({
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {tags.map((t) => {
-              const active = selectedTagIds.includes(t.id);
+              // The backend serialises the saved tag list as a list of
+              // slugs (see PostDTO.tags and PostManagementService.updatePost),
+              // not UUIDs. Match against slug so the previously-saved tags
+              // stay highlighted when the user reopens the post for edit.
+              const tagKey = t.slug;
+              const active = selectedTagIds.includes(tagKey);
               return (
                 <button
-                  key={t.id}
+                  key={tagKey || t.id}
                   type="button"
-                  onClick={() => onToggleTag(t.id)}
+                  onClick={() => onToggleTag(tagKey)}
                   className={`pe-tag-chip${active ? ' pe-tag-chip--active' : ''}`}
                   style={
                     active
@@ -126,7 +131,7 @@ export function PostEditorSidebar({
                   }
                 >
                   {active ? <X size={10} /> : <Plus size={10} />}
-                  {t.name}
+                  {t.name || t.slug}
                 </button>
               );
             })}

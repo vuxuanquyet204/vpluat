@@ -13,6 +13,17 @@ export interface UsePostsOptions {
 }
 
 function mapPost(p: Post) {
+  // Convert the flat BE payload (metaTitle/metaDesc/ogImageUrl) into the
+  // nested `seo` envelope that the legacy BlogPost type expects. Without
+  // this remap the editor's `buildInitialState` reads `undefined` for every
+  // SEO field, so opening an existing post for edit blanks the form.
+  const seo = {
+    metaTitle: p.metaTitle ?? '',
+    metaDescription: p.metaDesc ?? '',
+    ogImage: p.ogImageUrl ?? '',
+    canonical: '',
+    noindex: false,
+  };
   return {
     ...p,
     // compatibility aliases used by older UI components
@@ -23,6 +34,7 @@ function mapPost(p: Post) {
     category: p.categoryId,
     thumbnail: p.thumbnailUrl ?? '',
     tags: (p as unknown as { tags?: string[] }).tags ?? [],
+    seo,
   };
 }
 

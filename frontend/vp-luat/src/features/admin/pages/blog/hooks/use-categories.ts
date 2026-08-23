@@ -53,7 +53,11 @@ export function useCreateCategory() {
 
 export function useUpdateCategory() {
   const qc = useQueryClient();
-  const mutation = useApiMutation<Category, { id: string; values: Partial<CategoryCreateRequest> }>(
+  // useApiMutation PUT forwards `body` as the request payload and strips
+  // `id` from `{ id, ...rest }`. We pass `{ id, body }` rather than the
+  // legacy `{ id, values }` so BE doesn't reject the request with
+  // "Unrecognized field values".
+  const mutation = useApiMutation<Category, { id: string; body: Partial<CategoryCreateRequest> }>(
     'PUT',
     (vars) => `/admin/categories/${vars.id}`,
   );
@@ -61,7 +65,7 @@ export function useUpdateCategory() {
   return useCallback(
     async (vars: { id: string; patch: Partial<CategoryCreateRequest> }) => {
       try {
-        const updated = await mutation.mutateAsync({ id: vars.id, values: vars.patch });
+        const updated = await mutation.mutateAsync({ id: vars.id, body: vars.patch });
         qc.invalidateQueries({ queryKey: ['admin', 'categories'] });
         ghiAudit({
           action: 'update',

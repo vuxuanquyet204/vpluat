@@ -44,7 +44,10 @@ export function useCreateTag() {
 /** Update the display name of an existing tag. */
 export function useUpdateTag() {
   const qc = useQueryClient();
-  const mutation = useApiMutation<Tag, { slug: string; name?: string }>(
+  // useApiMutation PUT forwards `body` as the request payload. Pass
+  // `{ slug, body }` so the controller never sees the legacy `values`
+  // envelope (which it would reject as "Unrecognized field").
+  const mutation = useApiMutation<Tag, { slug: string; body: { name?: string } }>(
     'PUT',
     (vars) => `/admin/tags/${vars.slug}`,
   );
@@ -53,7 +56,7 @@ export function useUpdateTag() {
       try {
         const updated = await mutation.mutateAsync({
           slug: vars.id,
-          name: vars.patch.name,
+          body: { name: vars.patch.name },
         });
         qc.invalidateQueries({ queryKey: ['admin', 'tags'] });
         ghiAudit({

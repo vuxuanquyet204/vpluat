@@ -61,6 +61,16 @@ const EMPTY_SEO: PostSeo = {
 };
 
 function buildInitialState(post: BlogPost | null) {
+  // The backend serialises status as 'DRAFT' | 'PUBLISHED' | 'SCHEDULED'
+  // (see PostDTO.status). The legacy BlogPost type uses lowercase so the
+  // editor's status dropdown needs a lower-case value to render correctly.
+  const rawStatus = (post?.status as unknown as string) ?? 'draft';
+  const status: PostStatus =
+    rawStatus === 'PUBLISHED' || rawStatus === 'published'
+      ? 'published'
+      : rawStatus === 'SCHEDULED' || rawStatus === 'scheduled'
+      ? 'scheduled'
+      : 'draft';
   return {
     title: post?.title ?? '',
     slug: post?.slug ?? '',
@@ -68,7 +78,7 @@ function buildInitialState(post: BlogPost | null) {
     content: post?.content ?? '',
     category: post?.category ?? '',
     selectedTagIds: post?.tags ?? [],
-    status: (post?.status ?? 'draft') as PostStatus,
+    status,
     thumbnail: post?.thumbnail ?? '',
     scheduledAt: post?.scheduledAt ? toDatetimeLocal(post.scheduledAt) : '',
     seo: { ...EMPTY_SEO, ...(post?.seo ?? {}) },

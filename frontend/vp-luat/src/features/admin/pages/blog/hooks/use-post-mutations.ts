@@ -40,9 +40,13 @@ export function useUpdatePost() {
   const qc = useQueryClient();
   // Backend exposes PUT /api/admin/posts/{id} for full update. We use PUT
   // (not PATCH) to match the existing PostController.updatePost mapping.
-  // Note: Jackson ignores the `id` field on the body since PostRequest has
-  // no such property.
-  const mutation = useApiMutation<Post, { id: string; values: Partial<Post> }>(
+  //
+  // The mutation is invoked with `{ id, body }` so that useApiMutation's PUT
+  // branch forwards `body` directly as the request payload (it strips `id`
+  // for `{ id, body }` and `{ id, ...rest }` shapes but does NOT know about
+  // the legacy `{ id, values }` alias). Sending the raw patch as `body`
+  // avoids the "Unrecognized field values" rejection the controller throws.
+  const mutation = useApiMutation<Post, { id: string; body: Partial<Post> }>(
     'PUT',
     (vars) => `/admin/posts/${vars.id}`,
   );
@@ -50,7 +54,10 @@ export function useUpdatePost() {
   return useCallback(
     async (vars: { id: string; patch: Partial<Post> }) => {
       try {
-        const updated = await mutation.mutateAsync({ id: vars.id, values: vars.patch });
+        const updated = await mutation.mutateAsync({
+          id: vars.id,
+          body: vars.patch,
+        });
         qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
         postApi.recordRevision(vars.id, 'edit').catch(() => undefined);
         ghiAudit({

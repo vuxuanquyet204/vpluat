@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -96,7 +97,8 @@ public class PostManagementService {
     public PostDTO updatePost(UUID id, PostRequest request) {
         log.info("Updating post: {}", id);
 
-        Post post = postRepository.findById(id)
+        // Eagerly load tags so the response after update carries the new tag list.
+        Post post = postRepository.findByIdWithTags(id)
             .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + id));
 
         if (request.slug() != null) {
@@ -134,9 +136,41 @@ public class PostManagementService {
         if (request.status() != null) {
             post.setStatus(parseStatus(request.status()));
         }
+        if (request.publishedAt() != null && !request.publishedAt().isBlank()) {
+            post.setPublishedAt(parseInstant(request.publishedAt()));
+        }
+        if (request.scheduledAt() != null && !request.scheduledAt().isBlank()) {
+            post.setScheduledAt(parseInstant(request.scheduledAt()));
+        }
+
+        // Tags: when the request explicitly carries a list, REPLACE the
+        // existing join rows so the admin can both add and remove tags. An
+        // absent field leaves the existing tags untouched.
+        if (request.tags() != null) {
+            // Clear current join rows (orphanRemoval = true on Post.postTags).
+            post.getPostTags().clear();
+            // Flush so DB-side FK rows are gone before we add the new ones,
+            // otherwise Hibernate may try to insert duplicates.
+            postRepository.flush();
+            if (!request.tags().isEmpty()) {
+                List<PostTag> postTags = new ArrayList<>();
+                for (String tagSlug : request.tags()) {
+                    Tag tag = tagRepository.findBySlug(tagSlug).orElse(null);
+                    if (tag == null) {
+                        tag = Tag.builder().slug(tagSlug).build();
+                        tag = tagRepository.save(tag);
+                    }
+                    PostTag postTag = new PostTag();
+                    postTag.setPost(post);
+                    postTag.setTag(tag);
+                    postTags.add(postTag);
+                }
+                post.getPostTags().addAll(postTags);
+            }
+        }
 
         post = postRepository.save(post);
-        return postMapper.toDTO(post);
+        return postMapper.toDTOWithDetails(post);
     }
 
     @Transactional
@@ -197,7 +231,10 @@ public class PostManagementService {
     }
 
     public PostDTO getPostById(UUID id) {
-        Post post = postRepository.findById(id)
+        // Eagerly load the post + postTags + tags so the admin editor can
+        // hydrate the form (title, excerpt, content, categoryId, tag slugs,
+        // metaTitle/metaDesc, ogImageUrl, …) from the response.
+        Post post = postRepository.findByIdWithTags(id)
             .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + id));
         return postMapper.toDTOWithDetails(post);
     }
@@ -207,10 +244,10 @@ public class PostManagementService {
         Page<Post> posts;
 
         if (status != null && !status.isEmpty()) {
-            posts = postRepository.findByStatusAndDeletedAtIsNull(
+            posts = postRepository.findByStatusAndDeletedAtIsNullWithTags(
                 parseStatus(status), pageable);
         } else {
-            posts = postRepository.findAllByDeletedAtIsNull(pageable);
+            posts = postRepository.findAllByDeletedAtIsNullWithTags(pageable);
         }
 
         return PageResponse.of(
@@ -247,6 +284,21 @@ public class PostManagementService {
             default:
                 log.warn("Unknown post status '{}', falling back to DRAFT", raw);
                 return com.lawfirm.brs.constants.PostStatus.DRAFT;
+        }
+    }
+
+    /**
+     * Parse an ISO-8601 instant coming from the admin client. Both
+     * `2025-08-22T00:00:00Z` and `2025-08-22T00:00:00.000Z` are accepted.
+     * Returns null on parse failure (logged) so the caller keeps the prior
+     * value rather than crashing with 500.
+     */
+    private Instant parseInstant(String raw) {
+        try {
+            return Instant.parse(raw);
+        } catch (DateTimeParseException e) {
+            log.warn("Cannot parse publishedAt/scheduledAt '{}', ignoring", raw);
+            return null;
         }
     }
 }

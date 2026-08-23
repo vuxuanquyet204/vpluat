@@ -58,6 +58,24 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL")
     Page<Post> findAllByDeletedAtIsNull(Pageable pageable);
 
+    /** Same as findAllByDeletedAtIsNull but eagerly fetches the postTags → tag
+     *  join so {@link com.lawfirm.brs.mapper.PostMapper} can read the tag
+     *  slugs without triggering N+1 lazy loads. */
+    @Query(value = "SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.postTags pt LEFT JOIN FETCH pt.tag WHERE p.deletedAt IS NULL",
+        countQuery = "SELECT COUNT(p) FROM Post p WHERE p.deletedAt IS NULL")
+    Page<Post> findAllByDeletedAtIsNullWithTags(Pageable pageable);
+
+    /** Same as findByStatusAndDeletedAtIsNull but eagerly fetches the
+     *  postTags → tag join. */
+    @Query(value = "SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.postTags pt LEFT JOIN FETCH pt.tag WHERE p.status = :status AND p.deletedAt IS NULL",
+        countQuery = "SELECT COUNT(p) FROM Post p WHERE p.status = :status AND p.deletedAt IS NULL")
+    Page<Post> findByStatusAndDeletedAtIsNullWithTags(@Param("status") PostStatus status, Pageable pageable);
+
+    /** Eagerly fetches the post row together with the postTags + tags so the
+     *  admin "edit post" screen can populate tags from the response. */
+    @Query("SELECT p FROM Post p LEFT JOIN FETCH p.postTags pt LEFT JOIN FETCH pt.tag WHERE p.id = :id")
+    Optional<Post> findByIdWithTags(@Param("id") UUID id);
+
     long countByCategoryId(UUID categoryId);
 
     @Query("SELECT p FROM Post p WHERE p.status = 'PUBLISHED' AND p.id != :postId ORDER BY p.publishedAt DESC")
