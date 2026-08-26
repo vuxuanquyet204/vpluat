@@ -189,7 +189,7 @@ function ReviewDetailModal({
             color: 'var(--gray-700)',
             whiteSpace: 'pre-wrap',
           }}>
-            "{review.contentVi}"
+            &quot;{review.contentVi}&quot;
           </div>
         </div>
         {review.lawyerName && (
@@ -403,7 +403,7 @@ export default function StaffReviewsPage() {
                   marginBottom: 12,
                   lineHeight: 1.5
                 }}>
-                  "{review.contentVi}"
+                  &quot;{review.contentVi}&quot;
                 </div>
 
                 <div style={{

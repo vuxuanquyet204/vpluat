@@ -3,6 +3,7 @@
 
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse, PageResponse } from '@/types/api';
+import { getDisplayLabel } from '@/lib/display-labels';
 
 export interface PostDTO {
   id: string;
@@ -87,10 +88,7 @@ function mapPostDto(dto: PostDTO): PostApiResponse {
   const rawCategoryName = dto.categoryName ?? '';
   const looksLikeSlug = /[-_]/.test(rawCategoryName) && rawCategoryName === rawCategoryName.toLowerCase();
   const categoryDisplayName = looksLikeSlug
-    ? rawCategoryName
-        .split('-')
-        .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ''))
-        .join(' ')
+    ? getDisplayLabel(rawCategoryName, 'Tin tức')
     : rawCategoryName || 'Tin tức';
 
   return {
@@ -186,6 +184,35 @@ export async function getPostsByCategory(categorySlug: string, page = 0, size = 
     console.error('Failed to fetch posts by category:', error);
     return null;
   }
+}
+
+export async function getRelatedPosts(postId: string, limit = 5): Promise<PostApiResponse[]> {
+  try {
+    const { data } = await apiClient.get<ApiResponse<PostDTO[]>>(
+      `/public/posts/${encodeURIComponent(postId)}/related`,
+      { params: { limit } },
+    );
+    return data.success && data.data ? data.data.map(mapPostDto) : [];
+  } catch (error) {
+    console.error('Failed to fetch related posts:', error);
+    return [];
+  }
+}
+
+export async function searchPublicContent(
+  query: string,
+  type?: string,
+  language = 'vi',
+): Promise<Array<{ type: string; id: string; title: string; excerpt?: string; slug?: string; url?: string }>> {
+  const { data } = await apiClient.get<ApiResponse<Array<{
+    type: string;
+    id: string;
+    title: string;
+    excerpt?: string;
+    slug?: string;
+    url?: string;
+  }>>>('/public/search', { params: { query, type, language } });
+  return data.success && data.data ? data.data : [];
 }
 
 export async function incrementPostViews(postId: string): Promise<void> {

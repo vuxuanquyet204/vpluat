@@ -767,7 +767,8 @@
    ============================================================ */
 .services__grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 270px));
+  justify-content: center;
   gap: 24px;
 }
 
@@ -857,7 +858,8 @@
    ============================================================ */
 .team__grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 270px));
+  justify-content: center;
   gap: 28px;
 }
 
@@ -2112,14 +2114,6 @@
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1024px) {
-  .services__grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .team__grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .footer__top {
     grid-template-columns: repeat(2, 1fr);
   }

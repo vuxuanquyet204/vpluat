@@ -3,6 +3,7 @@ package com.lawfirm.brs.service.content;
 import com.lawfirm.brs.dto.request.CaseStudyRequest;
 import com.lawfirm.brs.entity.ServiceEntity;
 import com.lawfirm.brs.exception.ResourceNotFoundException;
+import com.lawfirm.brs.repository.CaseStudyRepository;
 import com.lawfirm.brs.repository.ServiceEntityRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -21,134 +22,124 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class CaseStudyService {
 
+    private final CaseStudyRepository caseStudyRepository;
     private final ServiceEntityRepository serviceRepository;
     private final ContentSanitizerService contentSanitizer;
-    private final List<CaseStudy> caseStudies = new ArrayList<>();
 
     @Transactional
     public CaseStudy createCaseStudy(CaseStudyRequest request, UUID createdBy) {
-        log.info("Creating case study: {}", request.titleVi());
-
-        CaseStudy caseStudy = new CaseStudy();
-        caseStudy.setId(UUID.randomUUID());
-        caseStudy.setTitleVi(request.titleVi());
-        caseStudy.setTitleEn(request.titleEn());
-        caseStudy.setSlug(request.slug());
-        caseStudy.setExcerptVi(request.excerptVi());
-        caseStudy.setExcerptEn(request.excerptEn());
-        caseStudy.setContentVi(request.contentVi() != null ?
-            contentSanitizer.sanitizeRelaxed(request.contentVi()) : null);
-        caseStudy.setContentEn(request.contentEn() != null ?
-            contentSanitizer.sanitizeRelaxed(request.contentEn()) : null);
-        caseStudy.setOutcome(request.outcome());
-        caseStudy.setThumbnailUrl(request.thumbnailUrl());
-        caseStudy.setOgImageUrl(request.ogImageUrl());
-        caseStudy.setPublished(request.isPublished() != null ? request.isPublished() : false);
-        caseStudy.setFeatured(request.isFeatured() != null ? request.isFeatured() : false);
-        caseStudy.setCreatedAt(Instant.now());
-        caseStudy.setUpdatedAt(Instant.now());
-        caseStudy.setCreatedBy(createdBy);
-
-        if (request.serviceIds() != null && !request.serviceIds().isEmpty()) {
-            List<ServiceEntity> services = new ArrayList<>();
-            for (String serviceId : request.serviceIds()) {
-                serviceRepository.findById(UUID.fromString(serviceId)).ifPresent(services::add);
-            }
-            caseStudy.setServices(services);
-        }
-
-        caseStudies.add(caseStudy);
-        log.info("Created case study: {}", caseStudy.getId());
-        return caseStudy;
+        com.lawfirm.brs.entity.CaseStudy entity = new com.lawfirm.brs.entity.CaseStudy();
+        apply(entity, request);
+        entity.setCreatedBy(createdBy);
+        entity.setCreatedAt(Instant.now());
+        entity.setUpdatedAt(Instant.now());
+        return toDto(caseStudyRepository.save(entity));
     }
 
     @Transactional
     public CaseStudy updateCaseStudy(UUID id, CaseStudyRequest request) {
-        log.info("Updating case study: {}", id);
-
-        CaseStudy caseStudy = caseStudies.stream()
-            .filter(cs -> cs.getId().equals(id))
-            .findFirst()
-            .orElseThrow(() -> new ResourceNotFoundException("Case study not found: " + id));
-
-        if (request.titleVi() != null) caseStudy.setTitleVi(request.titleVi());
-        if (request.titleEn() != null) caseStudy.setTitleEn(request.titleEn());
-        if (request.slug() != null) caseStudy.setSlug(request.slug());
-        if (request.excerptVi() != null) caseStudy.setExcerptVi(request.excerptVi());
-        if (request.excerptEn() != null) caseStudy.setExcerptEn(request.excerptEn());
-        if (request.contentVi() != null) caseStudy.setContentVi(contentSanitizer.sanitizeRelaxed(request.contentVi()));
-        if (request.contentEn() != null) caseStudy.setContentEn(contentSanitizer.sanitizeRelaxed(request.contentEn()));
-        if (request.outcome() != null) caseStudy.setOutcome(request.outcome());
-        if (request.thumbnailUrl() != null) caseStudy.setThumbnailUrl(request.thumbnailUrl());
-        if (request.ogImageUrl() != null) caseStudy.setOgImageUrl(request.ogImageUrl());
-        if (request.isPublished() != null) caseStudy.setPublished(request.isPublished());
-        if (request.isFeatured() != null) caseStudy.setFeatured(request.isFeatured());
-        if (request.serviceIds() != null) {
-            List<ServiceEntity> services = new ArrayList<>();
-            for (String serviceId : request.serviceIds()) {
-                serviceRepository.findById(UUID.fromString(serviceId)).ifPresent(services::add);
-            }
-            caseStudy.setServices(services);
-        }
-
-        caseStudy.setUpdatedAt(Instant.now());
-        log.info("Updated case study: {}", id);
-        return caseStudy;
+        com.lawfirm.brs.entity.CaseStudy entity = getEntity(id);
+        apply(entity, request);
+        entity.setUpdatedAt(Instant.now());
+        return toDto(caseStudyRepository.save(entity));
     }
 
     public CaseStudy getCaseStudy(UUID id) {
-        return caseStudies.stream()
-            .filter(cs -> cs.getId().equals(id))
-            .findFirst()
-            .orElseThrow(() -> new ResourceNotFoundException("Case study not found: " + id));
+        return toDto(getEntity(id));
     }
 
     public CaseStudy getCaseStudyBySlug(String slug) {
-        return caseStudies.stream()
-            .filter(cs -> slug.equals(cs.getSlug()))
-            .findFirst()
-            .orElseThrow(() -> new ResourceNotFoundException("Case study not found: " + slug));
+        return toDto(caseStudyRepository.findBySlugAndDeletedAtIsNull(slug)
+            .orElseThrow(() -> new ResourceNotFoundException("Case study not found: " + slug)));
     }
 
     public List<CaseStudy> listCaseStudies(boolean publishedOnly) {
-        if (publishedOnly) {
-            return caseStudies.stream().filter(CaseStudy::isPublished).toList();
-        }
-        return new ArrayList<>(caseStudies);
+        List<com.lawfirm.brs.entity.CaseStudy> rows = publishedOnly
+            ? caseStudyRepository.findAllByPublishedTrueAndDeletedAtIsNullOrderByUpdatedAtDesc()
+            : caseStudyRepository.findAllByDeletedAtIsNullOrderByUpdatedAtDesc();
+        return rows.stream().map(this::toDto).toList();
     }
 
     public List<CaseStudy> listCaseStudiesByService(UUID serviceId, boolean publishedOnly) {
-        return caseStudies.stream()
-            .filter(cs -> cs.getServices() != null && cs.getServices().stream().anyMatch(s -> serviceId.equals(s.getId())))
-            .filter(cs -> !publishedOnly || cs.isPublished())
-            .toList();
+        return caseStudyRepository.findByServiceId(serviceId, publishedOnly).stream().map(this::toDto).toList();
     }
 
     @Transactional
     public void deleteCaseStudy(UUID id) {
-        log.info("Deleting case study: {}", id);
-        boolean removed = caseStudies.removeIf(cs -> cs.getId().equals(id));
-        if (!removed) {
-            throw new ResourceNotFoundException("Case study not found: " + id);
-        }
-        log.info("Deleted case study: {}", id);
+        com.lawfirm.brs.entity.CaseStudy entity = getEntity(id);
+        entity.setDeletedAt(Instant.now());
+        entity.setPublished(false);
+        caseStudyRepository.save(entity);
     }
 
     @Transactional
     public CaseStudy publishCaseStudy(UUID id) {
-        CaseStudy caseStudy = getCaseStudy(id);
-        caseStudy.setPublished(true);
-        caseStudy.setPublishedAt(Instant.now());
-        caseStudy.setUpdatedAt(Instant.now());
-        return caseStudy;
+        com.lawfirm.brs.entity.CaseStudy entity = getEntity(id);
+        entity.setPublished(true);
+        entity.setPublishedAt(Instant.now());
+        entity.setUpdatedAt(Instant.now());
+        return toDto(caseStudyRepository.save(entity));
     }
 
     @Transactional
     public CaseStudy unpublishCaseStudy(UUID id) {
-        CaseStudy caseStudy = getCaseStudy(id);
-        caseStudy.setPublished(false);
-        caseStudy.setUpdatedAt(Instant.now());
-        return caseStudy;
+        com.lawfirm.brs.entity.CaseStudy entity = getEntity(id);
+        entity.setPublished(false);
+        entity.setUpdatedAt(Instant.now());
+        return toDto(caseStudyRepository.save(entity));
+    }
+
+    private com.lawfirm.brs.entity.CaseStudy getEntity(UUID id) {
+        return caseStudyRepository.findById(id)
+            .filter(entity -> entity.getDeletedAt() == null)
+            .orElseThrow(() -> new ResourceNotFoundException("Case study not found: " + id));
+    }
+
+    private void apply(com.lawfirm.brs.entity.CaseStudy entity, CaseStudyRequest request) {
+        if (request.titleVi() != null) entity.setTitleVi(request.titleVi());
+        if (request.titleEn() != null) entity.setTitleEn(request.titleEn());
+        if (request.slug() != null) entity.setSlug(request.slug());
+        if (request.excerptVi() != null) entity.setExcerptVi(request.excerptVi());
+        if (request.excerptEn() != null) entity.setExcerptEn(request.excerptEn());
+        if (request.contentVi() != null) entity.setContentVi(contentSanitizer.sanitizeRelaxed(request.contentVi()));
+        if (request.contentEn() != null) entity.setContentEn(contentSanitizer.sanitizeRelaxed(request.contentEn()));
+        if (request.outcome() != null) entity.setOutcome(request.outcome());
+        if (request.thumbnailUrl() != null) entity.setThumbnailUrl(request.thumbnailUrl());
+        if (request.ogImageUrl() != null) entity.setOgImageUrl(request.ogImageUrl());
+        if (request.isPublished() != null) entity.setPublished(request.isPublished());
+        if (request.isFeatured() != null) entity.setFeatured(request.isFeatured());
+        if (request.serviceIds() != null) {
+            List<ServiceEntity> services = new ArrayList<>();
+            for (String serviceId : request.serviceIds()) {
+                UUID id = UUID.fromString(serviceId);
+                services.add(serviceRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Service not found: " + id)));
+            }
+            entity.setServices(services);
+        }
+    }
+
+    private CaseStudy toDto(com.lawfirm.brs.entity.CaseStudy entity) {
+        CaseStudy dto = new CaseStudy();
+        dto.setId(entity.getId());
+        dto.setSlug(entity.getSlug());
+        dto.setTitleVi(entity.getTitleVi());
+        dto.setTitleEn(entity.getTitleEn());
+        dto.setExcerptVi(entity.getExcerptVi());
+        dto.setExcerptEn(entity.getExcerptEn());
+        dto.setContentVi(entity.getContentVi());
+        dto.setContentEn(entity.getContentEn());
+        dto.setOutcome(entity.getOutcome());
+        dto.setThumbnailUrl(entity.getThumbnailUrl());
+        dto.setOgImageUrl(entity.getOgImageUrl());
+        dto.setServices(entity.getServices());
+        dto.setPublished(entity.isPublished());
+        dto.setFeatured(entity.isFeatured());
+        dto.setPublishedAt(entity.getPublishedAt());
+        dto.setCreatedAt(entity.getCreatedAt());
+        dto.setUpdatedAt(entity.getUpdatedAt());
+        dto.setCreatedBy(entity.getCreatedBy());
+        return dto;
     }
 
     @Data

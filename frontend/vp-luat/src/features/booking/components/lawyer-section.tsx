@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { LawyerGrid } from './lawyer-grid';
 import type { BookingLawyerOption } from '../types';
@@ -15,6 +16,8 @@ export function LawyerSection({
   selectedLawyerId: string | null;
   onSelect: (lawyer: BookingLawyerOption) => void;
 }) {
+  const t = useTranslations('booking');
+
   return (
     <section
       className={cn(
@@ -23,7 +26,7 @@ export function LawyerSection({
       )}
     >
       <h3 className="mb-[18px] border-t border-[var(--gray-100)] pt-7 font-heading text-[1.15rem] font-bold text-[var(--primary)]">
-        Chọn luật sư bạn muốn tư vấn
+        {t('lawyerTitle')}
       </h3>
       <LawyerGrid
         lawyers={lawyers}

@@ -121,9 +121,6 @@ export default function StaffDashboardPage() {
     if (canAccessNav(userRole, 'blog')) {
       actions.push({ icon: Newspaper, label: 'Bài viết', href: '/staff/blog', bg: '#EFF3F8', color: '#1E3A5F' });
     }
-    if (canAccessNav(userRole, 'landing-pages')) {
-      actions.push({ icon: BarChart3, label: 'Landing Pages', href: '/staff/landing-pages', bg: '#EFF6FF', color: '#2563EB' });
-    }
     return actions;
   }, [userRole]);
 

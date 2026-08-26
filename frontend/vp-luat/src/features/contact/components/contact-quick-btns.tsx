@@ -1,26 +1,10 @@
-import { QUICK_CONTACTS } from '../lib/data/contact-data';
+'use client';
 
-const VARIANT_CLASS: Record<string, string> = {
-  phone: 'quick-btn--phone',
-  zalo: 'quick-btn--zalo',
-  messenger: 'quick-btn--messenger',
-};
+import { MessageCircle, Phone } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import type { PublicSiteContent } from '@/features/home/api/site-content-api';
 
-export function ContactQuickBtns() {
-  return (
-    <div className="quick-btns">
-      {QUICK_CONTACTS.map((qc) => (
-        <a
-          key={qc.label}
-          href={qc.href}
-          className={`quick-btn ${VARIANT_CLASS[qc.variant] ?? ''}`}
-          target={qc.href.startsWith('http') ? '_blank' : undefined}
-          rel="noopener noreferrer"
-        >
-          <i className={qc.icon} aria-hidden="true" />
-          {qc.label}
-        </a>
-      ))}
-    </div>
-  );
+export function ContactQuickBtns({ contact }: { contact: PublicSiteContent['contact'] }) {
+  const t = useTranslations('contactPage.quick');
+  return <div className="contact-quick-btns"><a href={contact.hotline ? `tel:${contact.hotline.replace(/\s/g, '')}` : undefined} className="contact-quick-btn contact-quick-btn--phone"><Phone size={17} />{t('call')}</a>{contact.zaloUrl && <a href={contact.zaloUrl} target="_blank" rel="noopener noreferrer" className="contact-quick-btn contact-quick-btn--zalo"><MessageCircle size={17} />Zalo</a>}</div>;
 }

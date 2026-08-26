@@ -1,8 +1,12 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 export function ChatTypingIndicator() {
+  const t = useTranslations('chatbot');
+
   return (
-    <div className="msg msg--bot" aria-label="Bot đang nhập">
+    <div className="msg msg--bot" aria-label={t('typing')}>
       <div className="msg__avatar msg__avatar--bot" aria-hidden="true">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
           <path d="M12 8V4H8" />

@@ -69,6 +69,16 @@ cp .env.example .env
 set PGPASSWORD=password
 psql -U postgres -h localhost -p 5433 -c "CREATE DATABASE brs_db;"
 
+### Seed dữ liệu khởi tạo một lần
+
+Các migration Flyway cũ được giữ nguyên để bảo toàn lịch sử. Seed runtime mới dùng marker `initial-content-v1` trong bảng `seed_runs`, khóa advisory PostgreSQL và mặc định tắt. Không đặt mật khẩu quản trị trong source code hoặc log.
+
+- Fresh database: chạy Flyway trước, đặt `APP_SEED_ENABLED=true`, `APP_SEED_MODE=IF_EMPTY`, `APP_SEED_ADMIN_EMAIL` và `APP_SEED_ADMIN_PASSWORD` qua secret manager, rồi khởi động đúng một lần.
+- Existing database: giữ `APP_SEED_ENABLED=false`; nếu dữ liệu legacy đã tồn tại, initializer chỉ ghi marker completed và không chèn dữ liệu mẫu.
+- Production: mặc định luôn tắt. Chỉ bật tạm thời cho database mới sau khi backup và kiểm tra secret, sau khi marker completed phải tắt lại.
+- Retry sau lỗi: xem log trạng thái `FAILED`, xử lý nguyên nhân, giữ cùng `APP_SEED_KEY` rồi khởi động lại. Transaction seed sẽ rollback dữ liệu của lần lỗi.
+- Không dùng `FORCE_EXISTING` nếu chưa có kế hoạch backup và xác nhận dữ liệu nghiệp vụ; mode này có thể tạo tài khoản seed trên database đang có dữ liệu.
+
 ### 3. Tạo JWT Keys
 
 ```bash

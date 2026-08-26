@@ -8,6 +8,7 @@ export interface LawyerDTO {
   id: string;
   userId?: string;
   userEmail?: string;
+  phone?: string;
   slug?: string;
   nameVi?: string;
   nameEn?: string;
@@ -82,6 +83,7 @@ function mapLawyerDto(dto: LawyerDTO): LawyerApiResponse {
     isFeatured: dto.isFeatured || false,
     workingHours: dto.workingHours,
     email: dto.userEmail,
+    phone: dto.phone,
     serviceIds: dto.serviceIds,
     serviceNames: dto.serviceNames,
     serviceSlugs: dto.serviceSlugs,

@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAdminUIStore } from '@/features/admin/store';
 import { getNavItemByHref } from '@/features/staff/constants';
 import { Menu, Calendar } from 'lucide-react';
@@ -13,20 +14,22 @@ import type { Role } from '@/features/auth/utils/permissions';
 
 export function StaffTopbar() {
   const pathname = usePathname();
+  const t = useTranslations('admin');
+  const locale = useLocale();
   const { toggleSidebar } = useAdminUIStore();
   const { data: session } = useSession();
 
   const navItem = getNavItemByHref(pathname);
-  const displayTitle = navItem?.label ?? 'Staff Portal';
+  const displayTitle = navItem ? t(navItem.labelKey) : t('staffPortal');
 
-  const today = new Intl.DateTimeFormat('vi-VN', {
+  const today = new Intl.DateTimeFormat(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
   }).format(new Date());
 
   const userRole = (session?.user?.role as Role) ?? 'VIEWER';
-  const roleDisplayName = RoleDisplayNames[userRole] ?? 'Nhân viên';
+  const roleDisplayName = RoleDisplayNames[userRole] ?? t('administrator');
 
   return (
     <header className="admin-topbar" role="banner">
@@ -34,7 +37,7 @@ export function StaffTopbar() {
         <button
           className="admin-topbar__toggle"
           onClick={toggleSidebar}
-          aria-label="Mở menu"
+          aria-label={t('openMenu')}
           aria-expanded="false"
         >
           <Menu size={18} />
@@ -50,7 +53,7 @@ export function StaffTopbar() {
           {roleDisplayName}
         </div>
 
-        <div className="admin-topbar__date" aria-label="Ngày hôm nay">
+        <div className="admin-topbar__date" aria-label={t('today')}>
           <Calendar size={14} aria-hidden="true" />
           <span>{today}</span>
         </div>

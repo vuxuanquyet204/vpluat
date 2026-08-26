@@ -24,7 +24,6 @@ import { useAdminAuth } from './hooks/use-admin-auth';
 import { UsersTable } from './components/users-table';
 import { UserForm } from './components/user-form';
 import { RolesTable } from './components/roles-table';
-import { RoleForm } from './components/role-form';
 import { PermissionMatrix } from './components/permission-matrix';
 import { ImpersonateDialog } from './components/impersonate-dialog';
 import {
@@ -35,15 +34,11 @@ import {
   useDeleteUserWithAudit,
   useResetPassword,
   useToggleUserStatus,
-  useCreateRoleFromValues,
-  useUpdateRoleFromValues,
-  useDeleteRoleWithAudit,
-  useUpdateRolePermissions,
   useAuditLogs,
   ROLE_LABELS,
 } from './hooks/use-users';
 import type { AdminUser, Role, UserRole } from '@/features/admin/types';
-import type { UserFormValues, RoleFormValues } from '@/features/admin/schema';
+import type { UserFormValues } from '@/features/admin/schema';
 import type { AdminUser as ApiAdminUser, Role as ApiRole } from '@/lib/api/admin-core';
 
 /** Normalise the API AdminUser (fullName) into the legacy UI AdminUser (name). */
@@ -466,197 +461,57 @@ function UsersTab() {
 
 // ─── ROLES TAB ─────────────────────────────────────────────────
 function RolesTab() {
-  const canWrite = useCan('users.write');
-  const canDelete = useCan('users.write');
   const { data: apiRoles } = useRoles();
   const roles = useMemo(() => (apiRoles ?? []).map(toUiRole), [apiRoles]);
-  const createRole = useCreateRoleFromValues();
-  const updateRole = useUpdateRoleFromValues();
-  const deleteRole = useDeleteRoleWithAudit();
-
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<Role | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<Role | null>(null);
   const LIMIT = 20;
 
   const filtered = useMemo(() => {
-    if (!search) return roles;
-    const q = search.toLowerCase();
+    const query = search.trim().toLowerCase();
+    if (!query) return roles;
     return roles.filter(
-      (r) => r.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q),
+      (role) => role.name.toLowerCase().includes(query) || role.description.toLowerCase().includes(query),
     );
   }, [roles, search]);
 
   const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
 
   return (
-    <>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginBottom: 12,
-        }}
-      >
-        {canWrite && (
-          <button
-            type="button"
-            className="action-btn action-btn--primary"
-            onClick={() => {
-              setEditing(null);
-              setFormOpen(true);
-            }}
-            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-          >
-            <Plus size={12} /> Tạo role
-          </button>
-        )}
+    <div className="admin-card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 8 }}>
+        <SearchBar value={search} onChange={(value) => { setSearch(value); setPage(1); }} placeholder="Tìm role..." />
+        <span style={{ color: 'var(--gray-400)', fontSize: '0.8rem' }}>{filtered.length} / {roles.length} roles</span>
       </div>
-
-      <div className="admin-card">
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 12,
-            flexWrap: 'wrap',
-            gap: 8,
-          }}
-        >
-          <SearchBar
-            value={search}
-            onChange={(v) => {
-              setSearch(v);
-              setPage(1);
-            }}
-            placeholder="Tìm role..."
-          />
-          <span style={{ color: 'var(--gray-400)', fontSize: '0.8rem' }}>
-            {filtered.length} / {roles.length} roles
-          </span>
-        </div>
-
-        {roles.length === 0 ? (
-          <EmptyStateWithCta
-            title="Chưa có role nào"
-            description="Tạo role đầu tiên để gán quyền cho user."
-            action={
-              canWrite ? (
-                <button
-                  type="button"
-                  className="action-btn action-btn--primary"
-                  onClick={() => {
-                    setEditing(null);
-                    setFormOpen(true);
-                  }}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                >
-                  <Plus size={12} /> Tạo ngay
-                </button>
-              ) : null
-            }
-          />
-        ) : (
-          <RolesTable
-            data={paginated}
-            selectedIds={selectedIds}
-            onSelectChange={setSelectedIds}
-            onEdit={(r) => {
-              setEditing(r);
-              setFormOpen(true);
-            }}
-            onDelete={(r) => setConfirmDelete(r)}
-            canWrite={canWrite}
-            canDelete={canDelete}
-          />
-        )}
-
-        <Pagination
-          page={page}
-          limit={LIMIT}
-          total={filtered.length}
-          onPageChange={setPage}
-        />
-      </div>
-
-      <RoleForm
-        isOpen={formOpen}
-        onClose={() => {
-          setFormOpen(false);
-          setEditing(null);
-        }}
-        onSubmit={async (values: RoleFormValues) => {
-          if (editing) {
-            const ok = await updateRole(editing.id, values);
-            if (ok) notifySuccess('Đã cập nhật role');
-          } else {
-            const id = await createRole(values);
-            if (id) notifySuccess('Đã tạo role');
-          }
-          setFormOpen(false);
-          setEditing(null);
-        }}
-        initial={editing}
+      <p style={{ color: 'var(--gray-500)', fontSize: '0.8rem', marginBottom: 12 }}>
+        Role được định nghĩa cố định trên backend và chỉ đọc tại giao diện này.
+      </p>
+      <RolesTable
+        data={paginated}
+        selectedIds={selectedIds}
+        onSelectChange={setSelectedIds}
+        onEdit={() => undefined}
+        onDelete={() => undefined}
+        canWrite={false}
+        canDelete={false}
       />
-
-      <ConfirmDialog
-        isOpen={Boolean(confirmDelete)}
-        title="Xóa role"
-        message={
-          confirmDelete
-            ? `Xóa role "${confirmDelete.name}"? Hành động không thể hoàn tác.`
-            : ''
-        }
-        confirmLabel="Xóa"
-        cancelLabel="Hủy"
-        variant="danger"
-        onConfirm={async () => {
-          if (!confirmDelete) return;
-          await deleteRole(confirmDelete);
-          setConfirmDelete(null);
-        }}
-        onClose={() => setConfirmDelete(null)}
-      />
-    </>
+      <Pagination page={page} limit={LIMIT} total={filtered.length} onPageChange={setPage} />
+    </div>
   );
 }
 
 // ─── MATRIX TAB ────────────────────────────────────────────────
 function MatrixTab() {
-  const canWrite = useCan('users.write');
   const { data: apiRoles } = useRoles();
   const roles = useMemo(() => (apiRoles ?? []).map(toUiRole), [apiRoles]);
-  const updateRolePermissions = useUpdateRolePermissions();
 
   return (
     <>
-      <div
-        style={{
-          padding: 10,
-          background: 'var(--blue-faint, #DBEAFE)',
-          border: '1px solid var(--blue, #2563EB)',
-          borderRadius: 8,
-          marginBottom: 12,
-          fontSize: '0.78rem',
-          color: 'var(--blue, #1E40AF)',
-        }}
-      >
-        ℹ Tick vào ô để cấp/thu hồi quyền. Cột hàng header có nút <strong>Lưu</strong> riêng cho mỗi role — chỉ lưu khi đã tick xong. System role không thể chỉnh qua matrix (vào <strong>Roles tab</strong> để tạo role mới).
+      <div style={{ padding: 10, background: 'var(--blue-faint, #DBEAFE)', border: '1px solid var(--blue, #2563EB)', borderRadius: 8, marginBottom: 12, fontSize: '0.78rem', color: 'var(--blue, #1E40AF)' }}>
+        Quyền được định nghĩa cố định trên backend. Permission Matrix chỉ hiển thị để đối chiếu và chưa hỗ trợ chỉnh sửa.
       </div>
-      <PermissionMatrix
-        roles={roles}
-        onSave={async (roleId, perms) => {
-          if (!canWrite) {
-            notifyError('Lỗi', 'Bạn không có quyền users.write');
-            return false;
-          }
-          return updateRolePermissions(roleId, perms);
-        }}
-      />
+      <PermissionMatrix roles={roles} onSave={async () => false} readOnly />
     </>
   );
 }

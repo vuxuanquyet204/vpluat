@@ -40,7 +40,6 @@ public class RoleController {
                     "reviews.read", "reviews.moderate", "reviews.reply",
                     "chatbot.read", "chatbot.train", "chatbot.handoff",
                     "newsletter.read", "newsletter.write", "newsletter.send",
-                    "landing.read", "landing.write", "landing.publish",
                     "users.read", "users.write", "users.impersonate",
                     "settings.read", "settings.write",
                     "audit.read"
@@ -61,7 +60,6 @@ public class RoleController {
                     "reviews.read", "reviews.moderate", "reviews.reply",
                     "chatbot.read",
                     "newsletter.read",
-                    "landing.read", "landing.write",
                     "users.read", "users.write",
                     "settings.read", "settings.write",
                     "audit.read"
@@ -79,8 +77,7 @@ public class RoleController {
                     "blog.read", "blog.write",
                     "services.read",
                     "lawyers.read",
-                    "reviews.read",
-                    "landing.read"
+                    "reviews.read"
                 ))
                 .isSystem(true)
                 .build(),

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { useUIStore } from '@/stores/ui.store';
@@ -21,6 +22,7 @@ function shouldHide(pathname: string | null) {
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const { mobileMenuOpen, toggleMobileMenu } = useUIStore();
+  const t = useTranslations('header');
   const pathname = usePathname();
   const hidden = shouldHide(pathname);
 
@@ -54,12 +56,12 @@ export function Header() {
           <div className="navbar__actions">
             <LanguageSwitcher layout="desktop" />
             <Link href="/booking" className="navbar__cta">
-              Đặt lịch tư vấn
+              {t('bookConsultation')}
             </Link>
             <button
               className={`navbar__hamburger ${mobileMenuOpen ? 'active' : ''}`}
               onClick={toggleMobileMenu}
-              aria-label="Toggle menu"
+              aria-label={t('toggleMenu')}
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>

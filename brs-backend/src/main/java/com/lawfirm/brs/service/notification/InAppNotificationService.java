@@ -85,8 +85,8 @@ public class InAppNotificationService {
     }
 
     @Transactional
-    public boolean markRead(UUID id) {
-        return repo.markRead(id) > 0;
+    public boolean markRead(UUID id, UUID userId) {
+        return repo.markRead(id, userId) > 0;
     }
 
     @Transactional

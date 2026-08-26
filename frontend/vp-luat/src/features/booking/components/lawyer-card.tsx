@@ -92,7 +92,7 @@ export function LawyerCard({
         <span
           className={cn(
             'inline-flex items-center gap-[5px] rounded-[var(--radius-full)] px-[10px] py-[3px] text-[0.72rem] font-semibold',
-            lawyer.availabilityLabel === 'Hết lịch hôm nay'
+            lawyer.isAvailableToday === false
               ? 'bg-[var(--gray-100)] text-[var(--gray-500)]'
               : 'bg-[var(--success-bg)] text-[var(--success)]',
           )}

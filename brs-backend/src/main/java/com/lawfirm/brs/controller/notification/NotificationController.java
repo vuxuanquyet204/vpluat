@@ -49,9 +49,10 @@ public class NotificationController {
     @PatchMapping("/{id}/read")
     @Operation(summary = "Mark a single notification as read")
     public ResponseEntity<ApiResponse<Map<String, Boolean>>> markRead(
+            @AuthenticationPrincipal UserPrincipal user,
             @PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(
-            Map.of("ok", service.markRead(id))));
+            Map.of("ok", service.markRead(id, user.getId()))));
     }
 
     @PatchMapping("/read-all")

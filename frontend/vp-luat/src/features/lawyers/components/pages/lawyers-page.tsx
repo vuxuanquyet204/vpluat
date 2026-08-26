@@ -9,8 +9,11 @@ import { LawyerProfileModal } from '@/features/lawyers/components/lawyer-profile
 import { useLawyers } from '@/features/lawyers/hooks/use-lawyers';
 import { useServices } from '@/features/services/hooks/use-services';
 import type { LawyerApiResponse } from '@/features/lawyers/api/lawyers-api';
+import { useTranslations } from 'next-intl';
 
 export default function LawyersPage() {
+  const t = useTranslations('public.lawyers');
+  const common = useTranslations('common');
   const router = useRouter();
   const [active, setActive] = useState<'all' | string>('all');
   const [profileLawyer, setProfileLawyer] = useState<LawyerApiResponse | null>(null);
@@ -70,7 +73,7 @@ export default function LawyersPage() {
     return (
       <div className="loading-container">
         <div className="loading-spinner" />
-        <p>Đang tải luật sư...</p>
+        <p>{common('loading')}</p>
       </div>
     );
   }
@@ -82,7 +85,7 @@ export default function LawyersPage() {
         active={active}
         onChange={setActive}
         services={serviceInfo}
-        totalLawyers={filtered.length}
+        totalLawyers={lawyers.length}
         countByServiceSlug={countByServiceSlug}
       />
 
@@ -100,7 +103,7 @@ export default function LawyersPage() {
           </div>
           {filtered.length === 0 && (
             <div className="lawyers-empty">
-              <p>Chưa có luật sư nào thuộc chuyên môn này.</p>
+              <p>{t('empty')}</p>
             </div>
           )}
         </div>

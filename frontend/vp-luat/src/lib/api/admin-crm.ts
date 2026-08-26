@@ -2,6 +2,7 @@
 // Lead pipeline + review moderation API surface.
 
 import { api } from './hooks';
+import { apiClient } from './client';
 import type { PageResponse } from './hooks';
 
 export interface Lead {
@@ -122,12 +123,18 @@ export const leadApi = {
 
   delete: (id: string) => api.del<void>(`/crm/leads/${id}`),
 
-  exportCsvUrl: (params?: { status?: string; source?: string }) => {
-    const qs = new URLSearchParams();
-    if (params?.status) qs.set('status', params.status);
-    if (params?.source) qs.set('source', params.source);
-    const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
-    return `${base}/crm/leads/export/csv${qs.toString() ? '?' + qs : ''}`;
+  importCsv: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post<{ created: number; skipped: number; errors: string[] }>(`/crm/leads/bulk/import`, form);
+  },
+
+  exportCsv: async (params?: { status?: string; source?: string }) => {
+    const response = await apiClient.get(`/crm/leads/export/csv`, {
+      params,
+      responseType: 'blob',
+    });
+    return response.data as Blob;
   },
 };
 
@@ -261,10 +268,35 @@ export interface Subscriber {
 export interface Campaign {
   id: string;
   subject: string;
-  status: 'DRAFT' | 'SENDING' | 'SENT' | 'FAILED';
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
   sentAt?: string;
+  scheduledAt?: string;
+  /** 0–1 ratio — admin modal multiplies by recipientCount to render absolute numbers. */
   openRate?: number;
   clickRate?: number;
+  bounceRate?: number;
+  unsubRate?: number;
+  recipientCount?: number;
+  name?: string;
+  body?: string;
+  segment?: 'all' | 'fdi' | 'realestate' | 'custom';
+  customEmails?: string[];
+  templateId?: string;
+  failureReason?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+}
+
+export interface NewsletterTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+  description?: string;
+  isDefault: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export const chatbotApi = {
@@ -346,6 +378,9 @@ export const faqApi = {
 // ============================================================
 
 export const newsletterApi = {
+  subscribe: (body: { email: string; name?: string }) =>
+    api.post<Subscriber>(`/crm/newsletter/subscribe`, body),
+
   listSubscribers: (params?: { page?: number; size?: number; status?: string }) =>
     api.get<PageResponse<Subscriber>>(`/admin/newsletter/subscribers`, params),
 
@@ -367,8 +402,60 @@ export const newsletterApi = {
   delete: (id: string) =>
     api.del<void>(`/admin/newsletter/subscribers/${id}`),
 
-  listCampaigns: () => api.get<Campaign[]>(`/admin/newsletter/campaigns`),
+  listCampaigns: () => api.get<Campaign[]>(`/admin/newsletter/campaigns/all`),
+
+  getCampaign: (id: string) =>
+    api.get<Campaign>(`/admin/newsletter/campaigns/${id}`),
+
+  createCampaign: (body: {
+    name: string;
+    subject: string;
+    body: string;
+    templateId?: string;
+    segment: 'all' | 'fdi' | 'realestate' | 'custom';
+    customEmails?: string[];
+    scheduledAt?: string;
+    action?: 'draft' | 'schedule' | 'send';
+  }) => api.post<Campaign>(`/admin/newsletter/campaigns`, body),
+
+  updateCampaign: (id: string, body: {
+    name?: string;
+    subject?: string;
+    body?: string;
+    templateId?: string;
+    segment?: 'all' | 'fdi' | 'realestate' | 'custom';
+    customEmails?: string[];
+    scheduledAt?: string;
+    action?: 'draft' | 'schedule' | 'send';
+  }) => api.put<Campaign>(`/admin/newsletter/campaigns/${id}`, body),
+
+  deleteCampaign: (id: string) =>
+    api.del<void>(`/admin/newsletter/campaigns/${id}`),
 
   sendCampaign: (id: string) =>
     api.post<Campaign>(`/admin/newsletter/campaigns/${id}/send`, {}),
+
+  listTemplates: () => api.get<NewsletterTemplate[]>(`/admin/newsletter/templates`),
+
+  getTemplate: (id: string) =>
+    api.get<NewsletterTemplate>(`/admin/newsletter/templates/${id}`),
+
+  createTemplate: (body: {
+    name: string;
+    subject: string;
+    body: string;
+    description?: string;
+    isDefault?: boolean;
+  }) => api.post<NewsletterTemplate>(`/admin/newsletter/templates`, body),
+
+  updateTemplate: (id: string, body: {
+    name?: string;
+    subject?: string;
+    body?: string;
+    description?: string;
+    isDefault?: boolean;
+  }) => api.put<NewsletterTemplate>(`/admin/newsletter/templates/${id}`, body),
+
+  deleteTemplate: (id: string) =>
+    api.del<void>(`/admin/newsletter/templates/${id}`),
 };

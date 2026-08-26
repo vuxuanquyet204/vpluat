@@ -12,7 +12,7 @@ import type { ContactFormValues } from '../types';
 
 export interface ContactSubmitPayload {
   name: string;
-  email: string;
+  email?: string;
   phone: string;
   /** Optional, folded into `message` before sending to the BE. */
   subject?: string;
@@ -31,7 +31,7 @@ export async function submitContactMessage(
 
   const payload: ContactSubmitPayload = {
     name: values.name.trim(),
-    email: values.email.trim(),
+    ...(values.email?.trim() ? { email: values.email.trim() } : {}),
     phone: values.phone.replace(/\s+/g, ''),
     subject: trimmedSubject,
     message: messageWithSubject,

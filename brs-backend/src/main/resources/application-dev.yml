@@ -19,8 +19,8 @@ spring:
   data:
     redis:
       host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      port: ${REDIS_PORT:6380}
+      password: ${REDIS_PASSWORD:redis_password}
       timeout: 5000
       lettuce:
         pool:
@@ -50,6 +50,14 @@ spring:
 
 # Development-specific app config
 app:
+  seed:
+    enabled: ${APP_SEED_ENABLED:false}
+    key: ${APP_SEED_KEY:initial-content-v1}
+    mode: ${APP_SEED_MODE:IF_EMPTY}
+    admin-email: ${APP_SEED_ADMIN_EMAIL:}
+    admin-password: ${APP_SEED_ADMIN_PASSWORD:}
+    admin-name: ${APP_SEED_ADMIN_NAME:Quan tri vien}
+    admin-phone: ${APP_SEED_ADMIN_PHONE:}
   jwt:
     private-key-path: ${JWT_PRIVATE_KEY_PATH:keys/jwt-private.pem}
     public-key-path: ${JWT_PUBLIC_KEY_PATH:keys/jwt-public.pem}

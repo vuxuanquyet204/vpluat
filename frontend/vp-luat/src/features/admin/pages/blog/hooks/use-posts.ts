@@ -46,20 +46,27 @@ export function usePosts(options: UsePostsOptions = {}): Array<Post & { title: s
       page: 0,
       size: 200,
       status: options.status && options.status !== 'all' ? options.status : undefined,
-      categoryId: options.category && options.category !== 'all' ? options.category : undefined,
-      search: options.search || undefined,
     },
   );
   const list = (data?.content ?? []).map(mapPost);
 
   return useMemo(() => {
+    const query = options.search?.trim().toLowerCase();
     let result = list;
+    if (query) {
+      result = result.filter((post) =>
+        [post.title, post.excerpt, post.slug].some((value) => value.toLowerCase().includes(query)),
+      );
+    }
+    if (options.category && options.category !== 'all') {
+      result = result.filter((post) => post.categoryId === options.category);
+    }
     if (options.tag) {
       result = result.filter((p) => (p as unknown as { tags: string[] }).tags?.includes(options.tag!));
     }
     if (options.author) {
-      result = result.filter((p) => p.author === options.author);
+      result = result.filter((p) => p.author === options.author || p.authorId === options.author);
     }
     return result;
-  }, [list, options.tag, options.author]);
+  }, [list, options.author, options.category, options.search, options.tag]);
 }

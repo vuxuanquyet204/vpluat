@@ -1,17 +1,24 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { usePublicSiteContent } from '@/features/home/hooks/use-site-content';
 import { Calendar, Briefcase, Users, Phone } from 'lucide-react';
 
 const HERO_STATS = [
-  { icon: Calendar, text: '15+ năm kinh nghiệm' },
+  { icon: Calendar, key: 'experience' },
   { divider: true },
-  { icon: Briefcase, text: '2.000+ vụ việc thành công' },
+  { icon: Briefcase, key: 'cases' },
   { divider: true },
-  { icon: Users, text: '50+ luật sư chuyên nghiệp' },
-];
+  { icon: Users, key: 'lawyers' },
+] as const;
 
 export function HeroSection() {
+  const t = useTranslations('home');
+  const { data: siteContent } = usePublicSiteContent();
+  const stats = siteContent?.heroStats;
+  const hotline = siteContent?.contact.hotline ?? '';
+
   return (
     <section className="hero">
       <div className="hero__bg" aria-hidden="true">
@@ -26,13 +33,11 @@ export function HeroSection() {
       <div className="container hero__content">
         <div className="hero__badge">
           <span className="hero__badge-dot" />
-          15+ năm kinh nghiệm tư vấn pháp lý
+          {t('badge')}
         </div>
 
         <h1 className="hero__title">
-          Giải Pháp Pháp Lý <em>Toàn Diện</em>
-          <br />
-          Cho Doanh Nghiệp & Cá Nhân
+          {t('title')}
         </h1>
 
         <div className="hero__stats">
@@ -42,7 +47,7 @@ export function HeroSection() {
             ) : (
               <div key={i} className="hero__stat">
                 <stat.icon className="hero__stat-icon" size={16} />
-                <span>{stat.text}</span>
+                <span>{t(`stats.${stat.key}`)}</span>
               </div>
             )
           )}
@@ -50,10 +55,10 @@ export function HeroSection() {
 
         <div className="hero__ctas">
           <Link href="/booking" className="btn btn--primary btn--lg">
-            Đặt lịch tư vấn ngay
+            {t('bookNow')}
           </Link>
           <Link href="/services" className="btn btn--outline btn--lg">
-            Khám phá dịch vụ
+            {t('exploreServices')}
           </Link>
         </div>
 
@@ -62,8 +67,8 @@ export function HeroSection() {
             <Phone size={20} />
           </div>
           <div className="hero__hotline-info">
-            <span className="hero__hotline-label">Tư vấn miễn phí</span>
-            <span className="hero__hotline-number">1900 1234</span>
+            <span className="hero__hotline-label">{t('freeConsultation')}</span>
+            <span className="hero__hotline-number">{hotline}</span>
           </div>
         </div>
       </div>
@@ -73,24 +78,24 @@ export function HeroSection() {
           <div className="stats-bar__inner">
             <div className="stats-bar__item">
               <div className="stats-bar__number">
-                2.000<span className="counter-suffix">+</span>
+                {stats?.successfulCases ?? 0}<span className="counter-suffix">+</span>
               </div>
-              <div className="stats-bar__label">Vụ việc thành công</div>
-              <div className="stats-bar__sublabel">Từ 2010 đến nay</div>
+              <div className="stats-bar__label">{t('summary.successfulCases')}</div>
+              <div className="stats-bar__sublabel">{t('summary.since')}</div>
             </div>
             <div className="stats-bar__item">
               <div className="stats-bar__number">
-                98<span className="counter-suffix">%</span>
+                {stats?.successRate ?? 0}<span className="counter-suffix">%</span>
               </div>
-              <div className="stats-bar__label">Tỷ lệ thành công</div>
-              <div className="stats-bar__sublabel">Khách hàng hài lòng</div>
+              <div className="stats-bar__label">{t('summary.successRate')}</div>
+              <div className="stats-bar__sublabel">{t('summary.satisfiedClients')}</div>
             </div>
             <div className="stats-bar__item">
               <div className="stats-bar__number">
-                15<span className="counter-suffix">+</span>
+                {stats?.yearsExperience ?? 0}<span className="counter-suffix">+</span>
               </div>
-              <div className="stats-bar__label">Năm kinh nghiệm</div>
-              <div className="stats-bar__sublabel">Trên thị trường pháp lý</div>
+              <div className="stats-bar__label">{t('summary.years')}</div>
+              <div className="stats-bar__sublabel">{t('summary.legalMarket')}</div>
             </div>
           </div>
         </div>

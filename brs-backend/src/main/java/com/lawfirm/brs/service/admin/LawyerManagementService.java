@@ -552,8 +552,8 @@ public class LawyerManagementService {
     private void syncServiceIdsToJoinTable(UUID lawyerId, List<UUID> newServiceIds) {
         // Get current assignments from join table
         List<UUID> previousServiceIds = serviceLawyerRepository.findServiceIdsByLawyerId(lawyerId);
-        Set<UUID> newSet = new java.util.HashSet<>(newServiceIds != null ? newServiceIds : java.util.List.of());
-        Set<UUID> previousSet = new java.util.HashSet<>(previousServiceIds);
+        Set<UUID> newSet = new java.util.LinkedHashSet<>(newServiceIds != null ? newServiceIds : java.util.List.of());
+        Set<UUID> previousSet = new java.util.LinkedHashSet<>(previousServiceIds);
 
         // Fetch lawyer entity once
         LawyerProfile lawyerEntity = lawyerRepository.findById(lawyerId).orElse(null);
@@ -592,5 +592,6 @@ public class LawyerManagementService {
                 log.debug("Removed service {} from lawyer {} in join table", serviceId, lawyerId);
             }
         }
+        serviceLawyerRepository.flush();
     }
 }

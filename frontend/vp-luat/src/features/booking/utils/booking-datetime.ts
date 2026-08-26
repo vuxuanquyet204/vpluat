@@ -1,6 +1,3 @@
-import type { BookingTimeSlot } from '../types';
-import { BOOKING_TIME_SLOTS, DEMO_BOOKED_TIMES } from '../lib';
-
 /**
  * Format a Date as `YYYY-MM-DD` using the *local* timezone. Unlike
  * `toISOString().slice(0, 10)` (which converts to UTC and can drift by one
@@ -91,42 +88,4 @@ export function createDayMatrix(currentMonth: Date, selectedDate: Date | null) {
   }
 
   return days;
-}
-
-export function createMockSlots(date: Date | null): BookingTimeSlot[] {
-  if (!date) {
-    return [];
-  }
-
-  return BOOKING_TIME_SLOTS.map((time) => {
-    const [hours, minutes] = time.split(':').map(Number);
-    const endHours = minutes + 45 >= 60 ? hours + 1 : hours;
-    const endMinutes = (minutes + 45) % 60;
-
-    return {
-      slotId: `${date.toISOString().slice(0, 10)}-${time}`,
-      startTime: time,
-      endTime: `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`,
-      status: DEMO_BOOKED_TIMES.has(time) ? 'booked' : 'available',
-    } satisfies BookingTimeSlot;
-  });
-}
-
-export function createMockReservation(params: {
-  lawyerId: string;
-  date: Date;
-  slot: BookingTimeSlot;
-}) {
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + 5 * 60 * 1000);
-
-  return {
-    reservationId: `res_${params.slot.slotId}`,
-    slotId: params.slot.slotId,
-    lawyerId: params.lawyerId,
-    date: params.date.toISOString().slice(0, 10),
-    startTime: params.slot.startTime,
-    endTime: params.slot.endTime,
-    expiresAt: expiresAt.toISOString(),
-  };
 }

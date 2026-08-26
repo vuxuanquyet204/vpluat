@@ -6,13 +6,13 @@ import {
   useApiQuery,
   useApiMutation,
 } from '@/lib/api/hooks';
-import { userApi, roleApi, auditApi, type AdminUser, type Role, type AuditLogEntry } from '@/lib/api/admin-core';
+import { userApi, auditApi, type AdminUser, type Role, type AuditLogEntry } from '@/lib/api/admin-core';
 import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
-import type { UserFormValues, RoleFormValues } from '@/features/admin/schema';
+import type { UserFormValues } from '@/features/admin/schema';
 
 // ─── Display helpers (frontend role -> label) ──────────────────
 
-export type FrontendUserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'CSKH' | 'LAWYER' | 'USER';
+export type FrontendUserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'CSKH' | 'LAWYER' | 'USER' | 'VIEWER';
 
 export const ROLE_LABELS: Record<FrontendUserRole, string> = {
   SUPER_ADMIN: 'Super Admin',
@@ -21,6 +21,7 @@ export const ROLE_LABELS: Record<FrontendUserRole, string> = {
   CSKH: 'CSKH',
   LAWYER: 'Luật sư',
   USER: 'Khách hàng',
+  VIEWER: 'Người xem',
 };
 
 export const ROLE_VARIANT: Record<FrontendUserRole, 'red' | 'blue' | 'purple' | 'yellow' | 'green' | 'orange'> = {
@@ -30,6 +31,7 @@ export const ROLE_VARIANT: Record<FrontendUserRole, 'red' | 'blue' | 'purple' | 
   CSKH: 'orange',
   LAWYER: 'purple',
   USER: 'green',
+  VIEWER: 'green',
 };
 
 /** Normalise backend AdminUser → UI shape with `name`. */
@@ -262,136 +264,7 @@ export function useRoles() {
   return { data: data ?? [], error, isLoading };
 }
 
-export function useCreateRole() {
-  return useApiMutation<Role, { name: string; description?: string; permissions: string[] }>(
-    'POST',
-    '/admin/roles',
-  );
-}
-
-export function useUpdateRole() {
-  return useApiMutation<Role, { id: string; body: Partial<Role> }>(
-    'PUT',
-    (vars) => `/admin/roles/${vars.id}`,
-  );
-}
-
-export function useDeleteRole() {
-  return useApiMutation<void, string>(
-    'DELETE',
-    (id) => `/admin/roles/${id}`,
-  );
-}
-
-export function useCreateRoleFromValues() {
-  return useCallback(async (values: RoleFormValues): Promise<string | null> => {
-    try {
-      const created = await roleApi.create({
-        name: values.name,
-        description: values.description,
-        permissions: values.permissions,
-      });
-      ghiAudit({
-        action: 'create',
-        entity: 'role',
-        entityId: created.id,
-        entityLabel: created.name,
-        diff: { before: { sourceId: '' }, after: { name: values.name, permissionCount: values.permissions.length } },
-      });
-      notifySuccess('Đã tạo role');
-      return created.id;
-    } catch (err) {
-      notifyError('Lỗi', (err as Error).message);
-      return null;
-    }
-  }, []);
-}
-
-export function useUpdateRoleFromValues() {
-  const qc = useQueryClient();
-  return useCallback(async (id: string, values: RoleFormValues) => {
-    try {
-      await roleApi.update(id, {
-        name: values.name,
-        description: values.description,
-        permissions: values.permissions,
-      });
-      qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
-      ghiAudit({
-        action: 'update',
-        entity: 'role',
-        entityId: id,
-        entityLabel: values.name,
-        diff: {
-          before: { name: values.name },
-          after: { name: values.name, permissions: values.permissions.length },
-        },
-      });
-      notifySuccess('Đã cập nhật role');
-      return true;
-    } catch (err) {
-      notifyError('Lỗi', (err as Error).message);
-      return false;
-    }
-  }, [qc]);
-}
-
-export function useDeleteRoleWithAudit() {
-  const qc = useQueryClient();
-  return useCallback(async (role: Role) => {
-    if (role.isSystem) {
-      notifyError('Lỗi', 'Không thể xóa system role');
-      return false;
-    }
-    try {
-      await roleApi.delete(role.id);
-      qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
-      ghiAudit({
-        action: 'delete',
-        entity: 'role',
-        entityId: role.id,
-        entityLabel: role.name,
-        diff: { before: { name: role.name }, after: {} },
-      });
-      notifySuccess(`Đã xóa role "${role.name}"`);
-      return true;
-    } catch (err) {
-      notifyError('Lỗi', (err as Error).message);
-      return false;
-    }
-  }, [qc]);
-}
-
-// ─── BATCH PERMISSION MATRIX ──────────────────────────────────
-
-export function useUpdateRolePermissions() {
-  const qc = useQueryClient();
-  return useCallback(
-    async (roleId: string, permissions: string[]) => {
-      try {
-        const before = await roleApi.get(roleId);
-        await roleApi.update(roleId, { permissions });
-        qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
-        ghiAudit({
-          action: 'update',
-          entity: 'role',
-          entityId: roleId,
-          entityLabel: before.name,
-          diff: {
-            before: { permissions: before.permissions.length },
-            after: { permissions: permissions.length },
-          },
-        });
-        notifySuccess(`Đã cập nhật permissions cho "${before.name}"`);
-        return true;
-      } catch (err) {
-        notifyError('Lỗi', (err as Error).message);
-        return false;
-      }
-    },
-    [qc],
-  );
-}
+// Role mutations are intentionally unavailable: backend roles are read-only.
 
 // ─── AUDIT LOG (xem) ──────────────────────────────────────────
 

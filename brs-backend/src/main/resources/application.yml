@@ -105,6 +105,15 @@ server:
 # Application Custom Properties
 # ============================================================
 app:
+  seed:
+    enabled: ${APP_SEED_ENABLED:false}
+    key: ${APP_SEED_KEY:initial-content-v1}
+    mode: ${APP_SEED_MODE:IF_EMPTY}
+    admin-email: ${APP_SEED_ADMIN_EMAIL:}
+    admin-password: ${APP_SEED_ADMIN_PASSWORD:}
+    admin-name: ${APP_SEED_ADMIN_NAME:Quan tri vien}
+    admin-phone: ${APP_SEED_ADMIN_PHONE:}
+
   # JWT Configuration
   jwt:
     private-key-path: ${JWT_PRIVATE_KEY_PATH:keys/jwt-private.pem}

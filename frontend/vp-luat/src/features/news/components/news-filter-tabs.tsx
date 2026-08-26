@@ -2,9 +2,19 @@
 
 import { useMemo } from 'react';
 import { FilterBar } from '@/components/layout/filter-bar';
-import { NEWS_CATEGORIES } from '../lib/data/news-data';
 import type { NewsCategory } from '../types';
+
+const CATEGORY_METADATA: ReadonlyArray<{ id: NewsCategory; icon: string }> = [
+  { id: 'tin-tuc', icon: 'fa-solid fa-newspaper' },
+  { id: 'nghi-dinh', icon: 'fa-solid fa-scale-balanced' },
+  { id: 'blog', icon: 'fa-solid fa-pen-nib' },
+  { id: 'case-study', icon: 'fa-solid fa-briefcase' },
+  { id: 'huong-dan', icon: 'fa-solid fa-circle-info' },
+];
+
+const ALL_CATEGORY_ICON = 'fa-solid fa-layer-group';
 import type { PostApiResponse } from '../api/news-api';
+import { useTranslations } from 'next-intl';
 
 interface NewsFilterTabsProps {
   active: 'all' | NewsCategory;
@@ -12,15 +22,8 @@ interface NewsFilterTabsProps {
   posts?: PostApiResponse[];
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  'tin-tuc': 'Tin tức',
-  'nghi-dinh': 'Nghị định',
-  'blog': 'Blog',
-  'case-study': 'Case study',
-  'huong-dan': 'Hướng dẫn',
-};
-
 export function NewsFilterTabs({ active, onChange, posts = [] }: NewsFilterTabsProps) {
+  const t = useTranslations('public.filters');
   const options = useMemo(() => {
     // Derive counts from the live posts list instead of trusting the
     // hardcoded `count` field on NEWS_CATEGORIES (it drifts when posts are
@@ -30,27 +33,22 @@ export function NewsFilterTabs({ active, onChange, posts = [] }: NewsFilterTabsP
       counts[p.category] = (counts[p.category] ?? 0) + 1;
     });
 
-    const seen = new Set<string>(['all']);
-    const rest = NEWS_CATEGORIES.filter((c) => !seen.has(c.id)).map((c) => {
-      seen.add(c.id);
-      return {
-        id: c.id as NewsCategory,
-        label: c.label,
-        icon: c.icon,
-        count: counts[c.id] ?? 0,
-      };
-    });
-    const all = NEWS_CATEGORIES.find((c) => c.id === 'all');
+    const rest = CATEGORY_METADATA.map((category) => ({
+      id: category.id,
+      label: t(`categories.${category.id}`),
+      icon: category.icon,
+      count: counts[category.id] ?? 0,
+    }));
     return [
       {
         id: 'all' as const,
-        label: all?.label ?? 'Tất cả',
-        icon: all?.icon ?? 'fa-solid fa-layer-group',
+        label: t('all'),
+        icon: ALL_CATEGORY_ICON,
         count: posts.length,
       },
       ...rest,
     ];
-  }, [posts]);
+  }, [posts, t]);
 
   const totalForActive =
     active === 'all'
@@ -59,12 +57,12 @@ export function NewsFilterTabs({ active, onChange, posts = [] }: NewsFilterTabsP
 
   return (
     <FilterBar
-      label="Lọc theo danh mục"
+      label={t('byCategory')}
       options={options}
       active={active}
       onChange={onChange}
       resultCount={totalForActive}
-      resultLabel="bài viết"
+      resultLabel={t('articles')}
     />
   );
 }

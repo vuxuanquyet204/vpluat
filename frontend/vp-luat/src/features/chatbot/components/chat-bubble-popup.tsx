@@ -1,21 +1,25 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 interface ChatBubblePopupProps {
   onClose: () => void;
   onOpen: () => void;
 }
 
 export function ChatBubblePopup({ onClose, onOpen }: ChatBubblePopupProps) {
+  const t = useTranslations('chatbot');
+
   return (
-    <div className="bubble-popup" role="dialog" aria-label="Chatbot thông báo">
+    <div className="bubble-popup" role="dialog" aria-label={t('popupLabel')}>
       <div className="bubble-popup__arrow" />
       <p className="bubble-popup__text">
-        Xin chào! Tôi có thể giúp gì cho bạn?
+        {t('popupMessage')}
       </p>
       <button
         className="bubble-popup__close"
         onClick={onClose}
-        aria-label="Đóng thông báo"
+        aria-label={t('dismissPopup')}
       >
         <svg
           width="12"
@@ -30,7 +34,7 @@ export function ChatBubblePopup({ onClose, onOpen }: ChatBubblePopupProps) {
         </svg>
       </button>
       <button className="bubble-popup__action" onClick={onOpen}>
-        Bắt đầu chat
+        {t('startChat')}
       </button>
     </div>
   );

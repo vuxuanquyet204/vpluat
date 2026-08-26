@@ -17,6 +17,7 @@ export interface BookingLawyerOption {
   reviewCount?: number;
   /** Pre-formatted label e.g. "Còn lịch hôm nay" / "Hết lịch hôm nay". */
   availabilityLabel?: string;
+  isAvailableToday?: boolean;
   avatarGradient: string;
   avatarUrl?: string;
 }

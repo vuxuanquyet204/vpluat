@@ -353,169 +353,7 @@ export interface NewsletterTemplate {
 
 // ─── Users ─────────────────────────────────────────────────────────────
 
-export type LandingBlockType =
-  | 'hero'
-  | 'text'
-  | 'image'
-  | 'cta'
-  | 'lead-form'
-  | 'testimonials'
-  | 'pricing'
-  | 'reviews'
-  | 'faq'
-  | 'news'
-  | 'lawyers'
-  | 'map'
-  | 'contact';
-
-export type LandingPageStatus = 'draft' | 'published' | 'archived';
-export type LandingVariantLabel = 'A' | 'B';
-export type LandingAudience = 'fdi' | 'enterprise' | 'individual' | 'startup' | 'all';
-
-export interface HeroBlockProps {
-  headline: string;
-  subheadline?: string;
-  ctaText?: string;
-  ctaLink?: string;
-  backgroundImage?: string;
-  align?: 'left' | 'center' | 'right';
-  eyebrow?: string;
-}
-
-export interface TextBlockProps {
-  content: string;
-  maxWidth?: number;
-  align?: 'left' | 'center' | 'right';
-}
-
-export interface ImageBlockProps {
-  src: string;
-  alt: string;
-  caption?: string;
-  width?: number;
-  rounded?: boolean;
-}
-
-export interface CtaBlockProps {
-  text: string;
-  link: string;
-  variant?: 'primary' | 'secondary' | 'outline';
-  icon?: string;
-}
-
-export interface LeadFormBlockProps {
-  fields: string[];
-  submitText: string;
-  successMessage?: string;
-  redirectTo?: string;
-}
-
-export interface TestimonialsBlockProps {
-  limit: number;
-  layout?: 'grid' | 'carousel';
-  minRating?: number;
-}
-
-export interface PricingBlockProps {
-  serviceIds: string[];
-  showButton?: boolean;
-  title?: string;
-}
-
-export interface ReviewsBlockProps {
-  limit: number;
-  layout?: 'grid' | 'list';
-  showRating?: boolean;
-  serviceId?: string;
-}
-
-export interface FaqBlockProps {
-  title?: string;
-  items: Array<{ question: string; answer: string }>;
-}
-
-export interface NewsBlockProps {
-  category?: string;
-  limit: number;
-  layout?: 'grid' | 'list';
-}
-
-export interface LawyersBlockProps {
-  specialties?: string[];
-  limit: number;
-  showSchedule?: boolean;
-}
-
-export interface MapBlockProps {
-  embedUrl: string;
-  height?: number;
-  title?: string;
-}
-
-export interface ContactBlockProps {
-  address: string;
-  phone: string;
-  email: string;
-  workingHours?: string;
-  showMap?: boolean;
-}
-
-export type LandingBlockProps =
-  | HeroBlockProps
-  | TextBlockProps
-  | ImageBlockProps
-  | CtaBlockProps
-  | LeadFormBlockProps
-  | TestimonialsBlockProps
-  | PricingBlockProps
-  | ReviewsBlockProps
-  | FaqBlockProps
-  | NewsBlockProps
-  | LawyersBlockProps
-  | MapBlockProps
-  | ContactBlockProps;
-
-export interface LandingBlock<T extends LandingBlockProps = LandingBlockProps> {
-  id: string;
-  type: LandingBlockType;
-  order: number;
-  props: T;
-}
-
-export interface LandingSeo {
-  metaTitle: string;
-  metaDescription: string;
-  noindex: boolean;
-  ogImage?: string;
-}
-
-export interface LandingPageAnalytics {
-  views?: number;
-  conversions?: number;
-  ctr?: number;
-  bounceRate?: number;
-  dailyViews?: Array<{ date: string; views: number; conversions: number }>;
-}
-
-export interface LandingPage {
-  id: string;
-  title: string;
-  slug: string;
-  description?: string;
-  targetAudience: LandingAudience;
-  status: LandingPageStatus;
-  isVariant: boolean;
-  parentPageId?: string;
-  variantLabel?: LandingVariantLabel;
-  blocks: LandingBlock[];
-  seo: LandingSeo;
-  analytics?: LandingPageAnalytics;
-  publishedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'CSKH' | 'LAWYER' | 'USER';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'CSKH' | 'LAWYER' | 'USER' | 'VIEWER';
 
 export interface AdminUser {
   id: string;
@@ -549,7 +387,6 @@ export type Permission =
   | 'reviews.read' | 'reviews.moderate' | 'reviews.reply'
   | 'chatbot.read' | 'chatbot.train'
   | 'newsletter.read' | 'newsletter.send'
-  | 'landing.read' | 'landing.write' | 'landing.publish'
   | 'users.read' | 'users.write' | 'users.impersonate'
   | 'settings.read' | 'settings.write'
   | 'audit.read';
@@ -576,9 +413,6 @@ export const ALL_PERMISSIONS: Array<{ key: Permission; label: string; group: str
   { key: 'chatbot.train', label: 'Train', group: 'Chatbot' },
   { key: 'newsletter.read', label: 'Xem', group: 'Newsletter' },
   { key: 'newsletter.send', label: 'Gửi', group: 'Newsletter' },
-  { key: 'landing.read', label: 'Xem', group: 'Landing Page' },
-  { key: 'landing.write', label: 'Sửa', group: 'Landing Page' },
-  { key: 'landing.publish', label: 'Publish', group: 'Landing Page' },
   { key: 'users.read', label: 'Xem', group: 'Người dùng' },
   { key: 'users.write', label: 'Sửa', group: 'Người dùng' },
   { key: 'users.impersonate', label: 'Đăng nhập thay', group: 'Người dùng' },

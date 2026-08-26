@@ -11,7 +11,6 @@ import {
   type Category,
   type Tag,
 } from '@/lib/api/admin-content';
-import { landingPageApi, type LandingPage } from '@/lib/api/admin-content';
 import { notifySuccess, notifyError } from '@/features/admin/lib';
 import { Save, Loader2 } from 'lucide-react';
 
@@ -53,10 +52,6 @@ export function PostFormModal({ open, onClose, editing, onSaved }: PostFormModal
     tagInput: '',
   });
 
-  if (typeof console !== 'undefined') {
-    console.log('[PostForm] render, open=', open);
-  }
-
   const categoriesQuery = useApiQuery<Category[]>(
     ['admin', 'categories'],
     '/admin/categories',
@@ -73,41 +68,6 @@ export function PostFormModal({ open, onClose, editing, onSaved }: PostFormModal
     ? categoriesQuery.data
     : [];
   const availableTags: Tag[] = Array.isArray(tagsQuery.data) ? tagsQuery.data : [];
-
-  useEffect(() => {
-    if (typeof console !== 'undefined') {
-      console.log('[PostForm] categories state:', {
-        status: categoriesQuery.status,
-        fetchStatus: categoriesQuery.fetchStatus,
-        isLoading: categoriesQuery.isLoading,
-        isFetching: categoriesQuery.isFetching,
-        isError: categoriesQuery.isError,
-        error: categoriesQuery.error?.message,
-        count: categories.length,
-        sample: categories[0],
-      });
-      console.log('[PostForm] tags state:', {
-        status: tagsQuery.status,
-        isLoading: tagsQuery.isLoading,
-        isError: tagsQuery.isError,
-        error: tagsQuery.error?.message,
-        count: availableTags.length,
-      });
-    }
-  }, [
-    categoriesQuery.status,
-    categoriesQuery.fetchStatus,
-    categoriesQuery.isLoading,
-    categoriesQuery.isFetching,
-    categoriesQuery.isError,
-    categoriesQuery.error,
-    categories.length,
-    availableTags.length,
-    tagsQuery.status,
-    tagsQuery.isLoading,
-    tagsQuery.isError,
-    tagsQuery.error,
-  ]);
 
   useEffect(() => {
     if (editing) {
@@ -412,162 +372,6 @@ export function PostFormModal({ open, onClose, editing, onSaved }: PostFormModal
                 <option value="en">English</option>
               </select>
             </div>
-          </div>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-// === LANDING PAGE ===
-
-interface LandingFormModalProps {
-  open: boolean;
-  onClose: () => void;
-  editing?: LandingPage | null;
-  onSaved?: () => void;
-}
-
-export function LandingFormModal({ open, onClose, editing, onSaved }: LandingFormModalProps) {
-  const [form, setForm] = useState({
-    titleVi: '',
-    titleEn: '',
-    slug: '',
-    content: '{}',
-    isPublished: false,
-  });
-
-  useEffect(() => {
-    if (editing) {
-      setForm({
-        titleVi: editing.titleVi ?? '',
-        titleEn: editing.titleEn ?? '',
-        slug: editing.slug ?? '',
-        content: '{}',
-        isPublished: editing.isPublished,
-      });
-    } else if (open) {
-      setForm({ titleVi: '', titleEn: '', slug: '', content: '{}', isPublished: false });
-    }
-  }, [editing, open]);
-
-  const saveMutation = useApiMutation<LandingPage, unknown>(
-    editing ? 'PUT' : 'POST',
-    editing ? `/admin/landing-pages/${editing.id}` : '/admin/landing-pages',
-    {
-      onSuccess: () => {
-        notifySuccess(editing ? 'Đã cập nhật Landing Page' : 'Đã tạo Landing Page mới');
-        onSaved?.();
-        onClose();
-      },
-      onError: (err) => notifyError('Lỗi', err.message),
-    }
-  );
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.titleVi.trim()) {
-      notifyError('Vui lòng nhập tiêu đề tiếng Việt');
-      return;
-    }
-    if (!form.slug.trim()) {
-      notifyError('Vui lòng nhập slug');
-      return;
-    }
-    saveMutation.mutate(form);
-  };
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={editing ? 'Sửa Landing Page' : 'Tạo Landing Page'}
-      width={600}
-      footer={
-        <>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              padding: '8px 16px',
-              border: '1px solid var(--gray-200)',
-              background: 'white',
-              borderRadius: 6,
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-            }}
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            form="landing-form"
-            disabled={saveMutation.isPending}
-            style={{
-              padding: '8px 16px',
-              border: 'none',
-              background: 'var(--primary, #1E3A5F)',
-              color: 'white',
-              borderRadius: 6,
-              cursor: saveMutation.isPending ? 'not-allowed' : 'pointer',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              opacity: saveMutation.isPending ? 0.7 : 1,
-            }}
-          >
-            {saveMutation.isPending ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-            {editing ? 'Cập nhật' : 'Tạo trang'}
-          </button>
-        </>
-      }
-    >
-      <form id="landing-form" onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div>
-            <label style={labelStyle}>Tiêu đề tiếng Việt *</label>
-            <input
-              type="text"
-              required
-              value={form.titleVi}
-              onChange={(e) => setForm({ ...form, titleVi: e.target.value })}
-              style={inputStyle}
-              placeholder="Dịch vụ ly hôn trọn gói"
-            />
-          </div>
-          <div>
-            <label style={labelStyle}>Tiêu đề tiếng Anh</label>
-            <input
-              type="text"
-              value={form.titleEn}
-              onChange={(e) => setForm({ ...form, titleEn: e.target.value })}
-              style={inputStyle}
-              placeholder="Divorce service package (optional)"
-            />
-          </div>
-          <div>
-            <label style={labelStyle}>Slug *</label>
-            <input
-              type="text"
-              required
-              value={form.slug}
-              onChange={(e) => setForm({ ...form, slug: e.target.value })}
-              style={inputStyle}
-              placeholder="dich-vu-ly-hon"
-            />
-          </div>
-          <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={form.isPublished}
-                onChange={(e) => setForm({ ...form, isPublished: e.target.checked })}
-              />
-              <span style={{ fontSize: '0.85rem' }}>Xuất bản ngay</span>
-            </label>
           </div>
         </div>
       </form>

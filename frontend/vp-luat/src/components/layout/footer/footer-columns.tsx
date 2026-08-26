@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { MapPin, Phone, Mail } from 'lucide-react';
 
 function FacebookIcon({ size = 18 }: { size?: number }) {
@@ -55,47 +56,62 @@ const FOOTER_LINKS = {
     ],
   },
   contact: {
-    title: 'Liên hệ',
     items: [
-      { icon: MapPin, text: 'Tầng 15, Tòa nhà Landmark 72, Phạm Hùng, Nam Từ Liêm, Hà Nội' },
-      { icon: Phone, text: '1900 1234' },
-      { icon: Mail, text: 'contact@vuplat.vn' },
+      { icon: MapPin, key: 'address' },
+      { icon: Phone, key: 'hotline' },
+      { icon: Mail, key: 'email' },
     ],
   },
 };
 
 export function FooterColumns() {
+  const t = useTranslations('footer');
+  const serviceLinks = [
+    { label: 'service1', href: '/services/thanh-lap-doanh-nghiep' },
+    { label: 'service2', href: '/services/tu-van-hop-dong' },
+    { label: 'service3', href: '/services/ly-hon-tranh-chap' },
+    { label: 'service4', href: '/services/tranh-chap-dat-dai' },
+    { label: 'service5', href: '/services/dang-ky-nhan-hieu' },
+    { label: 'allServices', href: '/services' },
+  ];
+  const companyLinks = [
+    { label: 'lawyers', href: '/lawyers' },
+    { label: 'news', href: '/news' },
+    { label: 'booking', href: '/booking' },
+    { label: 'contact', href: '/contact' },
+  ];
+
   return (
     <>
       <div>
-        <div className="footer__col-title">Dịch vụ</div>
+        <div className="footer__col-title">{t('services')}</div>
         <div className="footer__links">
-          {FOOTER_LINKS.services.links.map((link) => (
+          {serviceLinks.map((link) => (
             <Link key={link.href} href={link.href} className="footer__link">
-              {link.label}
+              {t(link.label)}
             </Link>
           ))}
         </div>
       </div>
 
       <div>
-        <div className="footer__col-title">{FOOTER_LINKS.company.title}</div>
+        <div className="footer__col-title">{t('company')}</div>
         <div className="footer__links">
-          {FOOTER_LINKS.company.links.map((link) => (
+          {companyLinks.map((link) => (
             <Link key={link.href} href={link.href} className="footer__link">
-              {link.label}
+              {t(link.label)}
             </Link>
           ))}
         </div>
       </div>
 
       <div>
-        <div className="footer__col-title">{FOOTER_LINKS.contact.title}</div>
+        <div className="footer__col-title">{t('contact')}</div>
         <div>
           {FOOTER_LINKS.contact.items.map((item, index) => (
             <div key={index} className="footer__contact-item">
               <item.icon className="footer__contact-icon" size={16} />
-              <span>{item.text}</span>
+              <span>{t(item.key)}</span>
             </div>
           ))}
         </div>
@@ -105,15 +121,16 @@ export function FooterColumns() {
 }
 
 export function FooterBrand() {
+  const t = useTranslations('footer');
+
   return (
     <div>
       <div className="footer__brand-logo">
         <div className="footer__brand-icon">VP</div>
-        <span className="footer__brand-name">VP Luật Hùng & Cộng sự</span>
+        <span className="footer__brand-name">{t('brandName')}</span>
       </div>
       <p className="footer__brand-desc">
-        Đoàn luật sư hàng đầu Việt Nam với hơn 15 năm kinh nghiệm tư vấn pháp lý cho cá
-        nhân và doanh nghiệp. Cam kết bảo vệ quyền lợi hợp pháp của khách hàng.
+        {t('description')}
       </p>
       <div className="footer__socials">
         <a

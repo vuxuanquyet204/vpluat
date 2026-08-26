@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, Calendar, User, Tag, Share2, Clock, Eye } from 'lucide-react';
 import { Image } from 'lucide-react';
 import { NewsSidebar } from '@/features/news/components/news-sidebar';
+import { PostViewTracker } from '@/features/news/components/post-view-tracker';
 import type { ApiResponse } from '@/types/api';
+import { getRelatedPosts } from '@/features/news/api/news-api';
 import type { PostDTO } from '@/features/news/api/news-api';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
@@ -71,21 +74,10 @@ function mapPostDto(dto: PostDTO): PostApiResponse {
   };
 }
 
-function formatDate(iso: string) {
+function formatDate(iso: string, locale: string): string {
   const date = new Date(iso);
-  if (isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
-}
-
-function getCategoryLabel(cat: string): string {
-  const labels: Record<string, string> = {
-    'tin-tuc': 'Tin tức',
-    'nghi-dinh': 'Nghị định',
-    'blog': 'Blog',
-    'case-study': 'Case study',
-    'huong-dan': 'Hướng dẫn',
-  };
-  return labels[cat] || cat;
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
 }
 
 export async function generateStaticParams() {
@@ -115,21 +107,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ArticleDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const locale = await getLocale();
+  const t = await getTranslations('public.news');
+  const filters = await getTranslations('public.filters');
 
   let article: PostApiResponse | null = null;
   let relatedArticles: PostApiResponse[] = [];
 
   try {
-    const [detailRes, listRes] = await Promise.all([
-      fetch(`${API_BASE}/public/posts/${encodeURIComponent(slug)}`, {
-        headers: { 'Content-Type': 'application/json' },
-        next: { revalidate: 60 },
-      }),
-      fetch(`${API_BASE}/public/posts?page=0&size=10`, {
-        headers: { 'Content-Type': 'application/json' },
-        next: { revalidate: 60 },
-      }),
-    ]);
+    const detailRes = await fetch(`${API_BASE}/public/posts/${encodeURIComponent(slug)}`, {
+      headers: { 'Content-Type': 'application/json' },
+      next: { revalidate: 60 },
+    });
 
     if (detailRes.ok) {
       const detailJson: ApiResponse<PostDTO> = await detailRes.json();
@@ -138,14 +127,8 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
       }
     }
 
-    if (listRes.ok) {
-      const listJson: ApiResponse<{ content: PostDTO[] }> = await listRes.json();
-      if (listJson.success && listJson.data?.content) {
-        relatedArticles = listJson.data.content
-          .filter((p) => p.slug !== slug)
-          .slice(0, 3)
-          .map(mapPostDto);
-      }
+    if (article) {
+      relatedArticles = await getRelatedPosts(article.id, 3);
     }
   } catch (e) {
     console.error('Failed to fetch article:', e);
@@ -153,17 +136,20 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
 
   if (!article) notFound();
 
-  const categoryLabel = getCategoryLabel(article!.category);
+  const categoryLabel = filters.has(`categories.${article!.category}`)
+    ? filters(`categories.${article!.category}`)
+    : article!.category;
 
   return (
     <>
+      <PostViewTracker postId={article.id} />
       {/* ── Page Hero ── */}
       <div className="article-hero">
         <div className="container">
           <nav className="article-breadcrumb" aria-label="Breadcrumb">
-            <Link href="/">Trang chủ</Link>
+            <Link href="/">{t('breadcrumb.home')}</Link>
             <span className="sep">/</span>
-            <Link href="/news">Tin tức</Link>
+            <Link href="/news">{t('breadcrumb.current')}</Link>
             <span className="sep">/</span>
             <span>{article!.title}</span>
           </nav>
@@ -178,7 +164,7 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
             <main className="article-main">
               {/* Back link */}
               <Link href="/news" className="article-back">
-                <ArrowLeft size={16} aria-hidden /> Quay lại danh sách tin tức
+                <ArrowLeft size={16} aria-hidden /> {t('backToList')}
               </Link>
 
               {/* Category badge */}
@@ -191,7 +177,7 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
               <div className="article-meta">
                 <span className="article-meta__item">
                   <Calendar size={14} aria-hidden />
-                  {formatDate(article!.publishedAt)}
+                  {formatDate(article!.publishedAt, locale)}
                 </span>
                 <span className="article-meta__author">
                   <div
@@ -204,11 +190,11 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
                 </span>
                 <span className="article-meta__item">
                   <Eye size={14} aria-hidden />
-                  {article!.views.toLocaleString('vi-VN')} lượt xem
+                  {article!.views.toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN')} {t('views')}
                 </span>
                 <span className="article-meta__item article-meta__reading">
                   <Clock size={14} aria-hidden />
-                  {article!.readingTime} phút đọc
+                  {article!.readingTime} {t('minutesRead')}
                 </span>
               </div>
 
@@ -241,7 +227,7 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
               {article!.tags && article!.tags.length > 0 && (
                 <div className="article-tags">
                   <strong>
-                    <Tag size={14} aria-hidden /> Tags:
+                    <Tag size={14} aria-hidden /> {t('tags')}
                   </strong>
                   {article!.tags.map((t) => (
                     <Link key={t} href={`/news?tag=${encodeURIComponent(t)}`} className="article-tag">
@@ -254,13 +240,13 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
               {/* Share */}
               <div className="article-share">
                 <strong>
-                  <Share2 size={16} aria-hidden /> Chia sẻ:
+                  <Share2 size={16} aria-hidden /> {t('share')}
                 </strong>
                 <a
                   href={`https://www.facebook.com/sharer/sharer.php?u=%2Fnews%2F${article!.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Chia sẻ Facebook"
+                  aria-label={t('shareFacebook')}
                 >
                   <i className="fa-brands fa-facebook-f" />
                 </a>
@@ -268,7 +254,7 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
                   href={`https://twitter.com/intent/tweet?url=%2Fnews%2F${article!.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Chia sẻ Twitter"
+                  aria-label={t('shareTwitter')}
                 >
                   <i className="fa-brands fa-twitter" />
                 </a>
@@ -276,7 +262,7 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
                   href={`https://www.linkedin.com/sharing/share-offsite/?url=%2Fnews%2F${article!.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Chia sẻ LinkedIn"
+                  aria-label={t('shareLinkedIn')}
                 >
                   <i className="fa-brands fa-linkedin-in" />
                 </a>
@@ -285,7 +271,7 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
               {/* Bottom back link */}
               <div className="article-back-footer">
                 <Link href="/news" className="btn btn--outline">
-                  <ArrowLeft size={16} aria-hidden /> Quay lại danh sách tin tức
+                  <ArrowLeft size={16} aria-hidden /> {t('backToList')}
                 </Link>
               </div>
             </main>
@@ -303,7 +289,7 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
         <section className="section section--gray">
           <div className="container">
             <div className="section__header">
-              <h2 className="section__title">Bài viết liên quan</h2>
+              <h2 className="section__title">{t('related')}</h2>
             </div>
             <div className="related-grid">
               {relatedArticles.map((a) => (
@@ -319,7 +305,9 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
                   </div>
                   <div className="article-card__body">
                     <span className="article-card__cat">
-                      {getCategoryLabel(a.category)}
+                      {filters.has(`categories.${a.category}`)
+                      ? filters(`categories.${a.category}`)
+                      : a.category}
                     </span>
                     <h3 className="article-card__title">{a.title}</h3>
                     <p className="article-card__excerpt">{a.excerpt}</p>
@@ -334,7 +322,7 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
                         <span className="article-card__author-name">{a.author.name}</span>
                       </span>
                       <span className="article-card__meta-item">
-                        <Clock size={12} /> {formatDate(a.publishedAt)}
+                        <Clock size={12} /> {formatDate(a.publishedAt, locale)}
                       </span>
                       <span className="article-card__meta-item">
                         <Eye size={12} /> {a.views.toLocaleString('vi-VN')}

@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
@@ -27,6 +28,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 function LogoutButton() {
   const { closeSidebar } = useAdminUIStore();
+  const t = useTranslations('auth');
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -49,16 +51,17 @@ function LogoutButton() {
       type="button"
       onClick={handleLogout}
       className="admin-sidebar__logout"
-      aria-label="Đăng xuất"
+      aria-label={t('logout')}
     >
       <LogOut size={14} aria-hidden="true" />
-      Đăng xuất
+      {t('logout')}
     </button>
   );
 }
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const t = useTranslations('admin');
   const { isSidebarOpen, closeSidebar } = useAdminUIStore();
   const badges = useSidebarBadges();
   const { data: session } = useSession();
@@ -71,8 +74,8 @@ export function AdminSidebar() {
       }
     | undefined) ?? undefined;
 
-  const userName = sessionUser?.fullName || sessionUser?.name || 'Quản trị viên';
-  const userRole = ROLE_LABELS[sessionUser?.role ?? ''] || 'Quản trị viên';
+  const userName = sessionUser?.fullName || sessionUser?.name || t('administrator');
+  const userRole = ROLE_LABELS[sessionUser?.role ?? ''] || t('administrator');
   const userInitials = getInitials(sessionUser?.fullName || sessionUser?.name);
   const userAvatar = sessionUser?.avatarUrl;
 
@@ -94,7 +97,7 @@ export function AdminSidebar() {
 
       <aside
         className={`admin-sidebar ${isSidebarOpen ? 'admin-sidebar--open' : ''}`}
-        aria-label="Admin navigation"
+        aria-label={t('navigation')}
       >
         {/* Logo */}
         <div className="admin-sidebar__logo">
@@ -103,7 +106,7 @@ export function AdminSidebar() {
           </div>
           <div className="admin-sidebar__logo-text">
             <div className="admin-sidebar__logo-name">VP Luật</div>
-            <div className="admin-sidebar__logo-sub">Admin Panel</div>
+            <div className="admin-sidebar__logo-sub">{t('panel')}</div>
           </div>
         </div>
 
@@ -112,7 +115,7 @@ export function AdminSidebar() {
           {ADMIN_NAV_SECTIONS.map((section) => (
             <div key={section.label}>
               <div className="admin-sidebar__section-label">
-                {section.label}
+                {t(section.labelKey)}
               </div>
               {section.items.map((item) => {
                 const isActive = pathname.startsWith(item.href);
@@ -125,11 +128,11 @@ export function AdminSidebar() {
                     aria-current={isActive ? 'page' : undefined}
                   >
                     <item.icon size={16} strokeWidth={1.8} aria-hidden="true" />
-                    <span className="admin-sidebar__item-label">{item.label}</span>
+                    <span className="admin-sidebar__item-label">{t(item.labelKey)}</span>
                     {getBadge(item) > 0 && (
                       <span
                         className={`admin-sidebar__badge ${item.badgeVariant === 'red' ? 'admin-sidebar__badge--red' : ''}`}
-                        aria-label={`${getBadge(item)} thông báo`}
+                        aria-label={t('notificationsCount', { count: getBadge(item) })}
                       >
                         {getBadge(item) > 99 ? '99+' : getBadge(item)}
                       </span>

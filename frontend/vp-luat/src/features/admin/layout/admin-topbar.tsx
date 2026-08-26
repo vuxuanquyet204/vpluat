@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAdminUIStore } from '@/features/admin/store';
 import { getNavItemByHref } from '@/features/admin/constants';
 import { Menu, Calendar } from 'lucide-react';
@@ -12,12 +13,14 @@ import { UserMenu } from './user-menu';
 export function AdminTopbar() {
   const pathname = usePathname();
   const { toggleSidebar } = useAdminUIStore();
+  const t = useTranslations('admin');
+  const locale = useLocale();
 
   const navItem = pathname === '/admin' ? getNavItemByHref('/admin/dashboard') : getNavItemByHref(pathname);
 
-  const displayTitle = navItem?.label ?? 'Admin Panel';
+  const displayTitle = navItem?.label ?? t('panel');
 
-  const today = new Intl.DateTimeFormat('vi-VN', {
+  const today = new Intl.DateTimeFormat(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -29,7 +32,7 @@ export function AdminTopbar() {
         <button
           className="admin-topbar__toggle"
           onClick={toggleSidebar}
-          aria-label="Mở menu"
+          aria-label={t('openMenu')}
           aria-expanded="false"
         >
           <Menu size={18} />
@@ -41,7 +44,7 @@ export function AdminTopbar() {
       </div>
 
       <div className="admin-topbar__right">
-        <div className="admin-topbar__date" aria-label="Ngày hôm nay">
+        <div className="admin-topbar__date" aria-label={t('today')}>
           <Calendar size={14} aria-hidden="true" />
           <span>{today}</span>
         </div>

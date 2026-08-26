@@ -49,7 +49,17 @@ public class PublicFileController {
             throw new BusinessException("BAD_REQUEST", "Invalid file path");
         }
 
-        if (!Files.exists(target) || !Files.isReadable(target)) {
+        if (!Files.exists(target) || !Files.isReadable(target) || !Files.isRegularFile(target)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            Path realBase = Path.of(fileStorageService.getBaseDir()).toRealPath();
+            Path realTarget = target.toRealPath();
+            if (!realTarget.startsWith(realBase)) {
+                throw new BusinessException("BAD_REQUEST", "Invalid file path");
+            }
+        } catch (IOException e) {
             return ResponseEntity.notFound().build();
         }
 

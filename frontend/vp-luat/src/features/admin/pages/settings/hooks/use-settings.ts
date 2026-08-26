@@ -3,23 +3,11 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiQuery, useApiMutation } from '@/lib/api/hooks';
-import { settingsApi, auditApi, type SystemSettings, type AuditLogEntry } from '@/lib/api/admin-core';
+import { auditApi, type SystemSettings, type AuditLogEntry } from '@/lib/api/admin-core';
 import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
-
-const DEFAULT_SETTINGS: SystemSettings = {
-  siteName: 'Văn Phòng Luật',
-  siteEmail: 'contact@lawfirm.vn',
-  defaultLanguage: 'vi',
-  maintenanceMode: false,
-  allowRegistration: true,
-  emailNotifications: true,
-  smsNotifications: false,
-};
 
 // ─── SETTINGS ─────────────────────────────────────────────────
 
-// Local "namespace" types kept so existing settings sub-tabs can compile
-// while the backend lands a real /admin/settings/<namespace> endpoint.
 export interface GeneralSettings {
   siteName: string;
   hotline: string;
@@ -65,15 +53,10 @@ export interface IntegrationsSettings {
   chatbotWebhookUrl: string;
 }
 
-export type SettingsNamespace =
-  | 'settings.general'
-  | 'settings.booking'
-  | 'settings.smtp'
-  | 'settings.theme'
-  | 'settings.integrations';
+export type SettingsNamespace = 'general' | 'booking' | 'smtp' | 'theme' | 'integrations';
 
 const NS_DEFAULTS: Record<SettingsNamespace, unknown> = {
-  'settings.general': {
+  general: {
     siteName: 'Văn Phòng Luật',
     hotline: '',
     email: 'contact@lawfirm.vn',
@@ -82,7 +65,7 @@ const NS_DEFAULTS: Record<SettingsNamespace, unknown> = {
     defaultLanguage: 'vi',
     maintenanceMode: false,
   },
-  'settings.booking': {
+  booking: {
     slotDuration: 60,
     bookingLeadTime: 24,
     maxBookingsPerDay: 30,
@@ -90,7 +73,7 @@ const NS_DEFAULTS: Record<SettingsNamespace, unknown> = {
     autoConfirm: false,
     cancellationPolicy: '24h',
   },
-  'settings.smtp': {
+  smtp: {
     fromName: '',
     fromEmail: '',
     replyTo: '',
@@ -100,14 +83,14 @@ const NS_DEFAULTS: Record<SettingsNamespace, unknown> = {
     smtpPassword: '',
     useTls: true,
   },
-  'settings.theme': {
+  theme: {
     primaryColor: '#1E3A5F',
     accentColor: '#C9A84C',
     fontFamily: 'Inter',
     logoUrl: '',
     faviconUrl: '',
   },
-  'settings.integrations': {
+  integrations: {
     sentryDsn: '',
     posthogKey: '',
     googleAnalyticsId: '',
@@ -115,63 +98,38 @@ const NS_DEFAULTS: Record<SettingsNamespace, unknown> = {
   },
 };
 
-/**
- * Fetch a settings sub-document by namespace.
- * Returns the namespace default until the backend provides a real endpoint.
- */
+/** Fetch one persisted settings namespace with a deterministic default. */
 export function useSetting<T extends object>(key: SettingsNamespace, defaults: T) {
   const fallback = (NS_DEFAULTS[key] as T) ?? defaults;
-  const { value, loaded } = useFullSettings();
-  const ns = (value as unknown as Record<string, unknown>)[key];
-  return {
-    value: (ns && typeof ns === 'object' ? (ns as T) : fallback),
-    loaded,
-    refetch: () => undefined,
-  };
-}
-
-/**
- * Fetch the full settings document from the backend.
- * Falls back to DEFAULT_SETTINGS if the backend is unreachable so the
- * admin UI never renders blank while we wait.
- */
-function useFullSettings() {
-  const { data, isLoading, error, refetch } = useApiQuery<SystemSettings>(
-    ['admin', 'settings'],
-    '/admin/settings',
+  const { data, isLoading, refetch } = useApiQuery<T>(
+    ['admin', 'settings', key],
+    `/admin/settings/${key}`,
     {},
     { retry: false },
   );
 
   return {
-    value: data ?? DEFAULT_SETTINGS,
+    value: data ?? fallback,
     loaded: !isLoading,
-    error,
     refetch,
   };
 }
 
-/**
- * Generic typed setter for the singleton settings document. Records
- * before/after diffs to the audit trail.
- */
-function useUpdateSettingRaw() {
+/** Persist only the active namespace, so tab forms cannot overwrite each other. */
+export function useUpdateSetting<T extends object>(key: SettingsNamespace) {
   const qc = useQueryClient();
-  const mutation = useApiMutation<SystemSettings, Partial<SystemSettings>>(
-    'PUT',
-    '/admin/settings',
-  );
+  const mutation = useApiMutation<T, Partial<T>>('PUT', `/admin/settings/${key}`);
 
   return useCallback(
-    async (newValue: Partial<SystemSettings>, label = 'Cài đặt hệ thống') => {
+    async (newValue: Partial<T>, label = 'Cài đặt hệ thống') => {
       try {
-        const before = qc.getQueryData<SystemSettings>(['admin', 'settings']) ?? DEFAULT_SETTINGS;
+        const before = qc.getQueryData<T>(['admin', 'settings', key]) ?? (NS_DEFAULTS[key] as T);
         await mutation.mutateAsync(newValue);
-        qc.invalidateQueries({ queryKey: ['admin', 'settings'] });
+        await qc.invalidateQueries({ queryKey: ['admin', 'settings', key] });
         ghiAudit({
           action: 'update',
           entity: 'settings',
-          entityId: 'singleton',
+          entityId: key,
           entityLabel: label,
           diff: {
             before: { value: before as unknown as Record<string, unknown> },
@@ -180,61 +138,13 @@ function useUpdateSettingRaw() {
         });
         notifySuccess(`Đã lưu ${label}`);
         return true;
-      } catch (e) {
-        notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể lưu');
+      } catch (error) {
+        notifyError('Lỗi', error instanceof Error ? error.message : 'Không thể lưu');
         return false;
       }
     },
-    [mutation, qc],
+    [key, mutation, qc],
   );
-}
-
-// ─── RESET (no-op in real backend) ────────────────────────────
-
-/**
- * Reset to seed is meaningless once we use a real backend. Keep the
- * function but make it a no-op that logs the action so any leftover
- * UI button still works.
- */
-/**
- * Generic namespaced settings setter used by the sub-tab forms.
- * Each top-level settings form passes its own key + payload type.
- */
-export function useUpdateSetting<T extends object>(key: SettingsNamespace) {
-  const update = useUpdateSettingRaw();
-  return useCallback(
-    async (newValue: Partial<T>, label = 'Cài đặt hệ thống') => {
-      return update({ [key]: newValue } as Partial<SystemSettings>, label);
-    },
-    [update, key],
-  );
-}
-
-export function useResetAllToSeed() {
-  const qc = useQueryClient();
-  return useCallback(() => {
-    if (typeof window === 'undefined') return;
-    if (!window.confirm('Reset toàn bộ cache về mặc định? Hành động không thể hoàn tác.')) return;
-    try {
-      qc.invalidateQueries();
-      ghiAudit({
-        action: 'restore',
-        entity: 'system',
-        entityId: 'reset-cache',
-        entityLabel: 'Invalidated React Query cache',
-      });
-      notifySuccess('Đã reset cache. Vui lòng refresh trang.');
-    } catch {
-      notifyError('Lỗi', 'Không thể reset');
-    }
-  }, [qc]);
-}
-
-/**
- * Storage info is meaningless against a real API. Return a stub.
- */
-export function useStorageInfo() {
-  return { sizeBytes: 0, sizeKb: '0.0' };
 }
 
 // ─── AUDIT LOGS ───────────────────────────────────────────────
@@ -275,17 +185,15 @@ export function useAuditLogs(params?: { from?: string; to?: string; entityType?:
 export function useClearAuditLogs() {
   const qc = useQueryClient();
   return useCallback(async () => {
-    if (typeof window === 'undefined') return;
-    if (!window.confirm('Xóa toàn bộ audit log? Hành động không thể hoàn tác.')) return;
-    // Backend does not expose a "clear" endpoint yet; record intent.
-    qc.invalidateQueries({ queryKey: ['admin', 'audit-logs'] });
-    ghiAudit({
-      action: 'delete',
-      entity: 'audit_logs',
-      entityId: 'all',
-      entityLabel: 'Yêu cầu xóa toàn bộ audit log',
-    });
-    notifySuccess('Đã ghi nhận yêu cầu xóa audit log');
+    try {
+      const result = await auditApi.purge();
+      await qc.invalidateQueries({ queryKey: ['admin', 'audit-logs'] });
+      notifySuccess(`Đã xóa ${result.deleted.toLocaleString('vi-VN')} audit log`);
+      return true;
+    } catch (error) {
+      notifyError('Lỗi', error instanceof Error ? error.message : 'Không thể xóa audit log');
+      return false;
+    }
   }, [qc]);
 }
 

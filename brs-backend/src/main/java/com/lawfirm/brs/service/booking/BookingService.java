@@ -111,8 +111,8 @@ public class BookingService {
             log.warn("Failed to link lead for booking {}: {}", appointment.getId(), ex.getMessage());
         }
 
-        String otp = otpService.generateOtp(appointment.getId(), request.clientPhone());
-        log.info("OTP generated for appointment {}: {}", appointment.getId(), otp);
+        otpService.generateOtp(appointment.getId(), request.clientPhone());
+        log.info("OTP generated for appointment {}", appointment.getId());
 
         try {
             notificationService.notifyBookingCreatedSafely(appointment.getId(), appointment.getClientName());
@@ -161,8 +161,8 @@ public class BookingService {
                 "Cannot resend OTP for non-pending appointment");
         }
 
-        String otp = otpService.resendOtp(appointmentId, appointment.getClientPhone());
-        log.info("New OTP generated for appointment {}: {}", appointmentId, otp);
+        otpService.resendOtp(appointmentId, appointment.getClientPhone());
+        log.info("New OTP generated for appointment {}", appointmentId);
 
         return appointmentMapper.toDTO(appointment);
     }

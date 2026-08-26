@@ -1,25 +1,23 @@
-import { LAWYERS_STATS } from '../lib/data/lawyers-data';
 import { PageHero } from '@/components/layout/page-hero';
+import { useTranslations } from 'next-intl';
 
 interface LawyersHeroProps {
   totalCount: number;
 }
 
 export function LawyersHero({ totalCount }: LawyersHeroProps) {
+  const t = useTranslations('public.lawyers');
   return (
     <PageHero
-      eyebrow="Đội ngũ luật sư"
-      title="Đội ngũ luật sư tận tâm"
-      highlight="tận tâm"
-      subtitle="Hơn 20 năm kinh nghiệm, đội ngũ luật sư của chúng tôi tự hào đồng hành cùng khách hàng trong mọi tình huống pháp lý phức tạp nhất."
+      eyebrow={t('hero.eyebrow')}
+      title={t('hero.title')}
+      highlight={t('hero.highlight')}
+      subtitle={t('hero.subtitle')}
       breadcrumb={[
-        { label: 'Trang chủ', href: '/' },
-        { label: 'Luật sư' },
+        { label: t('breadcrumb.home'), href: '/' },
+        { label: t('breadcrumb.current') },
       ]}
-      stats={LAWYERS_STATS.map((s) => ({
-        ...s,
-        value: s.value === '6' ? String(totalCount) : s.value,
-      }))}
+      stats={totalCount > 0 ? [{ value: String(totalCount), label: t('stats.lawyers') }] : undefined}
     />
   );
 }

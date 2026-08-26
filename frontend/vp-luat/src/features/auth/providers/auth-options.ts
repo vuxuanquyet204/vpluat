@@ -118,6 +118,7 @@ export const authOptions = {
   },
   session: { strategy: 'jwt' as const },
   secret: process.env.NEXTAUTH_SECRET,
+  trustHost: process.env.AUTH_TRUST_HOST === 'true' || process.env.NODE_ENV !== 'production',
 } as Record<string, unknown>;
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authOptions as any);

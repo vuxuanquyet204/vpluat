@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Save, RotateCcw, Check } from 'lucide-react';
 import type { Service, Lawyer } from '../hooks/use-services';
+import { getDisplayLabel } from '@/lib/display-labels';
 
 interface AssignmentMatrixProps {
   services: Service[];
@@ -291,7 +292,7 @@ export function AssignmentMatrix({
                       fontWeight: 400,
                     }}
                   >
-                    {s.category}
+                    {getDisplayLabel(s.category)}
                   </div>
                 </td>
                 {lawyers.map((l) => {

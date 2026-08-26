@@ -35,10 +35,11 @@ export type {
   LawyerSchedule,
 } from './admin-booking';
 
-export { postApi, documentApi, auditLogApi, reportsApi, landingPageApi, notificationApi, leadPipelineApi, categoryApi, tagApi } from './admin-content';
+export { postApi, documentApi, auditLogApi, reportsApi, notificationApi, leadPipelineApi, categoryApi, tagApi } from './admin-content';
+export { caseStudyApi } from './admin-case-study';
+export type { CaseStudy, CaseStudyRequest } from './admin-case-study';
 export type {
   Post,
-  LandingPage,
   Notification,
   LeadPipelineStats,
   Category,

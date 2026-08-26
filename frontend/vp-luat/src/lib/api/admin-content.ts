@@ -37,9 +37,6 @@ export const postApi = {
     page?: number;
     size?: number;
     status?: string;
-    categoryId?: string;
-    authorId?: string;
-    search?: string;
   }) => api.get<PageResponse<Post>>(`/admin/posts`, params),
 
   get: (id: string) => api.get<Post>(`/admin/posts/${id}`),
@@ -54,25 +51,44 @@ export const postApi = {
     api.patch<Post>(`/admin/posts/${id}/schedule?at=${encodeURIComponent(atIso)}`, {}),
 
   recordRevision: (id: string, note?: string) =>
-    api.post<Post>(`/admin/posts/${id}/revisions?note=${encodeURIComponent(note ?? '')}`, {}),
+    api.post<void>(`/admin/posts/${id}/revisions?note=${encodeURIComponent(note ?? '')}`, {}),
 
   delete: (id: string) => api.del<void>(`/admin/posts/${id}`),
 
   revisions: (id: string, page = 0, size = 20) =>
     api.get<PageResponse<unknown>>(`/admin/posts/${id}/revisions`, { page, size }),
 
-  duplicate: (id: string) => api.post<Post>(`/admin/posts/${id}/duplicate`, {}),
 };
 
-export const documentApi = {
-  list: (params?: { category?: string; mimeType?: string }) =>
-    api.get<PageResponse<unknown>>(`/admin/documents`, params),
+export interface Document {
+  id: string;
+  fileName: string;
+  title?: string;
+  fileUrl?: string;
+  fileSize?: number;
+  mimeType?: string;
+  serviceId?: string;
+  isPublic: boolean;
+  downloadCount: number;
+  createdAt?: string;
+}
 
-  upload: (file: File) => {
+export const documentApi = {
+  list: (params?: { serviceId?: string }) =>
+    api.get<Document[]>(`/admin/documents`, params),
+
+  upload: (input: {
+    file: File;
+    title?: string;
+    serviceId?: string;
+    isPublic?: boolean;
+  }) => {
     const form = new FormData();
-    form.append('file', file);
-    return api.post<{ id: string; url: string; fileName: string; fileSize: number }>(
-      `/admin/documents/upload`, form);
+    form.append('file', input.file);
+    if (input.title) form.append('title', input.title);
+    if (input.serviceId) form.append('serviceId', input.serviceId);
+    if (input.isPublic !== undefined) form.append('isPublic', String(input.isPublic));
+    return api.post<Document>(`/admin/documents`, form);
   },
 
   delete: (id: string) => api.del<void>(`/admin/documents/${id}`),
@@ -98,25 +114,6 @@ export const auditLogApi = {
     const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
     return `${base}/admin/audit-logs/export/csv${qs.toString() ? '?' + qs : ''}`;
   },
-};
-
-export const chatbotApi = {
-  sessions: (params?: { page?: number; size?: number; escalated?: boolean }) =>
-    api.get<PageResponse<unknown>>(`/admin/chatbot/sessions`, params),
-
-  session: (id: string) => api.get<unknown>(`/admin/chatbot/sessions/${id}`),
-
-  unresolved: (page = 0, size = 20) =>
-    api.get<PageResponse<unknown>>(`/admin/chatbot/unresolved`, { page, size }),
-
-  reply: (id: string, content: string) =>
-    api.post<void>(`/admin/chatbot/sessions/${id}/reply`, { content }),
-
-  intents: (params?: { from?: string; to?: string }) =>
-    api.get<unknown[]>(`/admin/chatbot/intents`, params),
-
-  analytics: (params?: { from?: string; to?: string }) =>
-    api.get<unknown>(`/admin/chatbot/stats`, params),
 };
 
 // ============================================================
@@ -151,6 +148,7 @@ export interface Notification {
   entityId?: string;
   isRead: boolean;
   createdAt: string;
+  channels?: ('in_app' | 'email' | 'sms')[];
 }
 
 export const notificationApi = {
@@ -186,69 +184,6 @@ export const reportsApi = {
     const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
     return `${base}/admin/reports/export/${reportType}?range=${range}`;
   },
-};
-
-// ============================================================
-// Landing Pages
-// ============================================================
-
-export interface LandingPage {
-  id: string;
-  slug: string;
-  titleVi?: string;
-  titleEn?: string;
-  isPublished: boolean;
-  visitCount: number;
-  conversionCount: number;
-  createdAt: string;
-  updatedAt: string;
-  /** JSON envelope containing the block layout ({ blocks: [...] }).
-   *  Populated from the `content` JSONB column in the DB. */
-  content?: string;
-  /** Legacy fields (kept optional for backwards-compat with the
-   *  previous mock-shaped UI). */
-  title?: string;
-  description?: string;
-  targetAudience?: 'fdi' | 'enterprise' | 'individual' | 'startup' | 'all';
-  status?: 'draft' | 'published' | 'archived';
-  isVariant?: boolean;
-  parentPageId?: string;
-  variantLabel?: string;
-  blocks?: unknown[];
-  seo?: Record<string, unknown>;
-  analytics?: {
-    views: number;
-    conversions: number;
-    ctr: number;
-    bounceRate: number;
-    dailyViews: Array<{ date: string; views: number }>;
-  };
-}
-
-export const landingPageApi = {
-  list: (params?: { page?: number; size?: number }) =>
-    api.get<PageResponse<LandingPage>>(`/admin/landing-pages`, params),
-
-  get: (id: string) =>
-    api.get<LandingPage>(`/admin/landing-pages/${id}`),
-
-  stats: (id: string) =>
-    api.get<Record<string, unknown>>(`/admin/landing-pages/${id}/stats`),
-
-  create: (body: { titleVi: string; titleEn?: string; slug: string; content: string }) =>
-    api.post<LandingPage>(`/admin/landing-pages`, body),
-
-  update: (id: string, body: Partial<LandingPage>) =>
-    api.put<LandingPage>(`/admin/landing-pages/${id}`, body),
-
-  delete: (id: string) =>
-    api.del<void>(`/admin/landing-pages/${id}`),
-
-  publish: (id: string) =>
-    api.patch<LandingPage>(`/admin/landing-pages/${id}`, { isPublished: true }),
-
-  unpublish: (id: string) =>
-    api.patch<LandingPage>(`/admin/landing-pages/${id}`, { isPublished: false }),
 };
 
 // ============================================================

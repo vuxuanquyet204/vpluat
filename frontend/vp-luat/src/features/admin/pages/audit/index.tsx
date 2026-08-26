@@ -76,11 +76,11 @@ const ACTION_ICON: Record<string, React.ReactNode> = {
 
 export default function AuditPage() {
   const canRead = useCan('audit.read');
-  const canDelete = useCan('audit.read');
+  const { currentUser, effectiveUser, isImpersonating } = useAdminAuth();
+  const canDelete = currentUser?.role === 'SUPER_ADMIN';
   const { data: logs } = useAuditLogs();
   const clearLogs = useClearAuditLogs();
   const exportLogs = useExportAuditLogs();
-  const { currentUser, effectiveUser, isImpersonating } = useAdminAuth();
 
   const [search, setSearch] = useState('');
   const [actorFilter, setActorFilter] = useState<string>('all');
@@ -530,9 +530,9 @@ export default function AuditPage() {
         confirmLabel="Xóa tất cả"
         cancelLabel="Hủy"
         variant="danger"
-        onConfirm={() => {
-          clearLogs();
-          setConfirmClear(false);
+        onConfirm={async () => {
+          const cleared = await clearLogs();
+          if (cleared) setConfirmClear(false);
         }}
         onClose={() => setConfirmClear(false)}
       />

@@ -46,6 +46,13 @@ public class SecurityConfig {
         return http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
+            .headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp.policyDirectives(
+                    "default-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'"))
+                .referrerPolicy(referrer -> referrer.policy(
+                    org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                .frameOptions(frame -> frame.sameOrigin())
+            )
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
@@ -55,11 +62,14 @@ public class SecurityConfig {
                     "/api/auth/forgot-password", "/api/auth/reset-password",
                     "/api/auth/register").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
-                .requestMatchers("/api/bookings", "/api/bookings/availability/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/bookings").permitAll()
+                .requestMatchers(HttpMethod.POST,
+                    "/api/bookings/*/verify", "/api/bookings/*/resend-otp").permitAll()
+                .requestMatchers("/api/bookings/availability/**").permitAll()
                 .requestMatchers("/api/crm/newsletter/subscribe",
                     "/api/crm/newsletter/confirm",
                     "/api/crm/newsletter/unsubscribe").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/crm/leads").permitAll()
                 .requestMatchers("/api/crm/jobs/*/apply").permitAll()
                 .requestMatchers("/api/crm/jobs").permitAll()
                 .requestMatchers("/api/crm/reviews").permitAll()

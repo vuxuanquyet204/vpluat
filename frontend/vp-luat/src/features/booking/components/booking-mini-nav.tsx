@@ -1,8 +1,11 @@
 'use client';
 
 import { Scale, PhoneCall } from 'lucide-react';
+import { usePublicSiteContent } from '@/features/home/hooks/use-site-content';
 
 export function BookingMiniNav() {
+  const { data: siteContent } = usePublicSiteContent();
+  const hotline = siteContent?.contact.hotline ?? '';
   return (
     <header className="bg-[var(--primary)] px-6 py-0">
       <div className="mx-auto flex h-[60px] max-w-[1100px] items-center justify-between gap-4">
@@ -15,11 +18,11 @@ export function BookingMiniNav() {
           </span>
         </div>
         <a
-          href="tel:19001234"
+          href={hotline ? `tel:${hotline.replace(/\s/g, '')}` : undefined}
           className="inline-flex items-center gap-2 text-[0.9rem] font-bold text-[var(--accent)]"
         >
           <PhoneCall className="h-[0.85rem] w-[0.85rem]" />
-          <span>1900 1234</span>
+          <span>{hotline}</span>
         </a>
       </div>
     </header>

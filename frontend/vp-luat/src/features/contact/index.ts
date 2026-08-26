@@ -6,4 +6,3 @@ export { ContactFaq } from './components/contact-faq';
 export { ContactOffices } from './components/contact-offices';
 export { default as ContactPage } from './components/pages/contact-page';
 export * from './types';
-export * from './lib/data/contact-data';

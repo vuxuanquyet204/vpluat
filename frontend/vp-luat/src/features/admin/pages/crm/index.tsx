@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus, Download, LayoutGrid } from 'lucide-react';
+import { Plus, Download, Upload, LayoutGrid } from 'lucide-react';
 import { AdminPageHeader, FilterTabs, SearchBar } from '@/features/admin/shared';
 import { ConfirmDialog } from '@/features/admin/components';
 import { LeadsTable } from './components/leads-table';
@@ -24,10 +24,9 @@ import {
   useCan,
   notifySuccess,
   notifyError,
-  exportToCSV,
   toBackendStatus,
 } from '@/features/admin/lib';
-import type { Lead } from '@/lib/api/admin-crm';
+import { leadApi, type Lead } from '@/lib/api/admin-crm';
 import type { LeadStatus } from '@/features/admin/types';
 
 const LIMIT = 20;
@@ -105,6 +104,8 @@ export default function CRMPage() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [detailLead, setDetailLead] = useState<Lead | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Lead | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const tabsWithCounts = STATUS_TABS.map((t) => ({
     ...t,
@@ -193,30 +194,44 @@ export default function CRMPage() {
     [deleteManyMutation],
   );
 
-  // ── Export ─────────────────────────────────────────────────────────────
-  const handleExport = useCallback(() => {
-    const rows = entries.map((l) => ({
-      name: l.name,
-      phone: l.phone ?? '',
-      email: l.email ?? '',
-      service: l.serviceName ?? '',
-      source: l.source ?? '',
-      status: l.status ?? '',
-      assignedTo: l.assignedTo?.fullName ?? '',
-      createdAt: l.createdAt,
-    }));
-    exportToCSV(rows as unknown as Record<string, unknown>[], `leads-${new Date().toISOString().slice(0, 10)}`, [
-      { key: 'name', header: 'Họ tên' },
-      { key: 'phone', header: 'SĐT' },
-      { key: 'email', header: 'Email' },
-      { key: 'service', header: 'Dịch vụ' },
-      { key: 'source', header: 'Nguồn' },
-      { key: 'status', header: 'Trạng thái' },
-      { key: 'assignedTo', header: 'CSKH' },
-      { key: 'createdAt', header: 'Ngày tạo' },
-    ]);
-    notifySuccess(`Đã export ${entries.length} lead ra CSV`);
-  }, [entries]);
+  // ── Import / export ─────────────────────────────────────────────────────
+  const handleExport = useCallback(async () => {
+    try {
+      const blob = await leadApi.exportCsv({
+        status: statusFilter !== 'all' ? toBackendStatus(statusFilter) : undefined,
+        source: advancedFilters.source !== 'all' ? advancedFilters.source.toUpperCase() : undefined,
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      notifyError('Lỗi', error instanceof Error ? error.message : 'Không thể xuất CSV');
+    }
+  }, [advancedFilters.source, statusFilter]);
+
+  const handleImport = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      notifyError('Tệp không hợp lệ', 'Vui lòng chọn tệp CSV');
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const result = await leadApi.importCsv(file);
+      await qc.invalidateQueries({ queryKey: ['admin', 'crm', 'leads'] });
+      notifySuccess(`Đã nhập ${result.created} lead${result.skipped ? `, bỏ qua ${result.skipped} dòng` : ''}`);
+    } catch (error) {
+      notifyError('Lỗi', error instanceof Error ? error.message : 'Không thể nhập tệp CSV');
+    } finally {
+      setIsImporting(false);
+    }
+  }, [qc]);
 
   return (
     <div className="admin-view">
@@ -225,6 +240,13 @@ export default function CRMPage() {
         subtitle={`Theo dõi và chăm sóc ${stats.total} khách hàng tiềm năng`}
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleImport}
+              style={{ display: 'none' }}
+            />
             <a
               href="/admin/crm/pipeline"
               className="action-btn"
@@ -235,11 +257,19 @@ export default function CRMPage() {
             <button
               type="button"
               className="action-btn"
+              onClick={() => importInputRef.current?.click()}
+              style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+              disabled={!canCreate || isImporting}
+            >
+              <Upload size={14} /> {isImporting ? 'Đang nhập...' : 'Nhập CSV'}
+            </button>
+            <button
+              type="button"
+              className="action-btn"
               onClick={handleExport}
               style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-              disabled={entries.length === 0}
             >
-              <Download size={14} /> Export CSV
+              <Download size={14} /> Xuất CSV
             </button>
             {canCreate && (
               <button

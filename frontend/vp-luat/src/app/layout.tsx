@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Cormorant_Garamond, Plus_Jakarta_Sans } from 'next/font/google';
+import { getLocale, getMessages } from 'next-intl/server';
 import { Providers } from '@/providers';
 import { cn } from '@/lib/utils';
 import '@/app/globals.css';
@@ -30,15 +31,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="vi" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className={cn(headingFont.variable, bodyFont.variable, 'font-body antialiased')}>
-        <Providers>{children}</Providers>
+        <Providers locale={locale} messages={messages}>
+          {children}
+        </Providers>
       </body>
     </html>
   );

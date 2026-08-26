@@ -52,7 +52,7 @@ export function PostEditorSidebar({
       <div className="pe-sidebar__section">
         <label className="pe-sidebar__label">Slug (URL)</label>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ color: 'var(--gray-500)', fontSize: '0.78rem' }}>/blog/</span>
+            <span style={{ color: 'var(--gray-500)', fontSize: '0.78rem' }}>/news/</span>
           <input
             type="text"
             className="form-input"

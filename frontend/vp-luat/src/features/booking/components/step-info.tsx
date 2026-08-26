@@ -5,6 +5,7 @@ import { ArrowLeft, CalendarCheck } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { bookingFormSchema, type BookingFormValues } from '../schemas';
 import { trackBookingSubmitFailed, trackBookingSubmitStarted, trackBookingSubmitSucceeded } from '../analytics';
 import { useBookingStore, useSubmitBookingMutation } from '../hooks';
@@ -17,6 +18,7 @@ export function StepInfo({
   onBack: () => void;
   onSubmitSuccess: () => void;
 }) {
+  const t = useTranslations('booking');
   const service = useBookingStore((state) => state.service);
   const lawyer = useBookingStore((state) => state.lawyer);
   const customerInfo = useBookingStore((state) => state.customerInfo);
@@ -60,13 +62,13 @@ export function StepInfo({
   const handleReservationExpire = () => {
     setReservation(null);
     setTimeSlot(null);
-    toast.error('Khung giờ bạn giữ đã hết hạn. Vui lòng chọn lại giờ tư vấn.');
+    toast.error(t('reservationExpired'));
     setStep('datetime');
   };
 
   const onSubmit = async (values: BookingFormValues) => {
     if (!reservation || !service || !lawyer) {
-      toast.error('Khung giờ giữ chỗ không còn hợp lệ. Vui lòng chọn lại lịch.');
+      toast.error(t('reservationInvalid'));
       setStep('datetime');
       return;
     }
@@ -112,8 +114,8 @@ export function StepInfo({
 
       toast.error(
         backendMessage
-          ? `Đặt lịch thất bại: ${backendMessage}`
-          : 'Không thể hoàn tất đặt lịch. Vui lòng thử lại sau ít phút.',
+          ? `${t('bookingFailed')}: ${backendMessage}`
+          : t('bookingFailedRetry'),
       );
     }
   };
@@ -121,10 +123,10 @@ export function StepInfo({
   return (
     <section className="animate-in fade-in slide-in-from-right-1 duration-300">
       <h2 className="mb-1.5 font-heading text-[1.5rem] font-bold text-[var(--primary)]">
-        Nhập thông tin của bạn
+        {t('infoTitle')}
       </h2>
       <p className="mb-7 text-[0.875rem] text-[var(--gray-500)]">
-        Thông tin của bạn được bảo mật hoàn toàn và chỉ dùng để xác nhận lịch hẹn.
+        {t('infoSubtitle')}
       </p>
 
       <div className="grid gap-8 md:grid-cols-[1fr_340px] md:items-start">
@@ -134,7 +136,7 @@ export function StepInfo({
         >
           <div className="mb-[18px]">
             <label htmlFor="booking-fullName" className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">
-              Họ và tên <span className="text-[var(--error)]">*</span>
+              {t('fullName')} <span className="text-[var(--error)]">*</span>
             </label>
             <input
               id="booking-fullName"
@@ -142,7 +144,7 @@ export function StepInfo({
               aria-describedby={errors.fullName ? 'booking-fullName-error' : undefined}
               aria-invalid={!!errors.fullName}
               className="w-full rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] px-[14px] py-[11px] text-[0.9rem] text-[var(--primary)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(30,58,95,0.07)] aria-invalid:border-[var(--error)]"
-              placeholder="Nhập họ và tên đầy đủ"
+              placeholder={t('fullNamePlaceholder')}
             />
             {errors.fullName ? (
               <p id="booking-fullName-error" className="mt-1 text-[0.75rem] text-[var(--error)]" role="alert">{errors.fullName.message}</p>
@@ -151,7 +153,7 @@ export function StepInfo({
 
           <div className="mb-[18px]">
             <label htmlFor="booking-phone" className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">
-              Số điện thoại <span className="text-[var(--error)]">*</span>
+              {t('phone')} <span className="text-[var(--error)]">*</span>
             </label>
             <div className="relative flex items-center">
               <span className="pointer-events-none absolute left-[14px] text-[0.875rem] text-[var(--gray-600)]">+84</span>
@@ -161,7 +163,7 @@ export function StepInfo({
                 aria-describedby={errors.phone ? 'booking-phone-error' : undefined}
                 aria-invalid={!!errors.phone}
                 className="w-full rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] px-[14px] py-[11px] pl-[52px] text-[0.9rem] text-[var(--primary)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(30,58,95,0.07)] aria-invalid:border-[var(--error)]"
-                placeholder="0xxx xxx xxx"
+                placeholder={t('phonePlaceholder')}
               />
             </div>
             {errors.phone ? (
@@ -170,7 +172,7 @@ export function StepInfo({
           </div>
 
           <div className="mb-[18px]">
-            <label htmlFor="booking-email" className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">Email</label>
+            <label htmlFor="booking-email" className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">{t('email')}</label>
             <input
               id="booking-email"
               {...register('email')}
@@ -186,7 +188,7 @@ export function StepInfo({
 
           <div className="mb-[18px]">
             <label htmlFor="booking-issueSummary" className="mb-1.5 block text-[0.82rem] font-bold text-[var(--primary)]">
-              Mô tả vấn đề pháp lý cần tư vấn <span className="text-[var(--error)]">*</span>
+              {t('issueSummary')} <span className="text-[var(--error)]">*</span>
             </label>
             <textarea
               id="booking-issueSummary"
@@ -194,7 +196,7 @@ export function StepInfo({
               aria-describedby={errors.issueSummary ? 'booking-issueSummary-error' : undefined}
               aria-invalid={!!errors.issueSummary}
               className="min-h-[110px] w-full resize-y rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] px-[14px] py-[11px] text-[0.9rem] text-[var(--primary)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(30,58,95,0.07)] aria-invalid:border-[var(--error)]"
-              placeholder="Mô tả ngắn gọn vấn đề bạn cần hỗ trợ..."
+              placeholder={t('issueSummaryPlaceholder')}
             />
             {errors.issueSummary ? (
               <p id="booking-issueSummary-error" className="mt-1 text-[0.75rem] text-[var(--error)]" role="alert">{errors.issueSummary.message}</p>
@@ -221,9 +223,11 @@ export function StepInfo({
               ) : null}
             </span>
             <span className="text-[0.82rem] leading-[1.5] text-[var(--gray-600)]">
-              Tôi đồng ý với <span className="font-semibold text-[var(--primary)] underline">Điều khoản sử dụng</span> và{' '}
-              <span className="font-semibold text-[var(--primary)] underline">Chính sách bảo mật</span>{' '}
-              của Văn Phòng Luật Hùng & Cộng sự. <span className="text-[var(--error)]">*</span>
+              {t('termsAgreementPrefix')}{' '}
+              <span className="font-semibold text-[var(--primary)] underline">{t('terms')}</span>{' '}
+              {t('and')}{' '}
+              <span className="font-semibold text-[var(--primary)] underline">{t('privacy')}</span>{' '}
+              {t('termsAgreementSuffix')} <span className="text-[var(--error)]">*</span>
             </span>
           </button>
           {errors.agreedToTerms ? (
@@ -236,7 +240,7 @@ export function StepInfo({
             className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--accent)] px-6 py-3.5 text-[1rem] font-bold text-[var(--primary-dark)] transition-all duration-200 hover:-translate-y-px hover:bg-[var(--accent-dark)] hover:shadow-[0_4px_15px_rgba(201,168,76,0.3)] disabled:cursor-not-allowed disabled:bg-[var(--gray-200)] disabled:text-[var(--gray-400)]"
           >
             <CalendarCheck className="h-5 w-5" />
-            <span>{submitBookingMutation.isPending ? 'ĐANG XỬ LÝ...' : 'XÁC NHẬN ĐẶT LỊCH'}</span>
+            <span>{submitBookingMutation.isPending ? t('processing') : t('confirmBooking')}</span>
           </button>
         </form>
 
@@ -250,7 +254,7 @@ export function StepInfo({
           className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] bg-white px-[22px] py-[11px] text-[0.875rem] font-semibold text-[var(--gray-600)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Quay lại</span>
+          <span>{t('back')}</span>
         </button>
       </div>
     </section>

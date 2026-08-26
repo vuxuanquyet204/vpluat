@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -21,6 +22,6 @@ public interface NewsletterSubscriberRepository extends JpaRepository<Newsletter
 
     Page<NewsletterSubscriber> findByStatus(String status, Pageable pageable);
 
-    @Query("SELECT COUNT(s) FROM NewsletterSubscriber s WHERE s.status = 'ACTIVE'")
-    long countByStatus(String status);
+    @Query("SELECT COUNT(s) FROM NewsletterSubscriber s WHERE s.status = :status")
+    long countByStatus(@Param("status") String status);
 }

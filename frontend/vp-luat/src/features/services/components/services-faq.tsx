@@ -1,25 +1,27 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
-import { SERVICES_FAQS } from '../lib/data/services-data';
+import { usePublicSiteContent } from '@/features/home/hooks/use-site-content';
 
 export function ServicesFaq() {
-  const [openId, setOpenId] = useState<string | null>(SERVICES_FAQS[0]?.id ?? null);
+  const t = useTranslations('public.services.faq');
+  const { data: siteContent } = usePublicSiteContent();
+  const faqs = (siteContent?.faqs ?? []).map((faq) => ({ id: faq.id, question: faq.question, answer: faq.answer }));
+  const [openId, setOpenId] = useState<string | null>(null);
 
   return (
     <section className="services-faq-section">
       <div className="container">
         <div className="section__header">
-          <div className="section__label">Câu hỏi thường gặp</div>
-          <h2 className="section__title">Giải đáp thắc mắc</h2>
-          <p className="section__subtitle">
-            Những câu hỏi phổ biến nhất từ khách hàng khi sử dụng dịch vụ của chúng tôi.
-          </p>
+          <div className="section__label">{t('label')}</div>
+          <h2 className="section__title">{t('title')}</h2>
+          <p className="section__subtitle">{t('subtitle')}</p>
         </div>
 
         <div className="services-faq-list">
-          {SERVICES_FAQS.map((faq) => {
+          {faqs.map((faq) => {
             const isOpen = openId === faq.id;
             return (
               <div key={faq.id} className={`services-faq-item ${isOpen ? 'active' : ''}`}>

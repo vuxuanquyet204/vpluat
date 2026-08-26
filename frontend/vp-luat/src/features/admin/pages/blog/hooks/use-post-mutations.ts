@@ -129,15 +129,10 @@ export function useArchivePost() {
  */
 export function useSchedulePost() {
   const qc = useQueryClient();
-  const mutation = useApiMutation<Post, { id: string; at: string }>(
-    'PATCH',
-    (vars) => `/admin/posts/${vars.id}/schedule`,
-  );
-
   return useCallback(
     async (vars: { id: string; scheduledAt: string }) => {
       try {
-        const updated = await mutation.mutateAsync({ id: vars.id, at: vars.scheduledAt });
+        const updated = await postApi.schedule(vars.id, vars.scheduledAt);
         qc.invalidateQueries({ queryKey: ['admin', 'posts'] });
         ghiAudit({
           action: 'update',
@@ -153,7 +148,7 @@ export function useSchedulePost() {
         throw e;
       }
     },
-    [mutation, qc],
+    [qc],
   );
 }
 

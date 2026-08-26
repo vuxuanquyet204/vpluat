@@ -18,10 +18,6 @@ import {
   ConfirmDialog,
 } from '@/features/admin/shared';
 import {
-  useCreate,
-  useUpdate,
-  useDelete,
-  useDeleteMany,
   useCan,
   notifySuccess,
   notifyError,
@@ -34,7 +30,12 @@ import { LawyersTable } from './components/lawyers-table';
 import { ServiceFilters, type ServiceFiltersValue } from './components/services-filters';
 import { AssignmentMatrix } from './components/assignment-matrix';
 import { LawyerScheduleEditor } from './components/lawyer-schedule-editor';
-import { useServices } from './hooks/use-services';
+import {
+  useServices,
+  useCreateService,
+  useUpdateService,
+  useDeleteService,
+} from './hooks/use-services';
 import { useLawyers, useCreateLawyer, useUpdateLawyer, useDeleteLawyer } from './hooks/use-lawyers';
 import type { Service, Lawyer } from './hooks/use-services';
 import { useAssignment } from './hooks/use-assignment';
@@ -156,10 +157,9 @@ function ServicesTab() {
   const canWrite = useCan('services.write');
   const canDelete = useCan('services.write');
 
-  const createSvc = useCreate<Service>('services', 'service');
-  const updateSvc = useUpdate<Service>('services', 'service');
-  const removeSvc = useDelete('services', 'service');
-  const removeManySvc = useDeleteMany('services', 'service');
+  const createSvc = useCreateService();
+  const updateSvc = useUpdateService();
+  const removeSvc = useDeleteService();
 
   const tabsWithCounts = SERVICE_TABS.map((t) => ({
     value: t.value,
@@ -207,7 +207,7 @@ function ServicesTab() {
     };
     try {
       if (editing) {
-        await updateSvc.mutateAsync({ id: editing.id, patch: payload });
+        await updateSvc.mutateAsync({ id: editing.id, body: payload });
         notifySuccess('Đã cập nhật dịch vụ');
       } else {
         await createSvc.mutateAsync(payload as Omit<Service, 'id'>);
@@ -223,10 +223,7 @@ function ServicesTab() {
   const handleToggleActive = useCallback(
     async (s: Service) => {
       try {
-        await updateSvc.mutateAsync({
-          id: s.id,
-          patch: { isActive: !s.isActive },
-        });
+        await updateSvc.mutateAsync({ id: s.id, body: { isActive: !s.isActive } });
         notifySuccess(s.isActive ? `Đã tạm dừng "${s.name}"` : `Đã kích hoạt "${s.name}"`);
       } catch (e) {
         notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
@@ -428,8 +425,15 @@ function ServicesTab() {
         variant="danger"
         onConfirm={async () => {
           try {
-            await removeManySvc.mutateAsync(selectedIds);
-            notifySuccess(`Đã xóa ${selectedIds.length} dịch vụ`);
+            const results = await Promise.allSettled(
+              selectedIds.map((id) => removeSvc.mutateAsync(id)),
+            );
+            const failed = results.filter((result) => result.status === 'rejected').length;
+            if (failed > 0) {
+              notifyError('Lỗi', `Không thể xóa ${failed} dịch vụ`);
+            } else {
+              notifySuccess(`Đã xóa ${selectedIds.length} dịch vụ`);
+            }
             setSelectedIds([]);
           } catch (e) {
             notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể xóa');

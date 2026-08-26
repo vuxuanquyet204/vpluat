@@ -52,9 +52,6 @@ export type Permission =
   | 'newsletter.read'
   | 'newsletter.write'
   | 'newsletter.send'
-  | 'landing.read'
-  | 'landing.write'
-  | 'landing.publish'
   | 'users.read'
   | 'users.write'
   | 'users.impersonate'
@@ -71,7 +68,6 @@ const SUPER_ADMIN_PERMS: Permission[] = [
   'reviews.read', 'reviews.moderate', 'reviews.reply',
   'chatbot.read', 'chatbot.train', 'chatbot.handoff',
   'newsletter.read', 'newsletter.write', 'newsletter.send',
-  'landing.read', 'landing.write', 'landing.publish',
   'users.read', 'users.write', 'users.impersonate',
   'settings.read', 'settings.write',
   'audit.read',
@@ -86,7 +82,6 @@ const ADMIN_PERMS: Permission[] = [
   'reviews.read', 'reviews.moderate', 'reviews.reply',
   'chatbot.read', 'chatbot.train', 'chatbot.handoff',
   'newsletter.read',
-  'landing.read', 'landing.write',
   'users.read', 'users.write',
   'settings.read', 'settings.write',
   'audit.read',
@@ -100,7 +95,6 @@ const STAFF_PERMS: Permission[] = [
   'lawyers.read',
   'reviews.read',
   'chatbot.read',
-  'landing.read',
 ];
 
 const ROLE_PERMISSIONS: Record<string, Permission[]> = {

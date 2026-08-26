@@ -27,7 +27,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE EXTENSION IF NOT EXISTS unaccent;
 
 CREATE OR REPLACE FUNCTION faq_search_text(value TEXT) RETURNS TEXT AS $$
-    SELECT unaccent('unaccent', value);
+    SELECT public.unaccent(value);
 $$ LANGUAGE SQL IMMUTABLE PARALLEL SAFE;
 
 CREATE INDEX IF NOT EXISTS idx_locale_keys_faq_question_trgm

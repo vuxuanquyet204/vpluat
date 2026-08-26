@@ -2,20 +2,31 @@
 
 import { useState, FormEvent } from 'react';
 import { Send, Mail } from 'lucide-react';
+import { newsletterApi } from '@/lib/api/admin-crm';
+import { useTranslations } from 'next-intl';
 
 export function SidebarNewsletter() {
+  const t = useTranslations('public.news');
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setStatus('error');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await newsletterApi.subscribe({ email: email.trim() });
       setStatus('success');
       setEmail('');
-      setTimeout(() => setStatus('idle'), 3000);
-    } else {
+    } catch {
       setStatus('error');
-      setTimeout(() => setStatus('idle'), 3000);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -24,23 +35,21 @@ export function SidebarNewsletter() {
       <div className="newsletter-box__icon">
         <Mail size={20} />
       </div>
-      <h3 className="newsletter-box__title">Nhận tin pháp luật mới</h3>
-      <p className="newsletter-box__sub">
-        Đăng ký nhận bản tin hàng tuần về cập nhật pháp luật và blog chuyên môn.
-      </p>
+      <h3 className="newsletter-box__title">{t('newsletterTitle')}</h3>
+      <p className="newsletter-box__sub">{t('newsletterSubtitle')}</p>
       <form onSubmit={handleSubmit}>
         <input
           type="email"
           className="newsletter-box__input"
-          placeholder="Nhập email của bạn..."
+          placeholder={t('newsletterPlaceholder')}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          aria-label="Email đăng ký nhận tin"
+          aria-label={t('newsletterEmailLabel')}
         />
-        <button type="submit" className="newsletter-box__btn">
+        <button type="submit" className="newsletter-box__btn" disabled={submitting}>
           <Send size={14} />
-          {status === 'success' ? 'Đã đăng ký!' : status === 'error' ? 'Email không hợp lệ' : 'Đăng ký ngay'}
+          {submitting ? t('newsletterSubmitting') : status === 'success' ? t('newsletterSuccess') : status === 'error' ? t('newsletterError') : t('newsletterSubmit')}
         </button>
       </form>
     </div>

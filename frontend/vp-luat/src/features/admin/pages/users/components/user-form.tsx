@@ -34,6 +34,7 @@ const ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
   { value: 'CSKH', label: 'CSKH' },
   { value: 'LAWYER', label: 'Luật sư' },
   { value: 'USER', label: 'Khách hàng' },
+  { value: 'VIEWER', label: 'Người xem' },
 ];
 
 export function UserForm({ isOpen, onClose, onSubmit, initial, isLoading, hidePassword }: UserFormProps) {

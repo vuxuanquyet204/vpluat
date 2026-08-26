@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useChatbotStore } from '../state';
 import { ChatHeader } from './chat-header';
 import { ChatMessages } from './chat-messages';
@@ -7,6 +8,7 @@ import { ChatInputArea } from './chat-input-area';
 import { ChatHandoffBanner } from './chat-handoff-banner';
 
 export function ChatWindow() {
+  const t = useTranslations('chatbot');
   const isMinimized = useChatbotStore((s) => s.isMinimized);
   const conversationState = useChatbotStore((s) => s.conversationState);
 
@@ -16,7 +18,7 @@ export function ChatWindow() {
     <div
       className="chat-window"
       role="dialog"
-      aria-label="Cửa sổ chat AI"
+      aria-label={t('windowLabel')}
       aria-modal="false"
     >
       <ChatHeader />

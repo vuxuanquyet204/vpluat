@@ -1,9 +1,12 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useChatbotWidget } from '../hooks';
 import { CHATBOT_CONFIG } from '../config';
 
 export function ChatHeader() {
+  const t = useTranslations('chatbot');
+  const tCommon = useTranslations('common');
   const { setOpen, setMinimized } = useChatbotWidget();
 
   return (
@@ -25,20 +28,20 @@ export function ChatHeader() {
           <circle cx="12" cy="13" r="1" fill="white" />
           <circle cx="15" cy="13" r="1" fill="white" />
         </svg>
-        <span className="chat-header__status" aria-label="Trực tuyến" />
+        <span className="chat-header__status" aria-label={t('onlineStatus')} />
       </div>
 
       <div className="chat-header__info">
-        <span className="chat-header__name">{CHATBOT_CONFIG.BOT_NAME}</span>
-        <span className="chat-header__subtitle">{CHATBOT_CONFIG.BOT_SUBTITLE}</span>
+        <span className="chat-header__name">{t('botName')}</span>
+        <span className="chat-header__subtitle">{t('botSubtitle')}</span>
       </div>
 
       <div className="chat-header__actions">
         <button
           className="chat-header__btn"
           onClick={() => setMinimized(true)}
-          aria-label="Thu nhỏ"
-          title="Thu nhỏ"
+          aria-label={t('minimize')}
+          title={t('minimize')}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="5" y1="12" x2="19" y2="12" />
@@ -47,8 +50,8 @@ export function ChatHeader() {
         <button
           className="chat-header__btn"
           onClick={() => setOpen(false)}
-          aria-label="Đóng"
-          title="Đóng"
+          aria-label={t('close')}
+          title={t('close')}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18" />

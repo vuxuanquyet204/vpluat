@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+import { useTranslations } from 'next-intl';
 import { Send, CheckCircle, AlertCircle } from 'lucide-react';
 import type { ContactFormValues } from '../types';
 
@@ -14,6 +15,7 @@ const PHONE_RE = /^(0|\+84)[0-9]{9,10}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function ContactForm({ onSubmit }: ContactFormProps) {
+  const t = useTranslations('contact');
   const [values, setValues] = useState<ContactFormValues>({
     name: '',
     email: '',
@@ -34,12 +36,12 @@ export function ContactForm({ onSubmit }: ContactFormProps) {
 
   const validate = (): boolean => {
     const next: Partial<Record<keyof ContactFormValues, string>> = {};
-    if (values.name.trim().length < 2) next.name = 'Họ tên phải có ít nhất 2 ký tự';
-    if (!EMAIL_RE.test(values.email)) next.email = 'Email không hợp lệ';
-    if (!PHONE_RE.test(values.phone.replace(/\s/g, ''))) next.phone = 'Số điện thoại không hợp lệ';
-    if (values.subject.trim().length < 5) next.subject = 'Tiêu đề phải có ít nhất 5 ký tự';
-    if (values.message.trim().length < 20) next.message = 'Nội dung phải có ít nhất 20 ký tự';
-    if (!values.agreeTerms) next.agreeTerms = 'Bạn phải đồng ý điều khoản';
+    if (values.name.trim().length < 2) next.name = t('nameError');
+    if (!EMAIL_RE.test(values.email ?? '')) next.email = t('emailError');
+    if (!PHONE_RE.test(values.phone.replace(/\s/g, ''))) next.phone = t('phoneError');
+    if (values.subject.trim().length < 5) next.subject = t('subjectError');
+    if (values.message.trim().length < 20) next.message = t('messageError');
+    if (!values.agreeTerms) next.agreeTerms = t('termsError');
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -67,52 +69,52 @@ export function ContactForm({ onSubmit }: ContactFormProps) {
       <div className="contact-form__row">
         <Field
           id="name"
-          label="Họ tên *"
+          label={`${t('name')} *`}
           value={values.name}
           onChange={(v) => set('name', v)}
           error={errors.name}
-          placeholder="Nguyễn Văn A"
+          placeholder={t('namePlaceholder')}
         />
         <Field
           id="email"
-          label="Email *"
+          label={`${t('email')} *`}
           type="email"
-          value={values.email}
+          value={values.email ?? ''}
           onChange={(v) => set('email', v)}
           error={errors.email}
-          placeholder="email@example.com"
+          placeholder={t('emailPlaceholder')}
         />
       </div>
 
       <div className="contact-form__row">
         <Field
           id="phone"
-          label="Số điện thoại *"
+          label={`${t('phone')} *`}
           type="tel"
           value={values.phone}
           onChange={(v) => set('phone', v)}
           error={errors.phone}
-          placeholder="0901 234 567"
+          placeholder={t('phonePlaceholder')}
         />
         <Field
           id="subject"
-          label="Tiêu đề *"
+          label={`${t('subject')} *`}
           value={values.subject}
           onChange={(v) => set('subject', v)}
           error={errors.subject}
-          placeholder="Tư vấn pháp lý về..."
+          placeholder={t('subjectPlaceholder')}
         />
       </div>
 
       <div className="contact-form__field">
-        <label htmlFor="message" className="contact-form__label">Nội dung *</label>
+        <label htmlFor="message" className="contact-form__label">{t('message')} *</label>
         <textarea
           id="message"
           className={`contact-form__textarea ${errors.message ? 'has-error' : ''}`}
           rows={5}
           value={values.message}
           onChange={(e) => set('message', e.target.value)}
-          placeholder="Mô tả chi tiết vấn đề của bạn..."
+          placeholder={t('messagePlaceholder')}
         />
         {errors.message && <div className="contact-form__error">{errors.message}</div>}
       </div>
@@ -123,20 +125,20 @@ export function ContactForm({ onSubmit }: ContactFormProps) {
           checked={values.agreeTerms}
           onChange={(e) => set('agreeTerms', e.target.checked)}
         />
-        <span>Tôi đồng ý với <a href="#">điều khoản bảo mật</a> và cho phép VP Luật liên hệ lại.</span>
+        <span>{t('termsAgreement')}</span>
       </label>
       {errors.agreeTerms && <div className="contact-form__error">{errors.agreeTerms}</div>}
 
       {status === 'success' && (
         <div className="contact-form__alert contact-form__alert--success">
           <CheckCircle size={18} />
-          <span>Gửi liên hệ thành công! Chúng tôi sẽ phản hồi trong vòng 30 phút.</span>
+          <span>{t('successMessage')}</span>
         </div>
       )}
       {status === 'error' && (
         <div className="contact-form__alert contact-form__alert--error">
           <AlertCircle size={18} />
-          <span>Đã có lỗi xảy ra. Vui lòng thử lại.</span>
+          <span>{t('errorMessage')}</span>
         </div>
       )}
 
@@ -146,11 +148,11 @@ export function ContactForm({ onSubmit }: ContactFormProps) {
         disabled={status === 'submitting'}
       >
         {status === 'submitting' ? (
-          <>Đang gửi...</>
+          <>{t('submitting')}</>
         ) : (
           <>
             <Send size={16} />
-            Gửi liên hệ
+            {t('submit')}
           </>
         )}
       </button>

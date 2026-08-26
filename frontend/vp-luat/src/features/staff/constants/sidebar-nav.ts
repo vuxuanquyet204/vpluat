@@ -5,7 +5,6 @@ import {
   Users,
   Newspaper,
   Star,
-  LayoutTemplate,
   Bell,
   Settings,
 } from 'lucide-react';
@@ -72,13 +71,6 @@ const ALL_STAFF_ITEMS: Record<string, NavItem> = {
     icon: Newspaper,
     href: '/staff/blog',
   },
-  'landing-pages': {
-    id: 'landing-pages',
-    labelKey: 'nav.landing_pages',
-    label: 'Landing Pages',
-    icon: LayoutTemplate,
-    href: '/staff/landing-pages',
-  },
   notifications: {
     id: 'notifications',
     labelKey: 'nav.notifications',
@@ -102,7 +94,7 @@ export function getStaffNavSections(role: Role): NavSection[] {
   const personalItems: NavItem[] = [];
 
   // Work items: dashboard + business-related
-  const workNavIds = ['dashboard', 'crm', 'bookings', 'reviews', 'blog', 'landing-pages'];
+  const workNavIds = ['dashboard', 'crm', 'bookings', 'reviews', 'blog'];
   workNavIds.forEach((id) => {
     if (allowedIds.includes(id) && ALL_STAFF_ITEMS[id]) {
       workItems.push(ALL_STAFF_ITEMS[id]);
@@ -115,10 +107,10 @@ export function getStaffNavSections(role: Role): NavSection[] {
 
   const sections: NavSection[] = [];
   if (workItems.length > 0) {
-    sections.push({ label: 'Công việc', items: workItems });
+    sections.push({ label: 'sections.work', items: workItems });
   }
   if (personalItems.length > 0) {
-    sections.push({ label: 'Cá nhân', items: personalItems });
+    sections.push({ label: 'sections.personal', items: personalItems });
   }
 
   return sections;

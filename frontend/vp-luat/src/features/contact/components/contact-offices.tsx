@@ -1,54 +1,10 @@
-import { SOCIAL_LINKS, OFFICE_LOCATIONS } from '../lib/data/contact-data';
+'use client';
 
-export function ContactOffices() {
-  return (
-    <section className="contact-offices-section">
-      <div className="container">
-        <div className="section__header">
-          <div className="section__label">Văn phòng</div>
-          <h2 className="section__title">Hệ thống 3 chi nhánh</h2>
-        </div>
+import { useTranslations } from 'next-intl';
+import type { PublicSiteContent } from '@/features/home/api/site-content-api';
 
-        <div className="contact-offices-grid">
-          {OFFICE_LOCATIONS.map((office) => (
-            <div key={office.city} className={`office-card ${office.isMain ? 'office-card--main' : ''}`}>
-              {office.isMain && <span className="office-card__badge">Trụ sở chính</span>}
-              <h3 className="office-card__city">
-                <i className="fa-solid fa-building" aria-hidden="true" /> {office.city}
-              </h3>
-              <ul className="office-card__list">
-                <li>
-                  <i className="fa-solid fa-location-dot" aria-hidden="true" />
-                  <span>{office.address}</span>
-                </li>
-                <li>
-                  <i className="fa-solid fa-phone" aria-hidden="true" />
-                  <a href={`tel:${office.phone.replace(/\s/g, '')}`}>{office.phone}</a>
-                </li>
-                <li>
-                  <i className="fa-solid fa-envelope" aria-hidden="true" />
-                  <a href={`mailto:${office.email}`}>{office.email}</a>
-                </li>
-                <li>
-                  <i className="fa-solid fa-clock" aria-hidden="true" />
-                  <span>{office.workingHours}</span>
-                </li>
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="contact-social">
-          <span>Theo dõi chúng tôi:</span>
-          <div className="contact-social__list">
-            {SOCIAL_LINKS.map((s) => (
-              <a key={s.label} href={s.href} className="contact-social__link" aria-label={s.label}>
-                <i className={s.icon} aria-hidden="true" />
-              </a>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+export function ContactOffices({ offices }: { offices: PublicSiteContent['offices'] }) {
+  const t = useTranslations('contactPage.offices');
+  if (offices.length === 0) return null;
+  return <section className="contact-offices-section"><div className="container"><div className="section__header"><div className="section__label">{t('label')}</div><h2 className="section__title">{t('title')}</h2></div><div className="contact-offices-grid">{offices.map((office) => <article className="contact-office-card" key={`${office.city}-${office.address}`}><h3>{office.city}{office.isMain ? ` · ${t('mainBadge')}` : ''}</h3><p>{office.address}</p><p>{office.phone}</p><p>{office.email}</p><p>{office.workingHours}</p></article>)}</div></div></section>;
 }

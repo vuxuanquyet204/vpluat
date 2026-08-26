@@ -18,6 +18,7 @@ import type {
 import type {
   Subscriber as BESubscriber,
   Campaign as BECampaign,
+  NewsletterTemplate as BETemplate,
 } from '@/lib/api/admin-crm';
 
 // ─── Adapters (backend → frontend types) ───────────────────────────────
@@ -36,22 +37,58 @@ function beSubToFE(s: BESubscriber): Subscriber {
 
 function beCampToFE(c: BECampaign): Campaign {
   const extra = c as unknown as Record<string, unknown>;
+  // Normalise backend status -> frontend lowercase tokens.
+  const statusValue = c.status?.toLowerCase();
+  const status: CampaignStatus =
+    statusValue === 'draft'
+      ? 'draft'
+      : statusValue === 'scheduled'
+        ? 'scheduled'
+        : statusValue === 'sending'
+          ? 'sending'
+          : statusValue === 'sent'
+            ? 'sent'
+            : 'failed';
+  const segmentValue = typeof extra.segment === 'string' ? extra.segment.toLowerCase() : 'all';
+  const segment: Campaign['segment'] =
+    segmentValue === 'fdi' || segmentValue === 'realestate' || segmentValue === 'custom'
+      ? segmentValue
+      : 'all';
+  const rate = (v: unknown) => (typeof v === 'number' ? v : 0);
   return {
     id: c.id,
-    name: (extra.name as string) ?? c.subject,
+    name: c.name ?? extra.subject as string ?? c.subject,
     subject: c.subject,
-    body: (extra.body as string) ?? '',
-    status: (c.status === 'DRAFT' ? 'draft' : c.status === 'SENDING' ? 'sending' : c.status === 'SENT' ? 'sent' : 'failed') as CampaignStatus,
-    segment: (extra.segment as Campaign['segment']) ?? 'all',
-    customEmails: extra.customEmails as string[] | undefined,
-    scheduledAt: extra.scheduledAt as string | undefined,
+    body: c.body ?? (extra.body as string) ?? '',
+    status,
+    segment,
+    customEmails: (c.customEmails as string[] | undefined) ?? (extra.customEmails as string[] | undefined),
+    scheduledAt: c.scheduledAt ?? (extra.scheduledAt as string | undefined),
     sentAt: c.sentAt,
-    recipientCount: (extra.recipientCount as number) ?? 0,
-    openRate: c.openRate ?? 0,
-    clickRate: c.clickRate ?? 0,
-    bounceRate: (extra.bounceRate as number) ?? 0,
-    unsubRate: (extra.unsubRate as number) ?? 0,
-    createdAt: (extra.createdAt as string) ?? c.sentAt ?? new Date().toISOString(),
+    recipientCount: c.recipientCount ?? (extra.recipientCount as number) ?? 0,
+    openRate: rate(c.openRate ?? extra.openRate),
+    clickRate: rate(c.clickRate ?? extra.clickRate),
+    bounceRate: rate(c.bounceRate ?? extra.bounceRate),
+    unsubRate: rate(c.unsubRate ?? extra.unsubRate),
+    createdAt: c.createdAt ?? (extra.createdAt as string) ?? c.sentAt ?? new Date().toISOString(),
+    updatedAt: c.updatedAt,
+  };
+}
+
+function beTemplateToFE(t: BETemplate): NewsletterTemplate {
+  return {
+    id: t.id,
+    name: t.name,
+    subject: t.subject,
+    body: t.body,
+    description: t.description,
+    isDefault: !!t.isDefault,
+    // The admin/types module treats createdAt as required; the BE
+    // DTO marks it optional so newly-created rows can be returned
+    // before the timestamp column is fully populated. Fallback to
+    // "now" to keep the type contract intact.
+    createdAt: t.createdAt ?? new Date().toISOString(),
+    updatedAt: t.updatedAt,
   };
 }
 
@@ -195,10 +232,14 @@ export function useImportSubscribers() {
       let skipped = 0;
       for (const row of rows) {
         try {
-          await newsletterApi.unsubscribeByEmail(row.email.trim());
-          skipped += 1;
-        } catch {
+          await newsletterApi.create({
+            email: row.email.trim(),
+            name: row.name?.trim() || undefined,
+            source: row.source?.trim() || 'import',
+          });
           added += 1;
+        } catch {
+          skipped += 1;
         }
       }
       qc.invalidateQueries({ queryKey: ['admin', 'subscribers'] });
@@ -246,9 +287,15 @@ export function useCreateCampaign() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (vars: Partial<Campaign> & { subject: string }) => {
-      void vars;
-      notifyError('Chưa hỗ trợ', 'Tạo campaign chưa được triển khai trên backend');
-      throw new Error('Not implemented');
+      const payload = toCampaignPayload(vars, 'draft');
+      const created = await newsletterApi.createCampaign(payload);
+      ghiAudit({
+        action: 'create',
+        entity: 'campaign',
+        entityId: created.id,
+        entityLabel: created.name ?? created.subject,
+      });
+      return created;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'campaigns'] }),
   });
@@ -258,10 +305,15 @@ export function useUpdateCampaign() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<Campaign> }) => {
-      void id;
-      void patch;
-      notifyError('Chưa hỗ trợ', 'Cập nhật campaign chưa được triển khai trên backend');
-      throw new Error('Not implemented');
+      const payload = toCampaignPayload(patch, 'draft');
+      const updated = await newsletterApi.updateCampaign(id, payload);
+      ghiAudit({
+        action: 'update',
+        entity: 'campaign',
+        entityId: id,
+        entityLabel: updated.name ?? updated.subject,
+      });
+      return updated;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'campaigns'] }),
   });
@@ -271,11 +323,18 @@ export function useDeleteCampaign() {
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: async (id: string) => {
-      void id;
-      notifyError('Chưa hỗ trợ', 'Xóa campaign chưa được triển khai trên backend');
-      throw new Error('Not implemented');
+      await newsletterApi.deleteCampaign(id);
+      return id;
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: ['admin', 'campaigns'] }),
+    onSuccess: (id) => {
+      ghiAudit({
+        action: 'delete',
+        entity: 'campaign',
+        entityId: id,
+        entityLabel: id,
+      });
+      qc.invalidateQueries({ queryKey: ['admin', 'campaigns'] });
+    },
   });
 
   const call = useCallback(async (id: string) => mutation.mutateAsync(id), [mutation]);
@@ -316,16 +375,42 @@ export function useCampaignAutoSend() {
 // ─── Templates ──────────────────────────────────────────────────────────
 
 export function useTemplates() {
-  return { data: [] as NewsletterTemplate[], isLoading: false, error: undefined };
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['admin', 'templates'],
+    queryFn: async () => {
+      const res = await newsletterApi.listTemplates();
+      return (res ?? []).map(beTemplateToFE);
+    },
+  });
+
+  return {
+    data: (data ?? []) as NewsletterTemplate[],
+    isLoading,
+    error,
+  };
 }
 
 export function useCreateTemplate() {
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: async (vars: Partial<NewsletterTemplate>) => {
-      void vars;
-      notifyError('Chưa hỗ trợ', 'Tạo template chưa được triển khai trên backend');
-      throw new Error('Not implemented');
+      if (!vars.name || !vars.subject || !vars.body) {
+        throw new Error('Thiếu name/subject/body');
+      }
+      const created = await newsletterApi.createTemplate({
+        name: vars.name,
+        subject: vars.subject,
+        body: vars.body,
+        description: vars.description,
+        isDefault: vars.isDefault ?? false,
+      });
+      ghiAudit({
+        action: 'create',
+        entity: 'template',
+        entityId: created.id,
+        entityLabel: created.name,
+      });
+      return created;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'templates'] }),
   });
@@ -341,10 +426,20 @@ export function useUpdateTemplate() {
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<NewsletterTemplate> }) => {
-      void id;
-      void patch;
-      notifyError('Chưa hỗ trợ', 'Cập nhật template chưa được triển khai trên backend');
-      throw new Error('Not implemented');
+      const updated = await newsletterApi.updateTemplate(id, {
+        name: patch.name,
+        subject: patch.subject,
+        body: patch.body,
+        description: patch.description,
+        isDefault: patch.isDefault,
+      });
+      ghiAudit({
+        action: 'update',
+        entity: 'template',
+        entityId: id,
+        entityLabel: updated.name,
+      });
+      return updated;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'templates'] }),
   });
@@ -360,15 +455,50 @@ export function useDeleteTemplate() {
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: async (id: string) => {
-      void id;
-      notifyError('Chưa hỗ trợ', 'Xóa template chưa được triển khai trên backend');
-      throw new Error('Not implemented');
+      await newsletterApi.deleteTemplate(id);
+      return id;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'templates'] }),
+    onSuccess: (id) => {
+      ghiAudit({
+        action: 'delete',
+        entity: 'template',
+        entityId: id,
+        entityLabel: id,
+      });
+      qc.invalidateQueries({ queryKey: ['admin', 'templates'] });
+    },
   });
 
   const call = useCallback(async (id: string) => mutation.mutateAsync(id), [mutation]);
   return Object.assign(call, mutation);
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────
+
+/**
+ * Translate the FE {@link Campaign} payload (lowercase status / kebab
+ * segment / ISO strings) into the wire shape the backend accepts.
+ */
+function toCampaignPayload(
+  vars: Partial<Campaign>,
+  defaultAction: 'draft' | 'schedule' | 'send' = 'draft',
+): Parameters<typeof newsletterApi.createCampaign>[0] {
+  const segment = (vars.segment ?? 'all');
+
+  const action: 'draft' | 'schedule' | 'send' = defaultAction;
+
+  return {
+    name: vars.name ?? '',
+    subject: vars.subject ?? '',
+    body: vars.body ?? '',
+    templateId: undefined,
+    segment,
+    customEmails: vars.customEmails,
+    scheduledAt: vars.scheduledAt && vars.scheduledAt !== ''
+      ? new Date(vars.scheduledAt).toISOString()
+      : undefined,
+    action,
+  };
 }
 
 // ─── Labels ─────────────────────────────────────────────────────────────

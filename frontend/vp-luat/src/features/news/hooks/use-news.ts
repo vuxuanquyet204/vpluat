@@ -1,6 +1,7 @@
 // features/news/hooks/use-news.ts
 // React hooks for fetching posts/news from API
 
+import { useLocale, useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { 
   getPosts, 
@@ -93,13 +94,15 @@ export interface CategoryWithCount {
 }
 
 export function useCategories() {
+  const locale = useLocale();
+  const t = useTranslations('public.filters');
   return useQuery<CategoryWithCount[], Error>({
-    queryKey: ['posts', 'categories'],
+    queryKey: ['posts', 'categories', locale],
     queryFn: async () => {
       const posts = await getPosts(0, 200);
       if (!posts) {
         return [
-          { id: 'all', label: 'Tất cả', slug: 'all', count: 0, icon: 'fa-solid fa-layer-group' },
+          { id: 'all', label: t('all'), slug: 'all', count: 0, icon: 'fa-solid fa-layer-group' },
         ];
       }
       
@@ -113,12 +116,12 @@ export function useCategories() {
       const totalCount = posts.content.length;
       
       return [
-        { id: 'all', label: 'Tất cả', slug: 'all', count: totalCount, icon: 'fa-solid fa-layer-group' },
-        { id: 'tin-tuc', label: 'Tin tức', slug: 'tin-tuc', count: categoryCounts['tin-tuc'] || 0, icon: 'fa-solid fa-newspaper' },
-        { id: 'nghi-dinh', label: 'Nghị định', slug: 'nghi-dinh', count: categoryCounts['nghi-dinh'] || 0, icon: 'fa-solid fa-scale-balanced' },
-        { id: 'blog', label: 'Blog', slug: 'blog', count: categoryCounts['blog'] || 0, icon: 'fa-solid fa-pen-nib' },
-        { id: 'case-study', label: 'Case study', slug: 'case-study', count: categoryCounts['case-study'] || 0, icon: 'fa-solid fa-briefcase' },
-        { id: 'huong-dan', label: 'Hướng dẫn', slug: 'huong-dan', count: categoryCounts['huong-dan'] || 0, icon: 'fa-solid fa-circle-info' },
+        { id: 'all', label: t('all'), slug: 'all', count: totalCount, icon: 'fa-solid fa-layer-group' },
+        { id: 'tin-tuc', label: t('categories.tin-tuc'), slug: 'tin-tuc', count: categoryCounts['tin-tuc'] || 0, icon: 'fa-solid fa-newspaper' },
+        { id: 'nghi-dinh', label: t('categories.nghi-dinh'), slug: 'nghi-dinh', count: categoryCounts['nghi-dinh'] || 0, icon: 'fa-solid fa-scale-balanced' },
+        { id: 'blog', label: t('categories.blog'), slug: 'blog', count: categoryCounts['blog'] || 0, icon: 'fa-solid fa-pen-nib' },
+        { id: 'case-study', label: t('categories.case-study'), slug: 'case-study', count: categoryCounts['case-study'] || 0, icon: 'fa-solid fa-briefcase' },
+        { id: 'huong-dan', label: t('categories.huong-dan'), slug: 'huong-dan', count: categoryCounts['huong-dan'] || 0, icon: 'fa-solid fa-circle-info' },
       ];
     },
     staleTime: 5 * 60 * 1000,

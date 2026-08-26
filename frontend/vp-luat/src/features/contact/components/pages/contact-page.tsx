@@ -9,8 +9,12 @@ import { ContactFaq } from '../../components/contact-faq';
 import { ContactOffices } from '../../components/contact-offices';
 import type { ContactFormValues } from '../../types';
 import { submitContactMessage } from '../../api/contact-api';
+import { useTranslations } from 'next-intl';
+import { usePublicSiteContent } from '@/features/home/hooks/use-site-content';
 
 export default function ContactPage() {
+  const t = useTranslations('public.contact');
+  const { data: siteContent } = usePublicSiteContent();
   const handleSubmit = async (values: ContactFormValues) => {
     await submitContactMessage(values, 'contact-page');
   };
@@ -22,16 +26,16 @@ export default function ContactPage() {
       <section className="contact-section">
         <div className="contact-grid">
           <div>
-            <ContactInfoList />
-            <ContactQuickBtns />
+            <ContactInfoList contact={siteContent?.contact ?? { hotline: '', email: '', address: '', workingHours: '', zaloUrl: '' }} />
+            <ContactQuickBtns contact={siteContent?.contact ?? { hotline: '', email: '', address: '', workingHours: '', zaloUrl: '' }} />
           </div>
           <div className="contact-form-wrapper">
             <h2 className="contact-form__title">
               <i className="fa-solid fa-paper-plane" aria-hidden="true" />
-              Gửi yêu cầu tư vấn
+              {t('formTitle')}
             </h2>
             <p className="contact-form__sub">
-              Điền thông tin bên dưới, chúng tôi sẽ liên hệ lại trong vòng 30 phút.
+              {t('formSubtitle')}
             </p>
             <ContactForm onSubmit={handleSubmit} />
           </div>
@@ -44,8 +48,8 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <ContactFaq />
-      <ContactOffices />
+      <ContactFaq faqs={siteContent?.faqs ?? []} />
+      <ContactOffices offices={siteContent?.offices ?? []} />
     </>
   );
 }

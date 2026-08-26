@@ -232,7 +232,7 @@ export default function StaffBlogPage() {
                             type="button"
                             className="action-btn"
                             onClick={() => {
-                              window.open(`/blog/${post.slug}`, '_blank');
+                              window.open(`/news/${post.slug}`, '_blank');
                             }}
                             title="Xem trước"
                           >

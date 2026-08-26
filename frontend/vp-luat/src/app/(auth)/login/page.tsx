@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -14,25 +15,25 @@ import type { Role } from '@/features/auth/utils/permissions';
 // Map of every NextAuth error code we want to surface in Vietnamese.
 // Anything else falls back to the generic message.
 const NEXTAUTH_ERROR_MESSAGES: Record<string, string> = {
-  CredentialsSignin: 'Email hoặc mật khẩu không đúng',
-  SessionRequired: 'Vui lòng đăng nhập để tiếp tục.',
-  AccessDenied: 'Bạn không có quyền truy cập trang này.',
-  Verification: 'Liên kết xác thực đã hết hạn hoặc đã được sử dụng.',
-  Configuration: 'Lỗi cấu hình máy chủ. Liên hệ quản trị viên.',
-  OAuthSignin: 'Không thể bắt đầu phiên đăng nhập với nhà cung cấp.',
-  OAuthCallback: 'Đăng nhập qua nhà cung cấp thất bại.',
-  OAuthCreateAccount: 'Không thể tạo tài khoản từ nhà cung cấp.',
-  EmailCreateAccount: 'Không thể tạo tài khoản bằng email này.',
-  Callback: 'Đăng nhập thất bại khi gọi lại nhà cung cấp.',
-  OAuthAccountNotLinked:
-    'Email này đã được dùng với nhà cung cấp khác. Hãy đăng nhập bằng phương thức ban đầu.',
-  EmailSignin: 'Không thể gửi email đăng nhập.',
-  SessionError: 'Phiên đăng nhập đã hết hạn. Vui lòng thử lại.',
-  default: 'Đăng nhập thất bại. Vui lòng thử lại.',
+  CredentialsSignin: 'invalid_credentials',
+  SessionRequired: 'sessionRequired',
+  AccessDenied: 'accessDenied',
+  Verification: 'verification',
+  Configuration: 'configuration',
+  OAuthSignin: 'oauthSignin',
+  OAuthCallback: 'oauthCallback',
+  OAuthCreateAccount: 'oauthCreateAccount',
+  EmailCreateAccount: 'emailCreateAccount',
+  Callback: 'callback',
+  OAuthAccountNotLinked: 'oauthAccountNotLinked',
+  EmailSignin: 'emailSignin',
+  SessionError: 'sessionError',
+  default: 'login_failed',
 };
 
 function LoginForm() {
   const router = useRouter();
+  const t = useTranslations('auth');
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
   const [isLoading, setIsLoading] = useState(false);
@@ -42,10 +43,8 @@ function LoginForm() {
   useEffect(() => {
     const errorParam = searchParams.get('error');
     if (errorParam) {
-      const message =
-        NEXTAUTH_ERROR_MESSAGES[errorParam] ??
-        `Đăng nhập thất bại (${errorParam})`;
-      setError(message);
+      const messageKey = NEXTAUTH_ERROR_MESSAGES[errorParam];
+      setError(messageKey ? t(messageKey) : t('errorWithCode', { code: errorParam }));
     }
   }, [searchParams]);
 
@@ -81,7 +80,7 @@ function LoginForm() {
           result?.error && NEXTAUTH_ERROR_MESSAGES[result.error]
             ? NEXTAUTH_ERROR_MESSAGES[result.error]
             : NEXTAUTH_ERROR_MESSAGES.default;
-        setError(message);
+        setError(t(message));
         setIsLoading(false);
         return;
       }
@@ -129,7 +128,7 @@ function LoginForm() {
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Đã xảy ra lỗi. Vui lòng thử lại.');
+      setError(t('unexpectedError'));
       setIsLoading(false);
     }
   }
@@ -164,30 +163,30 @@ function LoginForm() {
           </div>
           <div>
             <div className="font-heading text-xl font-bold">VP Luật Hùng &amp; Cộng sự</div>
-            <div className="text-xs text-white/70">Hệ thống quản trị nội bộ</div>
+            <div className="text-xs text-white/70">{t('system')}</div>
           </div>
         </div>
 
         <div className="relative z-10 space-y-6">
           <h1 className="font-heading text-4xl font-bold leading-tight">
-            Giải pháp pháp lý <em className="not-italic text-[var(--accent)]">toàn diện</em> cho doanh nghiệp &amp; cá nhân
+            {t('heroTitle')}
           </h1>
           <p className="text-white/80 text-base leading-relaxed max-w-md">
-            Đăng nhập để quản lý lịch tư vấn, theo dõi vụ việc và truy cập tài liệu pháp lý nội bộ.
+            {t('heroDescription')}
           </p>
 
           <ul className="space-y-3 text-sm">
             <li className="flex items-center gap-3">
               <ShieldCheck size={18} className="text-[var(--accent)]" />
-              Bảo mật cấp ngân hàng · 2FA sẵn sàng
+              {t('security')}
             </li>
             <li className="flex items-center gap-3">
               <Phone size={18} className="text-[var(--accent)]" />
-              Hỗ trợ 24/7: <a href="tel:19001234" className="underline">1900 1234</a>
+              {t('support')}: <a href="tel:19001234" className="underline">1900 1234</a>
             </li>
             <li className="flex items-center gap-3">
               <MapPin size={18} className="text-[var(--accent)]" />
-              Văn phòng: Tầng 12, Tòa nhà AC, Hà Nội
+              {t('office')}
             </li>
           </ul>
         </div>
@@ -204,15 +203,13 @@ function LoginForm() {
             <h1 className="text-2xl font-heading font-bold text-[var(--primary)]">
               VP Luật Hùng &amp; Cộng sự
             </h1>
-            <p className="text-gray-600 mt-1 text-sm">Hệ thống quản trị</p>
+            <p className="text-gray-600 mt-1 text-sm">{t('system')}</p>
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10 border border-gray-100">
             <header className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900">Đăng nhập</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Chào mừng trở lại. Vui lòng nhập thông tin để tiếp tục.
-              </p>
+              <p className="text-sm text-gray-500 mt-1">{t('welcome')}</p>
             </header>
 
             {error && (
@@ -244,7 +241,7 @@ function LoginForm() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Mật khẩu</Label>
+                  <Label htmlFor="password">{t('password')}</Label>
                   <Link
                     href="/forgot-password"
                     className="text-xs font-medium text-[var(--primary)] hover:underline"
@@ -258,7 +255,7 @@ function LoginForm() {
                     id="password"
                     name="password"
                     type="password"
-                    placeholder="Nhập mật khẩu"
+                    placeholder={t('passwordPlaceholder')}
                     required
                     autoComplete="current-password"
                     className="pl-10 h-11"
@@ -274,7 +271,7 @@ function LoginForm() {
                   onChange={(e) => setRemember(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
                 />
-                Ghi nhớ đăng nhập trên thiết bị này
+                {t('remember')}
               </label>
 
               <Button
@@ -282,7 +279,7 @@ function LoginForm() {
                 className="w-full bg-[var(--primary)] hover:bg-[var(--primary-dark)] h-11 text-base"
                 disabled={isLoading}
               >
-                {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                {isLoading ? t('loggingIn') : t('login')}
               </Button>
             </form>
 
@@ -291,7 +288,7 @@ function LoginForm() {
                 <div className="w-full border-t border-gray-200" />
               </div>
               <div className="relative flex justify-center text-xs uppercase tracking-wider">
-                <span className="bg-white px-3 text-gray-400">Hoặc</span>
+                <span className="bg-white px-3 text-gray-400">{t('or')}</span>
               </div>
             </div>
 
@@ -339,9 +336,9 @@ function LoginForm() {
           </div>
 
           <p className="text-center text-xs text-gray-500 mt-6">
-            Chưa có tài khoản?{' '}
+            {t('noAccount')}{' '}
             <Link href="/contact" className="text-[var(--primary)] hover:underline font-medium">
-              Liên hệ quản trị viên
+              {t('contactAdmin')}
             </Link>
           </p>
         </div>

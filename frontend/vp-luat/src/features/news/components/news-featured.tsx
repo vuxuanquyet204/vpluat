@@ -1,30 +1,22 @@
 import Link from 'next/link';
 import { Clock, Eye, Flame } from 'lucide-react';
 import type { PostApiResponse } from '../api/news-api';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface NewsFeaturedProps {
   main: PostApiResponse;
   sides: PostApiResponse[];
 }
 
-function formatDate(iso: string) {
+function formatDate(iso: string, locale: string): string {
   const date = new Date(iso);
-  if (isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
-}
-
-function getCategoryLabel(category: string): string {
-  const labels: Record<string, string> = {
-    'tin-tuc': 'Tin tức',
-    'nghi-dinh': 'Nghị định',
-    'blog': 'Blog',
-    'case-study': 'Case study',
-    'huong-dan': 'Hướng dẫn',
-  };
-  return labels[category] || category;
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
 }
 
 export function NewsFeatured({ main, sides }: NewsFeaturedProps) {
+  const t = useTranslations('public.news');
+  const locale = useLocale();
   if (!main) return null;
   return (
     <section className="featured">
@@ -44,21 +36,21 @@ export function NewsFeatured({ main, sides }: NewsFeaturedProps) {
                 {main.isHot && (
                   <span className="featured__hot">
                     <Flame size={10} style={{ marginRight: '3px' }} />
-                    Hot
+                    {t('hot')}
                   </span>
                 )}
                 <span className={`featured__cat cat-${main.category}`}>
-                  {getCategoryLabel(main.category)}
+                  {t(`categories.${main.category}`, { defaultValue: main.category })}
                 </span>
               </div>
               <h2 className="featured__title">{main.title}</h2>
               <p className="featured__excerpt">{main.excerpt}</p>
               <div className="featured__meta">
                 <span>
-                  <Clock size={12} /> {formatDate(main.publishedAt)}
+                  <Clock size={12} /> {formatDate(main.publishedAt, locale === 'en' ? 'en-US' : 'vi-VN')}
                 </span>
                 <span>
-                  <Eye size={12} /> {main.views.toLocaleString('vi-VN')} lượt xem
+                  <Eye size={12} /> {main.views.toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN')} {t('views')}
                 </span>
               </div>
             </div>
@@ -81,11 +73,11 @@ export function NewsFeatured({ main, sides }: NewsFeaturedProps) {
                 </div>
                 <div className="featured__side-body">
                   <div className={`featured__side-cat cat-${s.category}`}>
-                    {getCategoryLabel(s.category)}
+                    {t(`categories.${s.category}`, { defaultValue: s.category })}
                   </div>
                   <div className="featured__side-title">{s.title}</div>
                   <div className="featured__side-meta">
-                    {formatDate(s.publishedAt)} · {s.readingTime} phút
+                    {formatDate(s.publishedAt, locale === 'en' ? 'en-US' : 'vi-VN')} · {s.readingTime} {t('minutes')}
                   </div>
                 </div>
               </Link>

@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useChatbotStore } from '../state';
 import { useSendMessage } from '../hooks';
 import { processUserInput } from '../config/conversation-flow';
 import { ChatQuickReplies } from './chat-quick-replies';
 
 export function ChatInputArea() {
+  const t = useTranslations('chatbot');
+  const tCommon = useTranslations('common');
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastMessage = useChatbotStore((s) => s.messages[s.messages.length - 1]);
@@ -32,14 +35,14 @@ export function ChatInputArea() {
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
     if (conversationState !== 'idle' && conversationState !== 'greeting') {
-      const result = processUserInput(conversationState, trimmed);
+      const result = processUserInput(t, conversationState, trimmed);
       result.botMessages.forEach((m) => addMessage(m));
       if (result.nextState) setConversationState(result.nextState as typeof conversationState);
       return;
     }
 
     if (conversationState === 'greeting') {
-      const result = processUserInput('greeting', trimmed);
+      const result = processUserInput(t, 'greeting', trimmed);
       result.botMessages.forEach((m) => addMessage(m));
       // Passthrough: forward the raw text to the backend so the AI replies
       // for inputs that didn't match any local keyword (e.g. "ly hôn").
@@ -63,7 +66,7 @@ export function ChatInputArea() {
 
   const handleQuickReply = (reply: string) => {
     const state = conversationState === 'idle' ? 'greeting' : conversationState;
-    const result = processUserInput(state, reply);
+    const result = processUserInput(t, state, reply);
     result.botMessages.forEach((m) => addMessage(m));
     if (result.nextState) setConversationState(result.nextState as typeof conversationState);
   };
@@ -85,7 +88,7 @@ export function ChatInputArea() {
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
           {error}
-          <button onClick={() => useChatbotStore.getState().setError(null)} aria-label="Dismiss error">
+          <button onClick={() => useChatbotStore.getState().setError(null)} aria-label={tCommon('error')}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -98,19 +101,19 @@ export function ChatInputArea() {
         <textarea
           ref={textareaRef}
           className="chat-input-area__input"
-          placeholder="Nhập tin nhắn..."
+          placeholder={t('inputPlaceholder')}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}
           disabled={isStreaming}
-          aria-label="Nhập tin nhắn"
+          aria-label={t('inputPlaceholder')}
         />
         <button
           className="chat-input-area__send"
           onClick={handleSubmit}
           disabled={!text.trim() || isStreaming}
-          aria-label="Gửi tin nhắn"
+          aria-label={t('sendLabel')}
         >
           <svg
             width="18"
@@ -132,7 +135,7 @@ export function ChatInputArea() {
         <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2M7.5 12a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3m9 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3" />
         </svg>
-        Powered by AI · Không thay thế tư vấn pháp lý
+        Powered by AI · {t('footerNote')}
       </div>
     </div>
   );

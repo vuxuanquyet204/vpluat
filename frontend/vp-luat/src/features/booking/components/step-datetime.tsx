@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ArrowLeft, ArrowRight, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -45,6 +46,7 @@ export function StepDatetime({
   onBack: () => void;
   onNext: () => void;
 }) {
+  const t = useTranslations('booking');
   const lawyer = useBookingStore((state) => state.lawyer);
   const date = useBookingStore((state) => state.date);
   const timeSlot = useBookingStore((state) => state.timeSlot);
@@ -79,7 +81,7 @@ export function StepDatetime({
       try {
         await releaseReservationMutation.mutateAsync(reservation.reservationId);
       } catch {
-        toast.error('Không thể giải phóng giữ chỗ cũ. Vui lòng thử lại.');
+        toast.error(t('releaseReservationFailed'));
       }
     }
 
@@ -118,7 +120,7 @@ export function StepDatetime({
       setTimeSlot(null);
       setReservation(null);
       trackBookingSlotConflict(slotId);
-      toast.error('Khung giờ này vừa được người khác giữ. Vui lòng chọn khung giờ khác.');
+      toast.error(t('slotConflict'));
       await availabilityQuery.refetch();
     }
   };
@@ -126,10 +128,10 @@ export function StepDatetime({
   return (
     <section className="animate-in fade-in slide-in-from-right-1 duration-300">
       <h2 className="mb-1.5 font-heading text-[1.5rem] font-bold text-[var(--primary)]">
-        Chọn ngày và giờ tư vấn
+        {t('datetimeTitle')}
       </h2>
       <p className="mb-7 text-[0.875rem] text-[var(--gray-500)]">
-        Chọn khung giờ phù hợp với bạn. Lịch hẹn có thể đặt từ 08:00 đến 17:30, thứ 2 đến thứ 6.
+        {t('datetimeSubtitle')}
       </p>
 
       <div className="grid gap-8 md:grid-cols-2 md:items-start">
@@ -147,7 +149,7 @@ export function StepDatetime({
                   )
                 }
                 className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] bg-white text-[var(--gray-600)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
-                aria-label="Tháng trước"
+                aria-label={t('previousMonth')}
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
               </button>
@@ -159,7 +161,7 @@ export function StepDatetime({
                   )
                 }
                 className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] bg-white text-[var(--gray-600)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
-                aria-label="Tháng sau"
+                aria-label={t('nextMonth')}
               >
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>
@@ -216,29 +218,29 @@ export function StepDatetime({
 
         <div className="rounded-[var(--radius-xl)] border border-[var(--gray-100)] bg-white p-6 shadow-[var(--shadow-sm)]">
           <div className="mb-1.5 font-heading text-[1.05rem] font-bold text-[var(--primary)]">
-            Khung giờ có sẵn
+            {t('availableSlots')}
           </div>
           <div className="mb-[18px] flex items-center gap-1.5 text-[0.82rem] text-[var(--gray-500)]">
             <CalendarDays className="h-3.5 w-3.5 text-[var(--accent)]" />
             <span>
-              {selectedDate ? formatBookingDateLabel(selectedDate) : 'Vui lòng chọn ngày'}
+              {selectedDate ? formatBookingDateLabel(selectedDate) : t('chooseDate')}
             </span>
           </div>
 
           {selectedDate ? (
             availabilityQuery.isLoading ? (
               <div className="py-8 text-center text-[0.875rem] text-[var(--gray-400)]">
-                Đang tải khung giờ...
+                {t('loadingSlots')}
               </div>
             ) : availabilityQuery.isError ? (
               <div className="py-8 text-center text-[0.875rem] text-[var(--gray-400)]">
                 <CalendarDays className="mx-auto mb-2 h-8 w-8 text-[var(--gray-300)]" />
-                <span>Không thể tải khung giờ. Vui lòng thử lại.</span>
+                <span>{t('slotsError')}</span>
               </div>
             ) : slots.length === 0 ? (
               <div className="py-8 text-center text-[0.875rem] text-[var(--gray-400)]">
                 <CalendarDays className="mx-auto mb-2 h-8 w-8 text-[var(--gray-300)]" />
-                <span>Luật sư chưa có lịch trống cho ngày này. Vui lòng chọn ngày khác.</span>
+                <span>{t('noSlots')}</span>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-3">
@@ -272,12 +274,12 @@ export function StepDatetime({
           ) : (
             <div className="py-8 text-center text-[0.875rem] text-[var(--gray-400)]">
               <CalendarDays className="mx-auto mb-2 h-8 w-8 text-[var(--gray-300)]" />
-              <span>Chọn ngày để xem khung giờ trống</span>
+              <span>{t('select_date')}</span>
             </div>
           )}
 
           <div className="mt-6 border-t border-[var(--gray-100)] pt-5">
-            <div className="mb-3 text-[0.875rem] font-bold text-[var(--primary)]">Hình thức tư vấn</div>
+            <div className="mb-3 text-[0.875rem] font-bold text-[var(--primary)]">{t('consultationType')}</div>
             <div className="flex flex-col gap-2">
               {BOOKING_CONSULTATION_TYPES.map((option) => {
                 const selected = consultationType === option.id;
@@ -305,8 +307,8 @@ export function StepDatetime({
                     </span>
                     <BookingIcon name={option.icon} className="h-3.5 w-3.5 text-[var(--primary)]" />
                     <span className="flex-1">
-                      <strong className="block text-[0.875rem] text-[var(--primary)]">{option.title}</strong>
-                      <span className="text-[0.75rem] text-[var(--gray-500)]">{option.description}</span>
+                      <strong className="block text-[0.875rem] text-[var(--primary)]">{t(`consultation.${option.id}`)}</strong>
+                      <span className="text-[0.75rem] text-[var(--gray-500)]">{t(`consultation.${option.id}Description`)}</span>
                     </span>
                   </button>
                 );
@@ -323,7 +325,7 @@ export function StepDatetime({
           className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border-[1.5px] border-[var(--gray-200)] bg-white px-[22px] py-[11px] text-[0.875rem] font-semibold text-[var(--gray-600)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Quay lại</span>
+          <span>{t('back')}</span>
         </button>
 
         <button
@@ -332,7 +334,7 @@ export function StepDatetime({
           disabled={!canProceed}
           className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--accent)] px-7 py-[11px] text-[0.875rem] font-bold text-[var(--primary-dark)] transition-all duration-200 hover:-translate-y-px hover:bg-[var(--accent-dark)] hover:shadow-[0_4px_15px_rgba(201,168,76,0.3)] disabled:cursor-not-allowed disabled:bg-[var(--gray-200)] disabled:text-[var(--gray-400)] disabled:shadow-none"
         >
-          <span>Tiếp theo</span>
+          <span>{t('next')}</span>
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>

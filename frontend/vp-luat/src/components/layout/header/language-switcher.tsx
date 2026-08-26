@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import type { Locale } from '@/i18n/routing';
 
 const LANGUAGES = [
   { code: 'vi', label: 'VI', name: 'Tiếng Việt' },
   { code: 'en', label: 'EN', name: 'English' },
-] as const;
-
-type LangCode = (typeof LANGUAGES)[number]['code'];
+] as const satisfies ReadonlyArray<{ code: Locale; label: string; name: string }>;
 
 interface LanguageSwitcherProps {
   layout?: 'desktop' | 'mobile';
@@ -16,19 +16,33 @@ interface LanguageSwitcherProps {
 }
 
 export function LanguageSwitcher({ layout = 'desktop', className }: LanguageSwitcherProps) {
-  const [current, setCurrent] = useState<LangCode>('vi');
+  const locale = useLocale() as Locale;
+  const router = useRouter();
+
+  const changeLocale = async (nextLocale: Locale) => {
+    if (nextLocale === locale) return;
+
+    await fetch('/api/locale', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ locale: nextLocale }),
+    });
+    router.refresh();
+  };
 
   if (layout === 'mobile') {
     return (
       <div className={cn('mobile-menu__lang', className)}>
-        {LANGUAGES.map((lang) => (
+        {LANGUAGES.map((language) => (
           <button
-            key={lang.code}
-            className={cn('mobile-menu__lang-btn', current === lang.code && 'active')}
-            onClick={() => setCurrent(lang.code)}
-            aria-label={lang.name}
+            key={language.code}
+            type="button"
+            className={cn('mobile-menu__lang-btn', locale === language.code && 'active')}
+            onClick={() => changeLocale(language.code)}
+            aria-label={language.name}
+            aria-pressed={locale === language.code}
           >
-            {lang.label}
+            {language.label}
           </button>
         ))}
       </div>
@@ -36,15 +50,17 @@ export function LanguageSwitcher({ layout = 'desktop', className }: LanguageSwit
   }
 
   return (
-    <div className={cn('navbar__lang', className)}>
-      {LANGUAGES.map((lang) => (
+    <div className={cn('navbar__lang', className)} role="group" aria-label="Language">
+      {LANGUAGES.map((language) => (
         <button
-          key={lang.code}
-          className={cn('navbar__lang-btn', current === lang.code && 'active')}
-          onClick={() => setCurrent(lang.code)}
-          aria-label={lang.name}
+          key={language.code}
+          type="button"
+          className={cn('navbar__lang-btn', locale === language.code && 'active')}
+          onClick={() => changeLocale(language.code)}
+          aria-label={language.name}
+          aria-pressed={locale === language.code}
         >
-          {lang.label}
+          {language.label}
         </button>
       ))}
     </div>

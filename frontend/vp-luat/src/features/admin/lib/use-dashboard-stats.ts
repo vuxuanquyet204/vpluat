@@ -289,28 +289,6 @@ export function useRecentActivity(
   };
 }
 
-// ─── Pricing table (kept for legacy components; values are static) ─────────
-
-const SERVICE_PRICE: Record<string, number> = {
-  'Tư vấn pháp lý': 1_500_000,
-  'Tư vấn doanh nghiệp': 3_500_000,
-  'Hợp đồng': 2_500_000,
-  'Ly hôn': 4_000_000,
-  'Đất đai': 5_000_000,
-  'Sở hữu trí tuệ': 3_000_000,
-  'Hình sự': 6_000_000,
-  'Thừa kế': 2_000_000,
-  'Lao động': 1_800_000,
-  'Bảo hiểm xã hội': 1_500_000,
-  'Nhập cư': 8_000_000,
-  'Giấy phép': 2_200_000,
-};
-const DEFAULT_SERVICE_PRICE = 2_500_000;
-
-export function servicePrice(service: string): number {
-  return SERVICE_PRICE[service] ?? DEFAULT_SERVICE_PRICE;
-}
-
 // ─── Generic helpers used by other admin pages ─────────────────────────────
 
 export function getInitials(name: string): string {
@@ -339,22 +317,3 @@ export function timeAgo(iso?: string): string {
 /** Re-export so callers don't need a second import. */
 export { adminDashboardApi, backendDateToISO };
 export type { ActivityLog, DistributionSlice, LeadFunnel, TimeSeriesPoint, DashboardStats };
-
-// ─── Legacy stubs (kept to satisfy remaining admin pages during migration) ─
-
-/** Today's bookings from the backend — placeholder until the dashboard page
- *  is migrated to fetch the data directly from bookingApi. */
-export function useTodayBookings() {
-  return { data: [] as never[], isLoading: false };
-}
-
-/** Lead timeline chart data — placeholder. */
-export function useLeadsTimelineChart(_range: DashboardRange = 'month') {
-  return [] as Array<{ date: string; visits: number; leads: number }>;
-}
-
-/** Map a Booking status string → UI display key. Today the dashboard imports
- *  booking data straight from bookingApi so this is a noop pass-through. */
-export function mapBookingStatus<T extends string>(s: T): T {
-  return s;
-}

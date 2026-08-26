@@ -32,25 +32,15 @@ export interface ApiEnvelope<T> {
 }
 
 async function get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
-  if (typeof console !== 'undefined') {
-    console.log('[api GET]', url, params);
-  }
-  try {
-    const res = await apiClient.get<ApiEnvelope<T>>(url, { params });
-    if (typeof console !== 'undefined') {
-      console.log('[api GET response]', url, 'env=', res.data);
-    }
-    return unwrap(res.data);
-  } catch (e) {
-    if (typeof console !== 'undefined') {
-      console.error('[api GET error]', url, (e as { response?: { status?: number; data?: unknown } })?.response?.status, (e as { response?: { data?: unknown } })?.response?.data);
-    }
-    throw e;
-  }
+  const res = await apiClient.get<ApiEnvelope<T>>(url, { params });
+  return unwrap(res.data);
 }
 
 async function post<T>(url: string, body?: unknown): Promise<T> {
-  const res = await apiClient.post<ApiEnvelope<T>>(url, body);
+  const config = body instanceof FormData
+    ? { headers: { 'Content-Type': undefined } }
+    : undefined;
+  const res = await apiClient.post<ApiEnvelope<T>>(url, body, config);
   return unwrap(res.data);
 }
 
@@ -64,16 +54,21 @@ async function put<T>(url: string, body?: unknown): Promise<T> {
   return unwrap(res.data);
 }
 
-async function del<T>(url: string): Promise<T> {
-  const res = await apiClient.delete<ApiEnvelope<T>>(url);
+async function del<T>(url: string, params?: Record<string, unknown>): Promise<T> {
+  const res = await apiClient.delete<ApiEnvelope<T>>(url, { params });
   return unwrap(res.data);
 }
 
-function unwrap<T>(env: ApiEnvelope<T>): T {
-  if (!env.success && env.error) {
-    throw new Error(env.error);
+function unwrap<T>(response: ApiEnvelope<T> | T): T {
+  if (!isApiEnvelope<T>(response)) return response;
+  if (!response.success) {
+    throw new Error(response.error ?? response.message ?? 'API request failed');
   }
-  return env.data as T;
+  return response.data as T;
+}
+
+function isApiEnvelope<T>(value: ApiEnvelope<T> | T): value is ApiEnvelope<T> {
+  return typeof value === 'object' && value !== null && 'success' in value;
 }
 
 /**
@@ -124,12 +119,17 @@ export function useApiMutation<T, V = unknown>(
   return useMutation<T, AxiosError, V>({
     mutationFn: async (vars: V) => {
       const target = typeof url === 'function' ? url(vars) : url;
-      if (method === 'POST') return post<T>(target, vars);
+      if (method === 'POST') {
+        if (typeof vars === 'object' && vars !== null && 'body' in vars) {
+          return post<T>(target, (vars as { body?: unknown }).body ?? {});
+        }
+        return post<T>(target, vars ?? {});
+      }
       if (method === 'PATCH') {
         // PATCH body must not include the id field (it's already in the URL).
-        // Hooks may pass vars as `{ id, body }` (common pattern across the
-        // admin modules) — in that case forward `body` directly.
-        const v = vars as { id?: string; body?: unknown } & Record<string, unknown>;
+        // Primitive route variables are used by action endpoints with no body.
+        if (typeof vars !== 'object' || vars === null) return patch<T>(target, {});
+        const v = (vars ?? {}) as { id?: string; body?: unknown } & Record<string, unknown>;
         if ('body' in v && v.body !== undefined) {
           return patch<T>(target, v.body as Record<string, unknown>);
         }
@@ -140,7 +140,7 @@ export function useApiMutation<T, V = unknown>(
         // PUT body must not include the id field (it's already in the URL).
         // Hooks may pass vars as `{ id, body }` (common pattern across the
         // admin modules) — in that case forward `body` directly.
-        const v = vars as { id?: string; body?: unknown } & Record<string, unknown>;
+        const v = (vars ?? {}) as { id?: string; body?: unknown } & Record<string, unknown>;
         if ('body' in v && v.body !== undefined) {
           const payload = v.body as Record<string, unknown>;
           return put<T>(target, payload);

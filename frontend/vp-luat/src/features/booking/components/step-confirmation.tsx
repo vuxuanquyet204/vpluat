@@ -2,6 +2,7 @@
 
 import { Bell, CalendarPlus, Check, Clock3, House, LocateFixed, Phone, UserRound } from 'lucide-react';
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { useBookingStore } from '../hooks';
 import { formatBookingDateLabel } from '../utils';
 
@@ -28,6 +29,7 @@ function ReceiptRow({
 }
 
 export function StepConfirmation({ onReset }: { onReset: () => void }) {
+  const t = useTranslations('booking');
   const service = useBookingStore((state) => state.service);
   const lawyer = useBookingStore((state) => state.lawyer);
   const date = useBookingStore((state) => state.date);
@@ -37,14 +39,14 @@ export function StepConfirmation({ onReset }: { onReset: () => void }) {
   const confirmation = useBookingStore((state) => state.confirmation);
 
   const methodMap: Record<string, string> = {
-    office: 'Tại văn phòng',
-    video: 'Online (Video call)',
-    phone: 'Qua điện thoại',
+    office: t('consultation.office'),
+    video: t('consultation.video'),
+    phone: t('consultation.phone'),
   };
 
   const formattedDate = useMemo(() => {
     if (!date) {
-      return 'Chưa chọn';
+      return t('notSelected');
     }
 
     return formatBookingDateLabel(new Date(date));
@@ -64,16 +66,16 @@ export function StepConfirmation({ onReset }: { onReset: () => void }) {
         .replace(/[-:]/g, '')
         .replace(/\.\d{3}/, '');
 
-    const title = encodeURIComponent(`Tư vấn pháp lý - ${service?.name ?? 'VP Luật'}`);
+    const title = encodeURIComponent(`${t('calendarTitle')} - ${service?.name ?? t('firmName')}`);
     const details = encodeURIComponent(
-      `Buổi tư vấn với luật sư ${lawyer?.name ?? ''}.\nMã đặt lịch: ${confirmation.bookingId}`,
+      `${t('calendarDetails', { lawyer: lawyer?.name ?? '', bookingId: confirmation.bookingId })}`,
     );
     const location = encodeURIComponent(
       consultationType === 'office'
-        ? 'Văn phòng VP Luật - Tầng 15, Landmark 72, Hà Nội'
+        ? t('calendarOffice')
         : consultationType === 'video'
-          ? 'Google Meet (liên kết sẽ được gửi qua email)'
-          : 'Trao đổi qua điện thoại',
+          ? t('calendarVideo')
+          : t('calendarPhone'),
     );
 
     const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${toGcal(start)}/${toGcal(end)}&details=${details}&location=${location}`;
@@ -85,39 +87,39 @@ export function StepConfirmation({ onReset }: { onReset: () => void }) {
       <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--success-bg)] text-[var(--success)]">
         <Check className="h-8 w-8" />
       </div>
-      <h2 className="mb-2.5 font-heading text-[2rem] font-bold text-[var(--primary)]">Đặt lịch thành công!</h2>
+      <h2 className="mb-2.5 font-heading text-[2rem] font-bold text-[var(--primary)]">{t('successTitle')}</h2>
       <p className="mb-7 text-[0.9rem] text-[var(--gray-500)]">
-        Cảm ơn bạn đã đặt lịch tư vấn. Dưới đây là thông tin lịch hẹn của bạn.
+        {t('successSubtitle')}
       </p>
 
       <div className="mb-6 rounded-[var(--radius-xl)] border border-[var(--gray-100)] bg-white p-7 text-left shadow-[var(--shadow-md)]">
         <div className="mb-5 flex items-center justify-between border-b border-[var(--gray-100)] pb-4">
           <div>
-            <div className="mb-0.5 text-[0.72rem] text-[var(--gray-500)]">Mã đặt lịch</div>
+            <div className="mb-0.5 text-[0.72rem] text-[var(--gray-500)]">{t('bookingCode')}</div>
             <div className="text-[1rem] font-bold text-[var(--primary)]">{confirmation?.bookingId}</div>
           </div>
           <div className="inline-flex items-center gap-1.5 rounded-[var(--radius-full)] bg-[var(--success-bg)] px-3 py-1 text-[0.75rem] font-bold text-[var(--success)]">
             <Check className="h-3.5 w-3.5" />
-            <span>Đã xác nhận</span>
+            <span>{t('confirmed')}</span>
           </div>
         </div>
 
-        <ReceiptRow icon={<UserRound className="h-4 w-4" />} label="Khách hàng" value={customerInfo.fullName} />
-        <ReceiptRow icon={<Phone className="h-4 w-4" />} label="Liên hệ" value={customerInfo.phone} />
-        <ReceiptRow icon={<CalendarPlus className="h-4 w-4" />} label="Dịch vụ" value={service?.name ?? 'Chưa chọn'} />
-        <ReceiptRow icon={<UserRound className="h-4 w-4" />} label="Luật sư" value={lawyer?.name ?? 'Chưa chọn'} />
-        <ReceiptRow icon={<CalendarPlus className="h-4 w-4" />} label="Ngày" value={formattedDate} />
-        <ReceiptRow icon={<Clock3 className="h-4 w-4" />} label="Giờ" value={timeSlot?.startTime ?? 'Chưa chọn'} />
+        <ReceiptRow icon={<UserRound className="h-4 w-4" />} label={t('customer')} value={customerInfo.fullName} />
+        <ReceiptRow icon={<Phone className="h-4 w-4" />} label={t('contact')} value={customerInfo.phone} />
+        <ReceiptRow icon={<CalendarPlus className="h-4 w-4" />} label={t('serviceLabel')} value={service?.name ?? t('notSelected')} />
+        <ReceiptRow icon={<UserRound className="h-4 w-4" />} label={t('lawyerLabel')} value={lawyer?.name ?? t('notSelected')} />
+        <ReceiptRow icon={<CalendarPlus className="h-4 w-4" />} label={t('dateLabel')} value={formattedDate} />
+        <ReceiptRow icon={<Clock3 className="h-4 w-4" />} label={t('timeLabel')} value={timeSlot?.startTime ?? t('notSelected')} />
         <ReceiptRow
           icon={<LocateFixed className="h-4 w-4" />}
-          label="Hình thức"
-          value={methodMap[consultationType] ?? 'Chưa chọn'}
+          label={t('consultationLabel')}
+          value={methodMap[consultationType] ?? t('notSelected')}
         />
       </div>
 
       <div className="mb-6 flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--primary-faint)] px-5 py-3 text-[0.85rem] text-[var(--gray-500)]">
         <Bell className="h-4 w-4 text-[var(--primary)]" />
-        <span>Chúng tôi sẽ xác nhận qua email trong vòng 15 phút.</span>
+        <span>{t('emailConfirmation')}</span>
       </div>
 
       <div className="flex flex-wrap justify-center gap-3 max-md:flex-col">
@@ -128,7 +130,7 @@ export function StepConfirmation({ onReset }: { onReset: () => void }) {
           className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--primary)] px-6 py-3 text-[0.875rem] font-bold text-white transition hover:-translate-y-px hover:bg-[var(--primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CalendarPlus className="h-4 w-4" />
-          <span>Thêm vào Google Calendar</span>
+          <span>{t('addToCalendar')}</span>
         </button>
         <button
           type="button"
@@ -136,7 +138,7 @@ export function StepConfirmation({ onReset }: { onReset: () => void }) {
           className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border-[1.5px] border-[var(--primary)] px-6 py-3 text-[0.875rem] font-bold text-[var(--primary)] transition hover:bg-[var(--primary-faint)]"
         >
           <House className="h-4 w-4" />
-          <span>Đặt lịch mới</span>
+          <span>{t('newBooking')}</span>
         </button>
       </div>
     </section>

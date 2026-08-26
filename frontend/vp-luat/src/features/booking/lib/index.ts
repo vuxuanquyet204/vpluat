@@ -1,16 +1,18 @@
 import type { BookingConsultationType } from '../types';
 
+export const BOOKING_CONSULTATION_KEYS = {
+  office: { title: 'office', description: 'officeDescription' },
+  video: { title: 'video', description: 'videoDescription' },
+  phone: { title: 'phone', description: 'phoneDescription' },
+} as const;
+
 // BOOKING_SERVICES và BOOKING_LAWYERS trước đây hardcode 13 dịch vụ + 3 luật sư
 // đã được thay bằng API:
 //   - Dịch vụ: useBookingServices() -> /api/public/services
 //   - Luật sư: useLawyersQuery(serviceSlug) -> /api/public/lawyers?serviceSlug=
 // File này chỉ giữ các cấu hình tĩnh không phụ thuộc dữ liệu nghiệp vụ.
 
-export const BOOKING_TRUST_ITEMS = [
-  'Miễn phí lần đầu tư vấn',
-  'Phản hồi trong 15 phút',
-  'Bảo mật thông tin 100%',
-] as const;
+export const BOOKING_TRUST_ITEMS = ['free', 'reply', 'privacy'] as const;
 
 export const BOOKING_CONSULTATION_TYPES: Array<{
   id: BookingConsultationType;
@@ -37,8 +39,6 @@ export const BOOKING_CONSULTATION_TYPES: Array<{
     icon: 'phone',
   },
 ];
-
-export const DEMO_BOOKED_TIMES = new Set(['08:00', '09:30', '10:00', '15:00']);
 
 export const BOOKING_TIME_SLOTS = [
   '08:00',

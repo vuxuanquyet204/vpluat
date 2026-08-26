@@ -202,7 +202,7 @@ export function RolesTable({
         isLoading={isLoading}
         rowKey={(r) => r.id}
         emptyTitle="Chưa có role nào"
-        emptyDescription="Tạo role đầu tiên để gán quyền cho user."
+        emptyDescription="Role được định nghĩa cố định trên backend."
       />
     </div>
   );

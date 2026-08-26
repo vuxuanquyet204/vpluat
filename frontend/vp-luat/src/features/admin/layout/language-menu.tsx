@@ -1,26 +1,22 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { Globe, Check, ChevronDown } from 'lucide-react';
-import { notifyInfo } from '@/features/admin/lib';
+import type { Locale } from '@/i18n/routing';
 
 const LANGUAGES = [
   { value: 'vi', label: 'Tiếng Việt', flag: 'VN' },
   { value: 'en', label: 'English', flag: 'EN' },
-];
-
-const STORAGE_KEY = 'vp-luat-admin-language';
+] as const satisfies ReadonlyArray<{ value: Locale; label: string; flag: string }>;
 
 export function LanguageMenu() {
   const [open, setOpen] = useState(false);
-  const [lang, setLang] = useState('vi');
+  const locale = useLocale() as Locale;
+  const t = useTranslations('language');
+  const router = useRouter();
   const wrapRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored) setLang(stored);
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -33,23 +29,28 @@ export function LanguageMenu() {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const handleSelect = (value: string, label: string) => {
-    setLang(value);
-    if (typeof window !== 'undefined') window.localStorage.setItem(STORAGE_KEY, value);
-    notifyInfo('Đã đổi ngôn ngữ', `Hiển thị: ${label} (mock — sẽ áp dụng i18n đầy đủ sau)`);
+  const handleSelect = async (nextLocale: Locale) => {
+    if (nextLocale !== locale) {
+      await fetch('/api/locale', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ locale: nextLocale }),
+      });
+      router.refresh();
+    }
     setOpen(false);
   };
 
-  const current = LANGUAGES.find((l) => l.value === lang) ?? LANGUAGES[0];
+  const current = LANGUAGES.find((language) => language.value === locale) ?? LANGUAGES[0];
 
   return (
     <div ref={wrapRef} style={{ position: 'relative' }}>
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        aria-label="Đổi ngôn ngữ"
+        aria-label={t('change')}
         aria-expanded={open}
-        title={`Ngôn ngữ: ${current.label}`}
+        title={`${t('current')}: ${current.label}`}
         className="admin-topbar__icon-btn"
       >
         <Globe size={16} />
@@ -86,17 +87,17 @@ export function LanguageMenu() {
                 letterSpacing: 0.5,
               }}
             >
-              Ngôn ngữ / Language
+              {t('title')}
             </div>
 
             <div style={{ padding: 4 }}>
               {LANGUAGES.map((l) => {
-                const active = l.value === lang;
+                const active = l.value === locale;
                 return (
                   <button
                     key={l.value}
                     type="button"
-                    onClick={() => handleSelect(l.value, l.label)}
+                    onClick={() => handleSelect(l.value)}
                     style={{
                       width: '100%',
                       display: 'flex',
@@ -165,7 +166,7 @@ export function LanguageMenu() {
               }}
             >
               <ChevronDown size={10} />
-              Mock i18n — ghi nhớ vào localStorage
+              {t('savedAutomatically')}
               <style jsx global>{`
                 @keyframes langFade {
                   from { opacity: 0; transform: translateY(-4px); }

@@ -4,28 +4,33 @@
  */
 'use client';
 
-import { useMemo } from 'react';
-import { useMockQuery } from './use-mock-query';
-import type { Booking, Lead, Review } from '../types';
+import { useApiQuery } from '@/lib/api/hooks';
+import type { PageResponse } from '@/lib/api/hooks';
+import type { Lead, Review } from '@/lib/api/admin-crm';
+import type { Appointment } from '@/lib/api/admin-booking';
 import type { SidebarBadgeSource } from '../constants/sidebar-nav';
 
 export function useSidebarBadges(): Record<SidebarBadgeSource, number> {
-  const { data: leads } = useMockQuery<Lead>('leads');
-  const { data: bookings } = useMockQuery<Booking>('bookings');
-  const { data: reviews } = useMockQuery<Review>('reviews');
+  const { data: leads } = useApiQuery<PageResponse<Lead>>(
+    ['admin', 'sidebar-badges', 'leads'],
+    '/crm/leads',
+    { page: 0, size: 200, status: 'NEW' },
+  );
+  const { data: bookings } = useApiQuery<PageResponse<Appointment>>(
+    ['admin', 'sidebar-badges', 'bookings'],
+    '/bookings',
+    { page: 0, size: 200, status: 'PENDING' },
+  );
+  const { data: reviews } = useApiQuery<PageResponse<Review>>(
+    ['admin', 'sidebar-badges', 'reviews'],
+    '/crm/reviews',
+    { page: 0, size: 200, status: 'PENDING' },
+  );
 
-  return useMemo(() => {
-    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const newLeads = (leads ?? []).filter(
-      (l) => l.status === 'new' && new Date(l.createdAt).getTime() >= weekAgo,
-    ).length;
-    const pendingBookings = (bookings ?? []).filter((b) => b.status === 'pending').length;
-    const pendingReviews = (reviews ?? []).filter((r) => r.status === 'pending').length;
-    return {
-      'new-leads': newLeads,
-      'pending-bookings': pendingBookings,
-      'pending-reviews': pendingReviews,
-      'unread-notifications': 0,
-    };
-  }, [leads, bookings, reviews]);
+  return {
+    'new-leads': leads?.totalElements ?? leads?.content.length ?? 0,
+    'pending-bookings': bookings?.totalElements ?? bookings?.content.length ?? 0,
+    'pending-reviews': reviews?.totalElements ?? reviews?.content.length ?? 0,
+    'unread-notifications': 0,
+  };
 }

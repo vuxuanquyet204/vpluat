@@ -52,20 +52,20 @@ import {
 } from '@dnd-kit/sortable';
 import { Badge, RowUser, LineChart, DonutChart } from '@/features/admin/shared';
 import type { ChartDataPoint, DonutSegment } from '@/features/admin/types';
-import { useMockQuery, useUpdate, notifySuccess, notifyError, toBackendStatus } from '@/features/admin/lib';
+import { notifySuccess, notifyError, toBackendStatus, useUpdateLead } from '@/features/admin/lib';
+import { leadApi, reviewApi } from '@/lib/api/admin-crm';
+import { bookingApi } from '@/lib/api/admin-booking';
+import { useMutation } from '@tanstack/react-query';
 import {
   useDashboardStats,
-  useTodayBookings,
   useRecentActivity,
   useServiceDistribution,
-  useLeadsTimelineChart,
   useLeadFunnel,
   useRevenueSeries,
   useVisitorSeries,
   DASHBOARD_RANGES,
   rangeStart,
   type DashboardRange,
-  mapBookingStatus,
   getInitials,
   timeAgo,
 } from '@/features/admin/lib/use-dashboard-stats';
@@ -304,7 +304,7 @@ function SortableKanbanCard({ card, dotColor }: { card: KanbanCard; dotColor: st
 function KanbanBoard({ range }: { range: DashboardRange }) {
   const qc = useQueryClient();
   const { data: allLeads, isLoading } = useLeadKanban();
-  const updateLead = useUpdate<Lead>('leads');
+  const updateLead = useUpdateLead();
 
   const leads = useMemo(() => {
     const start = rangeStart(range).getTime();
@@ -397,16 +397,18 @@ function KanbanBoard({ range }: { range: DashboardRange }) {
       try {
         await updateLead.mutateAsync({
           id,
-          patch: { status: backendStatus as Lead['status'] },
+          patch: { status: backendStatus },
         });
         notifySuccess(
           `Đã chuyển "${before.name}" → ${targetColumn.label}`,
           undefined,
         );
-        qc.invalidateQueries({ queryKey: ['admin', 'leads'] });
+        qc.invalidateQueries({ queryKey: ['admin', 'kanban', 'leads'] });
+        qc.invalidateQueries({ queryKey: ['admin', 'crm', 'leads'] });
       } catch (e) {
         notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
-        qc.invalidateQueries({ queryKey: ['admin', 'leads'] });
+        qc.invalidateQueries({ queryKey: ['admin', 'kanban', 'leads'] });
+        qc.invalidateQueries({ queryKey: ['admin', 'crm', 'leads'] });
       }
     },
     [columnItems, cards, updateLead, qc],
@@ -559,7 +561,9 @@ function SortableBookingCard({
 function BookingKanbanBoard({ range }: { range: DashboardRange }) {
   const qc = useQueryClient();
   const { data: allBookings, isLoading } = useBookingKanban();
-  const updateBooking = useUpdate<Booking>('bookings');
+  const updateBooking = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => bookingApi.updateStatus(id, status),
+  });
 
   const bookings = useMemo(() => {
     const start = rangeStart(range).getTime();
@@ -648,14 +652,16 @@ function BookingKanbanBoard({ range }: { range: DashboardRange }) {
       try {
         await updateBooking.mutateAsync({
           id,
-          patch: { status: targetColumn.id },
+          status: targetColumn.id.toUpperCase(),
         });
         notifySuccess(
           `Đã chuyển "${before.customerName}" → ${targetColumn.label}`,
         );
+        qc.invalidateQueries({ queryKey: ['admin', 'kanban', 'bookings'] });
         qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
       } catch (e) {
         notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
+        qc.invalidateQueries({ queryKey: ['admin', 'kanban', 'bookings'] });
         qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
       }
     },
@@ -788,7 +794,10 @@ function SortableReviewCard({
 function ReviewKanbanBoard({ range }: { range: DashboardRange }) {
   const qc = useQueryClient();
   const { data: allReviews, isLoading } = useReviewKanban();
-  const updateReview = useUpdate<Review>('reviews');
+  const updateReview = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'APPROVE' | 'REJECT' }) =>
+      status === 'APPROVE' ? reviewApi.approve(id) : reviewApi.reject(id, 'Moved from dashboard'),
+  });
 
   const reviews = useMemo(() => {
     const start = rangeStart(range).getTime();
@@ -868,14 +877,19 @@ function ReviewKanbanBoard({ range }: { range: DashboardRange }) {
       const before = cards[id];
       if (!before) return;
       try {
+        if (targetColumn.id === 'pending') {
+          throw new Error('Không thể chuyển đánh giá về trạng thái chờ duyệt');
+        }
         await updateReview.mutateAsync({
           id,
-          patch: { status: targetColumn.id },
+          status: targetColumn.id === 'approved' ? 'APPROVE' : 'REJECT',
         });
         notifySuccess(`Đã chuyển đánh giá → ${targetColumn.label}`);
+        qc.invalidateQueries({ queryKey: ['admin', 'kanban', 'reviews'] });
         qc.invalidateQueries({ queryKey: ['admin', 'reviews'] });
       } catch (e) {
         notifyError('Lỗi', e instanceof Error ? e.message : 'Không thể cập nhật');
+        qc.invalidateQueries({ queryKey: ['admin', 'kanban', 'reviews'] });
         qc.invalidateQueries({ queryKey: ['admin', 'reviews'] });
       }
     },
@@ -1088,7 +1102,6 @@ const QUICK_ACTIONS = [
   { Icon: PenLine, label: 'Tạo bài viết mới', href: '/admin/blog?action=new', bg: '#EFF3F8', color: '#1E3A5F' },
   { Icon: UserPlus, label: 'Thêm Lead', href: '/admin/crm?action=new', bg: '#FEF9EF', color: '#C9A84C' },
   { Icon: CalendarDays, label: 'Xem lịch hẹn', href: '/admin/bookings', bg: '#ECFDF5', color: '#059669' },
-  { Icon: BarChart3, label: 'Báo cáo SEO', href: '/admin/landing-pages', bg: '#EFF6FF', color: '#2563EB' },
 ];
 
 function QuickActions() {
@@ -1354,6 +1367,7 @@ function useRefreshDashboard() {
   return useCallback(() => {
     qc.invalidateQueries({ queryKey: ['admin'] });
     qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
+    qc.invalidateQueries({ queryKey: ['admin', 'kanban'] });
     notifySuccess('Đã làm mới dashboard');
   }, [qc]);
 }
@@ -1364,23 +1378,35 @@ export default function DashboardPage() {
   const router = useRouter();
   const [dateRange, setDateRange] = useState<DashboardRange>('week');
   const stats = useDashboardStats(dateRange);
-  const { data: todayBookings, isLoading: bookingsLoading } = useTodayBookings();
+  const { data: allBookings = [], isLoading: bookingsLoading } = useBookingKanban();
   const serviceDist = useServiceDistribution(dateRange);
   const funnel = useLeadFunnel(dateRange);
   const visitors = useVisitorSeries(dateRange);
-  const chartData = useLeadsTimelineChart(dateRange);
+  const chartData = visitors.data.map((point) => ({
+    date: point.date,
+    visits: point.value,
+    leads: 0,
+  }));
+  const todayBookings = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return allBookings.filter((booking) => booking.date === today);
+  }, [allBookings]);
   const refresh = useRefreshDashboard();
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [noteBooking, setNoteBooking] = useState<Booking | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const update = useUpdate<Booking>('bookings');
+  const update = useMutation({
+    mutationFn: ({ id, status, notes }: { id: string; status: string; notes: string }) =>
+      bookingApi.updateStatus(id, status, notes),
+  });
   const handleSaveNote = async (text: string) => {
     if (!noteBooking) return;
     try {
       await update.mutateAsync({
         id: noteBooking.id,
-        patch: { notes: text },
+        status: noteBooking.status.toUpperCase(),
+        notes: text,
       });
       notifySuccess('Đã lưu ghi chú', `${noteBooking.customerName} • ${text.slice(0, 30)}`);
       setNoteBooking(null);
@@ -1678,9 +1704,6 @@ export default function DashboardPage() {
             <div className="admin-card__title">
               Lượt truy cập & Lead — {DASHBOARD_RANGES.find((r) => r.value === dateRange)?.label ?? '7 ngày'}
             </div>
-            <Link href="/admin/landing-pages" className="admin-card__action">
-              Xem chi tiết →
-            </Link>
           </div>
           <LineChart data={chartData as unknown as ChartDataPoint[]} />
         </div>
@@ -1803,4 +1826,3 @@ function MiniStat({
 void MailOpen;
 void Star;
 void SkeletonStats;
-void mapBookingStatus;

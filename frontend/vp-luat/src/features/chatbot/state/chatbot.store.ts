@@ -33,6 +33,7 @@ export interface ChatbotWidgetState {
   setMinimized: (minimized: boolean) => void;
   dismissPopup: () => void;
   setSessionId: (id: string) => void;
+  setMessages: (messages: ChatMessage[]) => void;
   addMessage: (message: ChatMessage) => void;
   appendStreamContent: (chunk: string) => void;
   finishStream: (
@@ -107,6 +108,8 @@ export const useChatbotStore = create<ChatbotWidgetState>()(
       dismissPopup: () => set({ popupDismissed: true }),
 
       setSessionId: (sessionId) => set({ sessionId }),
+
+      setMessages: (messages) => set({ messages }),
 
       addMessage: (message) =>
         set((state) => {

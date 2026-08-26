@@ -3,6 +3,7 @@
 
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
+import { getDisplayLabel } from '@/lib/display-labels';
 
 export interface ReviewDTO {
   id: string;
@@ -54,10 +55,7 @@ function mapReviewDto(dto: ReviewDTO): ReviewApiResponse | null {
   const rawServiceName = dto.serviceName ?? '';
   const looksLikeSlug = /[-_]/.test(rawServiceName) && rawServiceName === rawServiceName.toLowerCase();
   const serviceDisplayName = looksLikeSlug
-    ? rawServiceName
-        .split('-')
-        .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ''))
-        .join(' ')
+    ? getDisplayLabel(rawServiceName, 'Dịch vụ')
     : rawServiceName;
 
   return {

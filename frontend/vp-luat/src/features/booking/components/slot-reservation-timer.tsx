@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export function SlotReservationTimer({
   expiresAt,
@@ -9,6 +10,7 @@ export function SlotReservationTimer({
   expiresAt: string | null;
   onExpire: () => void;
 }) {
+  const t = useTranslations('booking');
   const [now, setNow] = useState(() => Date.now());
   const remainingMs = useMemo(() => {
     if (!expiresAt) {
@@ -45,7 +47,7 @@ export function SlotReservationTimer({
 
   return (
     <div className="mt-4 rounded-[var(--radius-md)] bg-[var(--warning-bg)] px-4 py-3 text-center text-[0.82rem] font-medium text-[var(--warning)]">
-      Giữ lịch trong {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+      {t('reservationTimer', { time: `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}` })}
     </div>
   );
 }

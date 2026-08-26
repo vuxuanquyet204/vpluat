@@ -120,7 +120,7 @@ export function PostPreview({ isOpen, onClose, post, category, tags }: PostPrevi
         >
           <span>Tác giả: {post.author}</span>
           <span>·</span>
-          <span>Đường dẫn: /blog/{post.slug}</span>
+          <span>Đường dẫn: /news/{post.slug}</span>
           {post.publishedAt && (
             <>
               <span>·</span>

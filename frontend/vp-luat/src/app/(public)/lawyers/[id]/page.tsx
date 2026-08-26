@@ -22,12 +22,16 @@ import {
 } from 'lucide-react';
 import { useLawyerBySlug } from '@/features/lawyers/hooks/use-lawyers';
 import type { LawyerApiResponse } from '@/features/lawyers/api/lawyers-api';
+import { getDisplayLabel } from '@/lib/display-labels';
+import { useTranslations } from 'next-intl';
 
 function getSpecialtyLabels(lawyer: LawyerApiResponse): string[] {
   if (lawyer.serviceNames && lawyer.serviceNames.length > 0) {
-    return lawyer.serviceNames.filter((s): s is string => !!s);
+    return lawyer.serviceNames
+      .filter((s): s is string => !!s)
+      .map((serviceName) => getDisplayLabel(serviceName, 'Chuyên môn'));
   }
-  return lawyer.specialties ?? [];
+  return (lawyer.specialties ?? []).map((specialty) => getDisplayLabel(specialty, 'Chuyên môn'));
 }
 
 function renderStars(rating: number, size = 16) {
@@ -78,6 +82,7 @@ function getWorkingHoursLabel(workingHours?: LawyerApiResponse['workingHours']):
 export default function LawyerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: lawyer, isLoading } = useLawyerBySlug(id);
+  const t = useTranslations('public.lawyerDetail');
   const [imageFailed, setImageFailed] = useState(false);
 
   if (isLoading) {
@@ -85,7 +90,7 @@ export default function LawyerDetailPage({ params }: { params: Promise<{ id: str
       <main className="lawyer-detail-page">
         <div className="container" style={{ padding: '6rem 0', textAlign: 'center' }}>
           <div className="loading-spinner" style={{ margin: '0 auto 1rem' }} />
-          <p style={{ color: 'var(--gray-500)' }}>Đang tải thông tin luật sư...</p>
+          <p style={{ color: 'var(--gray-500)' }}>{t('loading')}</p>
         </div>
       </main>
     );
@@ -97,13 +102,13 @@ export default function LawyerDetailPage({ params }: { params: Promise<{ id: str
         <div className="container" style={{ padding: '6rem 0', textAlign: 'center' }}>
           <Scale size={56} style={{ color: 'var(--gray-200)', margin: '0 auto 1rem' }} />
           <h1 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", color: 'var(--primary)' }}>
-            Không tìm thấy luật sư
+            {t('notFoundTitle')}
           </h1>
           <p style={{ color: 'var(--gray-500)', marginBottom: '1.5rem' }}>
-            Luật sư bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.
+            {t('notFoundDescription')}
           </p>
           <Link href="/lawyers" className="btn btn--primary">
-            <ArrowLeft size={18} /> Quay lại danh sách
+            <ArrowLeft size={18} /> {t('backToList')}
           </Link>
         </div>
       </main>

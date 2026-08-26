@@ -8,14 +8,14 @@ import { ArticleCard } from '../../components/article-card';
 import { NewsSidebar } from '../../components/news-sidebar';
 import { NewsPagination } from '../../components/news-pagination';
 import { usePosts, useFeaturedPosts } from '../../hooks/use-news';
-import type { NewsArticle, NewsCategory } from '../../types';
+import type { NewsCategory } from '../../types';
+import { useTranslations } from 'next-intl';
 
 const PER_PAGE = 6;
 
-// Fallback data when API fails
-const FALLBACK_CATEGORIES = ['tin-tuc', 'nghi-dinh', 'blog', 'case-study', 'huong-dan'];
-
 export default function NewsPage() {
+  const t = useTranslations('public.news');
+  const common = useTranslations('common');
   const [activeCategory, setActiveCategory] = useState<'all' | NewsCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [appliedQuery, setAppliedQuery] = useState('');
@@ -75,7 +75,7 @@ export default function NewsPage() {
     return (
       <div className="loading-container">
         <div className="loading-spinner" />
-        <p>Đang tải tin tức...</p>
+        <p>{common('loading')}</p>
       </div>
     );
   }
@@ -98,7 +98,7 @@ export default function NewsPage() {
 
               {paginated.length === 0 ? (
                 <div className="services-empty">
-                  <p>Không có bài viết nào phù hợp.</p>
+                  <p>{t('empty')}</p>
                 </div>
               ) : (
                 <div className="news-list">

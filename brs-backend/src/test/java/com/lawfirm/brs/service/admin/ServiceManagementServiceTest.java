@@ -2,9 +2,11 @@ package com.lawfirm.brs.service.admin;
 
 import com.lawfirm.brs.dto.request.ServiceRequest;
 import com.lawfirm.brs.dto.response.ServiceDTO;
+import com.lawfirm.brs.entity.LawyerProfile;
 import com.lawfirm.brs.entity.ServiceEntity;
 import com.lawfirm.brs.entity.ServiceLawyer;
 import com.lawfirm.brs.mapper.ServiceEntityMapper;
+import com.lawfirm.brs.repository.LawyerProfileRepository;
 import com.lawfirm.brs.repository.ServiceEntityRepository;
 import com.lawfirm.brs.repository.ServiceLawyerRepository;
 import jakarta.persistence.EntityManager;
@@ -42,6 +44,7 @@ class ServiceManagementServiceTest {
     @Mock private ServiceEntityRepository serviceRepository;
     @Mock private ServiceEntityMapper serviceMapper;
     @Mock private ServiceLawyerRepository serviceLawyerRepository;
+    @Mock private LawyerProfileRepository lawyerRepository;
     @Mock private EntityManager entityManager;
 
     @InjectMocks private ServiceManagementService service;
@@ -96,14 +99,33 @@ class ServiceManagementServiceTest {
                 .build();
     }
 
+    private LawyerProfile lawyer(UUID id) {
+        return LawyerProfile.builder()
+                .id(id)
+                .serviceIds(new ArrayList<>())
+                .build();
+    }
+
+    private void stubLawyers(UUID... ids) {
+        List<LawyerProfile> lawyers = java.util.Arrays.stream(ids)
+                .map(this::lawyer)
+                .toList();
+        when(lawyerRepository.findAllById(any())).thenReturn(lawyers);
+        for (UUID id : ids) {
+            when(lawyerRepository.findById(id)).thenReturn(Optional.of(lawyer(id)));
+        }
+    }
+
     @Test
     @DisplayName("createService persists lawyerIds via the join table")
     void createService_persistsLawyerIds() {
         when(serviceRepository.findBySlug("tu-van-doanh-nghiep")).thenReturn(Optional.empty());
         when(serviceRepository.save(any(ServiceEntity.class))).thenReturn(savedEntity());
+        when(serviceRepository.findById(serviceId)).thenReturn(Optional.of(savedEntity()));
         when(serviceLawyerRepository.findLawyerIdsByServiceId(serviceId))
                 .thenReturn(List.of(lawyerA, lawyerB));
         when(serviceMapper.toDTO(any(ServiceEntity.class))).thenReturn(mappedDto());
+        stubLawyers(lawyerA, lawyerB);
 
         ServiceRequest req = request(List.of(lawyerA, lawyerB));
         ServiceDTO result = service.createService(req);
@@ -126,6 +148,7 @@ class ServiceManagementServiceTest {
         when(serviceLawyerRepository.findLawyerIdsByServiceId(serviceId))
                 .thenReturn(List.of(lawyerC));
         when(serviceMapper.toDTO(any(ServiceEntity.class))).thenReturn(mappedDto());
+        stubLawyers(lawyerC);
 
         ServiceRequest req = request(List.of(lawyerC));
         ServiceDTO result = service.updateService(serviceId, req);
@@ -180,6 +203,7 @@ class ServiceManagementServiceTest {
         when(serviceLawyerRepository.findLawyerIdsByServiceId(serviceId))
                 .thenReturn(List.of(lawyerA));
         when(serviceMapper.toDTO(any(ServiceEntity.class))).thenReturn(mappedDto());
+        stubLawyers(lawyerA, lawyerB);
 
         ServiceRequest req = request(List.of(lawyerA, lawyerA, lawyerB, lawyerB));
         service.updateService(serviceId, req);

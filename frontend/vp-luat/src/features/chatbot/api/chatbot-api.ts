@@ -81,7 +81,15 @@ export async function sendMessage(
  * Fetch conversation history for a session. Requires the FE to know the
  * sessionId issued by the backend on first message.
  */
-export async function getSessionHistory(sessionId: string): Promise<ChatbotStreamResponse[]> {
+export interface ChatHistoryMessage {
+  role: 'USER' | 'BOT' | 'SYSTEM' | 'ADMIN' | string;
+  content: string;
+  timestamp?: string;
+  intent?: string;
+  confidence?: string;
+}
+
+export async function getSessionHistory(sessionId: string): Promise<ChatHistoryMessage[]> {
   const response = await fetch(
     `${API_BASE}/chatbot/history/${encodeURIComponent(sessionId)}`,
     {
@@ -97,6 +105,6 @@ export async function getSessionHistory(sessionId: string): Promise<ChatbotStrea
     throw new Error(`Failed to fetch session: HTTP ${response.status}`);
   }
 
-  const json = (await response.json()) as { data: unknown[] };
-  return (json.data ?? []) as ChatbotStreamResponse[];
+  const json = (await response.json()) as { data: ChatHistoryMessage[] };
+  return json.data ?? [];
 }

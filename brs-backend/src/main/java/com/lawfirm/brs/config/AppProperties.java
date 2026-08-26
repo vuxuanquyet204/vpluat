@@ -23,6 +23,24 @@ public class AppProperties {
     private Upload upload = new Upload();
     private Mail mail = new Mail();
     private Sms sms = new Sms();
+    private Seed seed = new Seed();
+
+    @Getter
+    @Setter
+    public static class Seed {
+        private boolean enabled = false;
+        private String key = "initial-content-v1";
+        private Mode mode = Mode.IF_EMPTY;
+        private String adminEmail;
+        private String adminPassword;
+        private String adminName = "Quan tri vien";
+        private String adminPhone;
+
+        public enum Mode {
+            IF_EMPTY,
+            FORCE_EXISTING
+        }
+    }
 
     @Getter
     @Setter

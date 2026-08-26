@@ -1,23 +1,21 @@
 import type { ChatMessage, QuickReply } from '../types';
 
+type Translator = {
+  (key: string, values?: Record<string, string | number>): string;
+  raw: (key: string) => unknown;
+};
+
+function richMessage(t: Translator, key: string): string {
+  const value = t.raw(key);
+  return typeof value === 'string' ? value : t(key);
+}
+
 const now = () => new Date().toISOString();
-// Use stable, deterministic IDs for module-level constants. Generating a new
-// UUID at module-load time causes "duplicate key" warnings under Next.js HMR
-// when the module is re-evaluated across server/client boundaries — the
-// message objects are reference-equal semantically, but each fresh evaluation
-// produces a different id, which React then sees as a colliding key in lists.
 let msgCounter = 0;
 const stableUid = (prefix: string) => `${prefix}-${++msgCounter}`;
 
 function makeBot(content: string, quickReplies?: QuickReply[], disclaimer?: string): ChatMessage {
-  return {
-    id: stableUid('bot'),
-    from: 'bot',
-    content,
-    timestamp: now(),
-    quickReplies,
-    disclaimer,
-  };
+  return { id: stableUid('bot'), from: 'bot', content, timestamp: now(), quickReplies, disclaimer };
 }
 
 function makeUser(text: string): ChatMessage {
@@ -28,202 +26,94 @@ export interface ConversationStep {
   userMessage?: string;
   botMessages: ChatMessage[];
   nextState?: string;
-  /** When true the caller should forward the raw text to the BE chatbot
-   *  (so the AI model can produce a response instead of the local script). */
   passthrough?: boolean;
 }
 
-export const GREETING_MESSAGE = makeBot(
-  `<div style="margin-bottom:8px;line-height:1.5">
-    Xin chào! Tôi là <strong>Trợ Lý Pháp Lý</strong> của VP Luật Hùng & Cộng sự.<br>
-    Tôi có thể hỗ trợ bạn tìm hiểu thông tin pháp luật sơ bộ.
-  </div>
-  <div style="margin-top:8px;padding:8px 10px;background:#FEF2F2;border-radius:6px;font-size:0.78rem;color:#DC2626;border-left:3px solid #DC2626">
-    <i class="fa-solid fa-triangle-exclamation" style="margin-right:4px"></i>
-    Lưu ý: Thông tin mang tính tham khảo, không thay thế tư vấn chuyên nghiệp.
-  </div>`,
-  undefined,
-  'Thông tin mang tính tham khảo, không thay thế tư vấn chuyên nghiệp.',
-);
+const reply = (t: Translator, key: string, icon: string, value: string): QuickReply => ({
+  label: t(`replies.${key}`),
+  icon,
+  reply: value,
+});
 
-export const SERVICE_PROMPT = makeBot(
-  'Bạn cần hỗ trợ về lĩnh vực nào?',
-  [
-    { label: 'Luật Doanh nghiệp', icon: 'fa-solid fa-building', reply: 'Luật doanh nghiệp' },
-    { label: 'Đất đai & BĐS', icon: 'fa-solid fa-land-plot', reply: 'Đất đai và bất động sản' },
-    { label: 'Luật Dân sự', icon: 'fa-solid fa-file-contract', reply: 'Luật dân sự' },
-    { label: 'Luật Hình sự', icon: 'fa-solid fa-gavel', reply: 'Luật hình sự' },
-    { label: 'Lĩnh vực khác', icon: 'fa-solid fa-globe', reply: 'Lĩnh vực khác' },
-  ],
-);
+export function createConversationFlow(t: Translator) {
+  const consultationReplies = [
+    reply(t, 'bookConsultation', 'fa-solid fa-calendar-check', 'intent:book_consultation'),
+    reply(t, 'askMore', 'fa-solid fa-circle-question', 'intent:ask_more'),
+  ];
+  const serviceReplies = [
+    reply(t, 'businessLaw', 'fa-solid fa-building', 'intent:business_law'),
+    reply(t, 'landLaw', 'fa-solid fa-land-plot', 'intent:land_law'),
+    reply(t, 'civilLaw', 'fa-solid fa-file-contract', 'intent:civil_law'),
+    reply(t, 'criminalLaw', 'fa-solid fa-gavel', 'intent:criminal_law'),
+    reply(t, 'otherArea', 'fa-solid fa-globe', 'intent:other_area'),
+  ];
 
-export const DOANH_NGHIEP_REPLY = makeBot(
-  `<div style="margin-bottom:8px">Về <strong>Luật Doanh Nghiệp</strong>, tôi có thể hỗ trợ bạn tìm hiểu về:</div>
-  <ul style="margin:6px 0 8px;padding-left:16px">
-    <li style="margin-bottom:4px"><i class="fa-solid fa-check" style="color:var(--green);margin-right:5px;font-size:0.7rem"></i>Thành lập &amp; đăng ký kinh doanh</li>
-    <li style="margin-bottom:4px"><i class="fa-solid fa-check" style="color:var(--green);margin-right:5px;font-size:0.7rem"></i>Soạn thảo &amp; rà soát hợp đồng</li>
-    <li style="margin-bottom:4px"><i class="fa-solid fa-check" style="color:var(--green);margin-right:5px;font-size:0.7rem"></i>Giải quyết tranh chấp thương mại</li>
-    <li><i class="fa-solid fa-check" style="color:var(--green);margin-right:5px;font-size:0.7rem"></i>M&amp;A và tái cơ cấu doanh nghiệp</li>
-  </ul>
-  Bạn đang quan tâm đến vấn đề cụ thể nào?`,
-  [
-    { label: 'Thành lập công ty', icon: 'fa-solid fa-rocket', reply: 'Thành lập công ty' },
-    { label: 'Tranh chấp hợp đồng', icon: 'fa-solid fa-file-signature', reply: 'Tranh chấp hợp đồng' },
-    { label: 'M&A', icon: 'fa-solid fa-handshake', reply: 'M&A doanh nghiệp' },
-    { label: 'Vấn đề khác', icon: 'fa-solid fa-ellipsis', reply: 'Vấn đề khác' },
-  ],
-);
+  const greetingMessage = makeBot(richMessage(t, 'greetingHtml'), undefined, t('disclaimer'));
+  const servicePrompt = makeBot(t('servicePrompt'), serviceReplies);
+  const businessReply = makeBot(richMessage(t, 'businessReplyHtml'), [
+    reply(t, 'companySetup', 'fa-solid fa-rocket', 'intent:company_setup'),
+    reply(t, 'contractDispute', 'fa-solid fa-file-signature', 'intent:contract_dispute'),
+    reply(t, 'ma', 'fa-solid fa-handshake', 'intent:mna'),
+    reply(t, 'otherIssue', 'fa-solid fa-ellipsis', 'intent:other_issue'),
+  ]);
+  const companySetupReply = makeBot(richMessage(t, 'companySetupHtml'), consultationReplies);
+  const bookingCtaReply = makeBot(richMessage(t, 'bookingCta'));
+  const leadCompleteBot = makeBot(t('leadComplete'));
 
-export const COMPANY_SETUP_REPLY = makeBot(
-  `<div style="margin-bottom:6px">Để thành lập công ty tại Việt Nam, bạn cần chuẩn bị:</div>
-  <div style="background:#EFF3F8;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:0.8rem">
-    <div style="margin-bottom:4px"><i class="fa-solid fa-file-lines" style="color:var(--primary);margin-right:6px"></i><strong>Hồ sơ cơ bản:</strong></div>
-    <div style="padding-left:22px;font-size:0.78rem;color:var(--gray-600)">Giấy tờ thành viên, vốn điều lệ, ngành nghề đăng ký</div>
-  </div>
-  <div style="background:#EFF3F8;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:0.8rem">
-    <div style="margin-bottom:4px"><i class="fa-solid fa-clock" style="color:var(--primary);margin-right:6px"></i><strong>Thời gian:</strong></div>
-    <div style="padding-left:22px;font-size:0.78rem;color:var(--gray-600)">3-5 ngày làm việc (loại hình TNHH/CP)</div>
-  </div>
-  <div style="background:#FEF9EF;border-radius:8px;padding:10px 12px;font-size:0.8rem">
-    <div style="margin-bottom:4px"><i class="fa-solid fa-coins" style="color:var(--accent);margin-right:6px"></i><strong>Chi phí nhà nước:</strong></div>
-    <div style="padding-left:22px;font-size:0.78rem;color:var(--gray-600)">~500.000 VNĐ lệ phí đăng ký</div>
-  </div>
-  <br>
-  Đội ngũ của chúng tôi có thể hỗ trợ toàn bộ quy trình từ A-Z.<br>
-  Bạn có muốn đặt lịch tư vấn miễn phí với luật sư không?`,
-  [
-    { label: 'Đặt lịch tư vấn', icon: 'fa-solid fa-calendar-check', reply: 'Đặt lịch tư vấn' },
-    { label: 'Hỏi thêm', icon: 'fa-solid fa-circle-question', reply: 'Hỏi thêm' },
-  ],
-);
-
-export const BOOKING_CTA_REPLY = makeBot(
-  'Tuyệt vời! Cho tôi xin thông tin để kết nối bạn với luật sư phù hợp nhé:<br><br>Họ và tên của bạn là gì?',
-  undefined,
-);
-
-export const PHONE_PROMPT = (name: string) =>
-  makeBot(
-    `Dạ anh/chị <strong>${name}</strong>, vui lòng cho tôi số điện thoại để luật sư liên hệ xác nhận lịch:`,
-    undefined,
-  );
-
-export const LEAD_COMPLETE_BOT = makeBot(
-  'Cảm ơn bạn! Đội ngũ luật sư sẽ liên hệ trong 15 phút làm việc.',
-);
-
-export const LEAD_COMPLETE_HANDSOFF: ChatMessage = {
-  id: stableUid('bot'),
-  from: 'bot',
-  content: '',
-  timestamp: now(),
-};
-
-export function makeLeadHandoff(userName?: string, userPhone?: string): ChatMessage {
-  return {
+  const makePhonePrompt = (name: string) => makeBot(t('phonePrompt', { name }));
+  const makeLeadHandoff = (userName?: string, userPhone?: string): ChatMessage => ({
     id: stableUid('bot'),
     from: 'bot',
     content: '',
     timestamp: now(),
-    quickReplies: [
-      {
-        label: 'Kết nối tư vấn viên',
-        icon: 'fa-solid fa-phone',
-        reply: `handoff:${userName ?? ''}:${userPhone ?? ''}`,
-      },
-    ],
+    quickReplies: [reply(t, 'connectConsultant', 'fa-solid fa-phone', `handoff:${userName ?? ''}:${userPhone ?? ''}`)],
+  });
+
+  const areaReply = (key: string) => makeBot(t(`${key}Reply`), consultationReplies);
+
+  const matchesIntent = (input: string, intent: string) =>
+    input === `intent:${intent}` || input.trim().toLowerCase().includes(intent.replace('_', ' '));
+
+  const script: Record<string, (input: string) => ConversationStep> = {
+    greeting: (input) => {
+      const lower = input.toLowerCase();
+      if (matchesIntent(input, 'business_law') || lower.includes('doanh nghiệp') || lower.includes('thành lập công ty') || lower.includes('thành lập')) {
+        return { botMessages: [businessReply], nextState: 'service_selected' };
+      }
+      if (matchesIntent(input, 'land_law') || lower.includes('đất') || lower.includes('bất động')) return { botMessages: [areaReply('landLaw')], nextState: 'service_selected' };
+      if (matchesIntent(input, 'civil_law') || lower.includes('dân sự') || lower.includes('hôn nhân') || lower.includes('ly hôn') || lower.includes('lyhon')) return { botMessages: [areaReply('civilLaw')], nextState: 'service_selected' };
+      if (matchesIntent(input, 'criminal_law') || lower.includes('hình sự')) return { botMessages: [areaReply('criminalLaw')], nextState: 'service_selected' };
+      return { botMessages: [], nextState: 'greeting', passthrough: true };
+    },
+    service_selected: (input) => {
+      const lower = input.toLowerCase();
+      if (matchesIntent(input, 'company_setup') || lower.includes('thành lập công ty') || lower.includes('thành lập')) return { botMessages: [companySetupReply], nextState: 'company_setup' };
+      if (matchesIntent(input, 'contract_dispute') || lower.includes('tranh chấp') || lower.includes('hợp đồng')) return { botMessages: [areaReply('contractDispute')], nextState: 'company_setup' };
+      return { botMessages: [servicePrompt], nextState: 'greeting' };
+    },
+    company_setup: (input) => {
+      if (matchesIntent(input, 'book_consultation') || input.includes('đặt lịch') || input.includes('tư vấn')) return { botMessages: [bookingCtaReply], nextState: 'lead_name' };
+      if (matchesIntent(input, 'ask_more') || input.includes('hỏi thêm')) return { botMessages: [businessReply], nextState: 'service_selected' };
+      return { botMessages: [companySetupReply], nextState: 'company_setup' };
+    },
+    lead_name: (input) => {
+      const name = input.trim();
+      const displayName = name.split(' ').filter(Boolean).slice(-2).join(' ') || name;
+      return { botMessages: [makePhonePrompt(displayName)], nextState: 'lead_phone' };
+    },
+    lead_phone: () => ({ botMessages: [leadCompleteBot, makeLeadHandoff()], nextState: 'lead_complete' }),
+  };
+
+  return {
+    greetingMessage,
+    processUserInput: (state: string, input: string): ConversationStep => script[state]
+      ? script[state](input)
+      : { botMessages: [makeBot(t('fallback'), serviceReplies)], nextState: 'greeting' },
   };
 }
 
-export const CONVERSATION_SCRIPT: Record<string, (userInput: string) => { botMessages: ChatMessage[]; nextState: string }> = {
-  'greeting': (input) => {
-    const lower = input.toLowerCase();
-    if (
-      lower.includes('doanh nghiệp') ||
-      lower.includes('thành lập công ty') ||
-      lower.includes('thành lập')
-    ) {
-      return { botMessages: [DOANH_NGHIEP_REPLY], nextState: 'service_selected' };
-    }
-    if (lower.includes('đất') || lower.includes('bất động')) {
-      return { botMessages: [makeBot('Về <strong>Luật Đất đai & Bất động sản</strong>, tôi có thể hỗ trợ: đăng ký quyền sử dụng đất, chuyển nhượng, thế chấp, giải quyết tranh chấp.', [
-        { label: 'Đặt lịch tư vấn', icon: 'fa-solid fa-calendar-check', reply: 'Đặt lịch tư vấn' },
-        { label: 'Hỏi thêm', icon: 'fa-solid fa-circle-question', reply: 'Hỏi thêm' },
-      ])], nextState: 'service_selected' };
-    }
-    if (lower.includes('dân sự') || lower.includes('hôn nhân') || lower.includes('ly hôn') || lower.includes('lyhon')) {
-      return { botMessages: [makeBot('Về <strong>Luật Dân sự</strong>, tôi có thể hỗ trợ: thừa kế, hợp đồng, ly hôn & hôn nhân gia đình, bồi thường thiệt hại, quyền sở hữu trí tuệ.', [
-        { label: 'Đặt lịch tư vấn', icon: 'fa-solid fa-calendar-check', reply: 'Đặt lịch tư vấn' },
-        { label: 'Hỏi thêm', icon: 'fa-solid fa-circle-question', reply: 'Hỏi thêm' },
-      ])], nextState: 'service_selected' };
-    }
-    if (lower.includes('hình sự')) {
-      return { botMessages: [makeBot('Về <strong>Luật Hình sự</strong>, tôi có thể hỗ trợ: tư vấn quyền bào chữa, bảo lĩnh, giải quyết khiếu nại.', [
-        { label: 'Đặt lịch tư vấn', icon: 'fa-solid fa-calendar-check', reply: 'Đặt lịch tư vấn' },
-        { label: 'Hỏi thêm', icon: 'fa-solid fa-circle-question', reply: 'Hỏi thêm' },
-      ])], nextState: 'service_selected' };
-    }
-    // No local keyword match — fall through to BE so the AI can handle free-form input.
-    return { botMessages: [], nextState: 'greeting', passthrough: true };
-  },
-
-  'service_selected': (input) => {
-    const lower = input.toLowerCase();
-    if (
-      lower.includes('thành lập công ty') ||
-      lower.includes('thành lập')
-    ) {
-      return { botMessages: [COMPANY_SETUP_REPLY], nextState: 'company_setup' };
-    }
-    if (
-      lower.includes('tranh chấp') ||
-      lower.includes('hợp đồng')
-    ) {
-      return { botMessages: [makeBot('Về <strong>Tranh chấp hợp đồng</strong>, chúng tôi hỗ trợ: soạn thảo, đàm phán, khởi kiện, giải quyết tranh chấp thương mại.', [
-        { label: 'Đặt lịch tư vấn', icon: 'fa-solid fa-calendar-check', reply: 'Đặt lịch tư vấn' },
-        { label: 'Hỏi thêm', icon: 'fa-solid fa-circle-question', reply: 'Hỏi thêm' },
-      ])], nextState: 'company_setup' };
-    }
-    return { botMessages: [SERVICE_PROMPT], nextState: 'greeting' };
-  },
-
-  'company_setup': (input) => {
-    if (input.includes('đặt lịch') || input.includes('tư vấn')) {
-      return { botMessages: [BOOKING_CTA_REPLY], nextState: 'lead_name' };
-    }
-    if (input.includes('hỏi thêm')) {
-      return { botMessages: [DOANH_NGHIEP_REPLY], nextState: 'service_selected' };
-    }
-    return { botMessages: [COMPANY_SETUP_REPLY], nextState: 'company_setup' };
-  },
-
-  'lead_name': (input) => {
-    const name = input.trim();
-    const displayName = name.split(' ').filter(Boolean).slice(-2).join(' ') || name;
-    return { botMessages: [PHONE_PROMPT(displayName)], nextState: 'lead_phone' };
-  },
-
-  'lead_phone': () => {
-    return { botMessages: [LEAD_COMPLETE_BOT, makeLeadHandoff()], nextState: 'lead_complete' };
-  },
-};
-
-export function processUserInput(
-  state: string,
-  input: string,
-): { botMessages: ChatMessage[]; nextState: string; passthrough?: boolean } {
-  const handler = CONVERSATION_SCRIPT[state];
-  if (handler) {
-    return handler(input);
-  }
-  return {
-    botMessages: [makeBot('Xin lỗi, tôi chưa hiểu ý bạn. Bạn cần hỗ trợ về lĩnh vực nào?', [
-      { label: 'Luật Doanh nghiệp', icon: 'fa-solid fa-building', reply: 'Luật doanh nghiệp' },
-      { label: 'Đất đai & BĐS', icon: 'fa-solid fa-land-plot', reply: 'Đất đai và bất động sản' },
-      { label: 'Đặt lịch tư vấn', icon: 'fa-solid fa-calendar-check', reply: 'Đặt lịch tư vấn' },
-    ])],
-    nextState: 'greeting',
-  };
+export function processUserInput(t: Translator, state: string, input: string): ConversationStep {
+  return createConversationFlow(t).processUserInput(state, input);
 }
 
 export { makeBot, makeUser };

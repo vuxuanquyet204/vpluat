@@ -9,9 +9,10 @@ interface PermissionMatrixProps {
   roles: Role[];
   onSave: (roleId: string, permissions: string[]) => Promise<boolean>;
   isLoading?: boolean;
+  readOnly?: boolean;
 }
 
-export function PermissionMatrix({ roles, onSave, isLoading }: PermissionMatrixProps) {
+export function PermissionMatrix({ roles, onSave, isLoading, readOnly = false }: PermissionMatrixProps) {
   const grouped = useMemo(() => {
     return ALL_PERMISSIONS.reduce<Record<string, typeof ALL_PERMISSIONS>>((acc, p) => {
       if (!acc[p.group]) acc[p.group] = [];
@@ -42,7 +43,7 @@ export function PermissionMatrix({ roles, onSave, isLoading }: PermissionMatrixP
 
   const toggle = (roleId: string, perm: string) => {
     const role = roles.find((r) => r.id === roleId);
-    if (role?.isSystem) return; // không cho sửa trực tiếp system role trong matrix
+    if (readOnly || role?.isSystem) return; // backend hiện chỉ cung cấp role read-only
     setMatrix((prev) => {
       const set = new Set(prev[roleId] ?? []);
       if (set.has(perm)) set.delete(perm);
@@ -54,7 +55,7 @@ export function PermissionMatrix({ roles, onSave, isLoading }: PermissionMatrixP
 
   const toggleGroup = (roleId: string, group: string) => {
     const role = roles.find((r) => r.id === roleId);
-    if (role?.isSystem) return;
+    if (readOnly || role?.isSystem) return;
     const perms = grouped[group].map((p) => p.key);
     const current = matrix[roleId] ?? new Set();
     const allSelected = perms.every((p) => current.has(p));
@@ -66,6 +67,7 @@ export function PermissionMatrix({ roles, onSave, isLoading }: PermissionMatrixP
   };
 
   const handleSave = async (roleId: string) => {
+    if (readOnly) return;
     setSavingId(roleId);
     try {
       const ok = await onSave(roleId, Array.from(matrix[roleId] ?? []));
@@ -154,8 +156,9 @@ export function PermissionMatrix({ roles, onSave, isLoading }: PermissionMatrixP
                   {dirty.has(r.id) && (
                     <button
                       type="button"
-                      onClick={() => handleSave(r.id)}
-                      disabled={savingId === r.id || r.isSystem}
+                        onClick={() => handleSave(r.id)}
+                        disabled={readOnly || savingId === r.id || r.isSystem}
+                        hidden={readOnly}
                       className="action-btn action-btn--primary"
                       style={{
                         padding: '2px 6px',
@@ -174,7 +177,7 @@ export function PermissionMatrix({ roles, onSave, isLoading }: PermissionMatrixP
                       Lưu
                     </button>
                   )}
-                  {dirty.has(r.id) && (
+                  {dirty.has(r.id) && !readOnly && (
                     <button
                       type="button"
                       onClick={() => handleRevert(r.id)}
@@ -237,12 +240,12 @@ export function PermissionMatrix({ roles, onSave, isLoading }: PermissionMatrixP
                         <button
                           type="button"
                           onClick={() => toggle(r.id, perm.key)}
-                          disabled={isSystem}
-                          title={isSystem ? 'Sửa qua Role form' : ''}
+                          disabled={readOnly || isSystem}
+                          title={readOnly ? 'Role được quản lý trên backend' : isSystem ? 'Role hệ thống' : ''}
                           style={{
                             background: 'transparent',
                             border: 'none',
-                            cursor: isSystem ? 'not-allowed' : 'pointer',
+                            cursor: readOnly || isSystem ? 'not-allowed' : 'pointer',
                             padding: 4,
                             color: isChecked ? 'var(--success, #10B981)' : 'var(--gray-300)',
                           }}

@@ -1,11 +1,13 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useChatbotStore } from '../state';
 import { ChatMessageItem } from './chat-message-item';
 import { ChatTypingIndicator } from './chat-typing-indicator';
 
 export function ChatMessages() {
+  const t = useTranslations('chatbot');
   const bottomRef = useRef<HTMLDivElement>(null);
   const messages = useChatbotStore((s) => s.messages);
   const streamedContent = useChatbotStore((s) => s.streamedContent);
@@ -17,7 +19,7 @@ export function ChatMessages() {
   }, [messages.length, streamedContent.length]);
 
   return (
-    <div className="chat-messages" role="log" aria-live="polite" aria-label="Tin nhắn chatbot">
+    <div className="chat-messages" role="log" aria-live="polite" aria-label={t('messagesLabel')}>
       {messages.map((msg) => (
         <ChatMessageItem key={msg.id} message={msg} />
       ))}

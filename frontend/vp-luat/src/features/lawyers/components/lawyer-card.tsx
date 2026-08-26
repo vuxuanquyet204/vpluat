@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Star } from 'lucide-react';
 import type { Lawyer } from '../types';
 import type { LawyerApiResponse } from '../api/lawyers-api';
+import { getDisplayLabel } from '@/lib/display-labels';
+import { useTranslations } from 'next-intl';
 
 interface LawyerCardProps {
   lawyer: LawyerApiResponse | Lawyer;
@@ -31,12 +33,15 @@ function renderStars(rating: number) {
 function getSpecialtyLabels(lawyer: LawyerApiResponse): string[] {
   // Ưu tiên serviceNames (BE trả về tên đẹp) - nếu thiếu thì dùng serviceSlugs
   if (lawyer.serviceNames && lawyer.serviceNames.length > 0) {
-    return lawyer.serviceNames.filter((s): s is string => !!s);
+    return lawyer.serviceNames
+      .filter((s): s is string => !!s)
+      .map((serviceName) => getDisplayLabel(serviceName, 'Chuyên môn'));
   }
-  return lawyer.specialties ?? [];
+  return (lawyer.specialties ?? []).map((specialty) => getDisplayLabel(specialty, 'Chuyên môn'));
 }
 
 export function LawyerCard({ lawyer, onViewProfile, onBook }: LawyerCardProps) {
+  const t = useTranslations('public.lawyerCard');
   const apiLawyer = lawyer as LawyerApiResponse;
   const specialtyLabels = getSpecialtyLabels(apiLawyer);
   const rating = lawyer.rating ?? 0;
@@ -67,7 +72,7 @@ export function LawyerCard({ lawyer, onViewProfile, onBook }: LawyerCardProps) {
         </div>
         <div className="avatar-ring" aria-hidden="true" />
         {lawyer.isVerified && (
-          <div className="lawyer-verified" aria-label="Đã xác minh" title="Đã xác minh">
+          <div className="lawyer-verified" aria-label={t('verified')} title={t('verified')}>
             <i className="fa-solid fa-check" aria-hidden="true" />
           </div>
         )}
@@ -79,7 +84,7 @@ export function LawyerCard({ lawyer, onViewProfile, onBook }: LawyerCardProps) {
       <div className="lawyer-stars">
         {renderStars(rating)}
         <span className="lawyer-rating-text">
-          ({rating} · {reviewCount} đánh giá)
+          ({rating} · {reviewCount} {t('reviews')})
         </span>
       </div>
 
@@ -91,10 +96,10 @@ export function LawyerCard({ lawyer, onViewProfile, onBook }: LawyerCardProps) {
 
       <div className="lawyer-meta">
         <span className="lawyer-meta-item">
-          <i className="fa-solid fa-clock" aria-hidden="true" /> <strong>{experience}</strong> năm kinh nghiệm
+          <i className="fa-solid fa-clock" aria-hidden="true" /> <strong>{experience}</strong> {t('yearsExperience')}
         </span>
         <span className="lawyer-meta-item">
-          <i className="fa-solid fa-trophy" aria-hidden="true" /> <strong>{successfulCases}</strong> vụ thành công
+          <i className="fa-solid fa-trophy" aria-hidden="true" /> <strong>{successfulCases}</strong> {t('successfulCases')}
         </span>
       </div>
 
@@ -108,14 +113,14 @@ export function LawyerCard({ lawyer, onViewProfile, onBook }: LawyerCardProps) {
           className="card-btn card-btn-profile"
           onClick={() => onViewProfile?.(apiLawyer)}
         >
-          <i className="fa-solid fa-user" aria-hidden="true" /> Xem hồ sơ
+          <i className="fa-solid fa-user" aria-hidden="true" /> {t('viewProfile')}
         </button>
         <button
           type="button"
           className="card-btn card-btn-book"
           onClick={() => onBook?.(apiLawyer)}
         >
-          <i className="fa-solid fa-calendar-plus" aria-hidden="true" /> Đặt lịch
+          <i className="fa-solid fa-calendar-plus" aria-hidden="true" /> {t('book')}
         </button>
       </div>
     </article>

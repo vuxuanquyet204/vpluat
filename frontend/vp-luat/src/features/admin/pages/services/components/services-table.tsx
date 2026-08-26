@@ -5,6 +5,7 @@ import { Pencil, Trash2, Eye, Briefcase, CheckSquare, Square } from 'lucide-reac
 import { DataTableV2, type DataTableColumn } from '@/features/admin/components';
 import { StatusBadge, type StatusVariant } from '@/features/admin/shared';
 import type { Service, Lawyer } from '../hooks/use-services';
+import { getDisplayLabel } from '@/lib/display-labels';
 
 const ACTIVE_VARIANT: StatusVariant = 'green';
 
@@ -121,7 +122,7 @@ export function ServicesTable({
       key: 'category',
       header: 'Danh mục',
       cell: (s) => (
-        <span style={{ fontSize: '0.8rem', color: 'var(--gray-700)' }}>{s.category}</span>
+        <span style={{ fontSize: '0.8rem', color: 'var(--gray-700)' }}>{getDisplayLabel(s.category)}</span>
       ),
     },
     {

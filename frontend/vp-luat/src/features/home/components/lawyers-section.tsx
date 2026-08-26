@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Calendar } from 'lucide-react';
 import { useFeaturedLawyers } from '@/features/lawyers/hooks/use-lawyers';
 import type { LawyerApiResponse } from '@/features/lawyers/api/lawyers-api';
+import { getDisplayLabel } from '@/lib/display-labels';
 
 function FacebookIcon({ size = 16 }: { size?: number }) {
   return (
@@ -22,14 +24,17 @@ function LinkedinIcon({ size = 16 }: { size?: number }) {
   );
 }
 
-function getSpecialtyLabels(lawyer: LawyerApiResponse): string[] {
+function getSpecialtyLabels(lawyer: LawyerApiResponse, specialtyLabel: string): string[] {
   if (lawyer.serviceNames && lawyer.serviceNames.length > 0) {
-    return lawyer.serviceNames.filter((s): s is string => !!s);
+    return lawyer.serviceNames
+      .filter((s): s is string => !!s)
+      .map((serviceName) => getDisplayLabel(serviceName, specialtyLabel));
   }
-  return lawyer.specialties ?? [];
+  return (lawyer.specialties ?? []).map((specialty) => getDisplayLabel(specialty, specialtyLabel));
 }
 
 export function LawyersSection() {
+  const t = useTranslations('homeSections.lawyers');
   const { data: lawyers = [], isLoading } = useFeaturedLawyers();
 
   const featuredLawyers = useMemo(() => lawyers.slice(0, 4), [lawyers]);
@@ -38,27 +43,25 @@ export function LawyersSection() {
     <section className="section section--gray">
       <div className="container">
         <div className="section__header">
-          <span className="section__label">Đội ngũ</span>
-          <h2 className="section__title">Luật Sư Chuyên Nghiệp</h2>
-          <p className="section__subtitle">
-            Đội ngũ luật sư giàu kinh nghiệm, tận tâm với khách hàng
-          </p>
+          <span className="section__label">{t('label')}</span>
+          <h2 className="section__title">{t('title')}</h2>
+          <p className="section__subtitle">{t('subtitle')}</p>
         </div>
 
         <div className="team__grid">
           {!isLoading && featuredLawyers.length === 0 && (
             <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#666' }}>
-              Đang cập nhật...
+              {t('empty')}
             </p>
           )}
           {isLoading && (
             <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#666' }}>
-              Đang tải đội ngũ luật sư...
+              {t('loading')}
             </p>
           )}
           {featuredLawyers.map((lawyer) => {
-            const tags = getSpecialtyLabels(lawyer);
-            return <LawyerCardItem key={lawyer.id} lawyer={lawyer} tags={tags} />;
+            const tags = getSpecialtyLabels(lawyer, t('specialty'));
+            return <LawyerCardItem key={lawyer.id} lawyer={lawyer} tags={tags} experienceLabel={t('experience')} viewProfileLabel={t('viewProfile')} facebookLabel={t('facebookOf', { name: lawyer.name })} linkedinLabel={t('linkedinOf', { name: lawyer.name })} />;
           })}
         </div>
       </div>
@@ -69,9 +72,17 @@ export function LawyersSection() {
 function LawyerCardItem({
   lawyer,
   tags,
+  experienceLabel,
+  viewProfileLabel,
+  facebookLabel,
+  linkedinLabel,
 }: {
   lawyer: LawyerApiResponse;
   tags: string[];
+  experienceLabel: string;
+  viewProfileLabel: string;
+  facebookLabel: string;
+  linkedinLabel: string;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(lawyer.avatar) && !imageFailed;
@@ -97,7 +108,7 @@ function LawyerCardItem({
               target="_blank"
               rel="noopener noreferrer"
               className="lawyer-card__social"
-              aria-label={`Facebook của ${lawyer.name}`}
+              aria-label={facebookLabel}
             >
               <FacebookIcon size={16} />
             </a>
@@ -106,7 +117,7 @@ function LawyerCardItem({
               target="_blank"
               rel="noopener noreferrer"
               className="lawyer-card__social"
-              aria-label={`LinkedIn của ${lawyer.name}`}
+              aria-label={linkedinLabel}
             >
               <LinkedinIcon size={16} />
             </a>
@@ -128,14 +139,14 @@ function LawyerCardItem({
             <Calendar size={14} />
           </span>
           <span className="lawyer-card__exp-text">
-            <strong>{lawyer.experience} năm kinh nghiệm</strong>
+            <strong>{lawyer.experience} {experienceLabel}</strong>
           </span>
         </div>
         <Link
           href={`/lawyers/${lawyer.slug || lawyer.id}`}
           className="lawyer-card__btn"
         >
-          Xem hồ sơ
+          {viewProfileLabel}
         </Link>
       </div>
     </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 
 export default function BookingError({
@@ -31,12 +32,12 @@ export default function BookingError({
             <RotateCcw className="h-4 w-4" />
             Thử lại
           </button>
-          <a
+          <Link
             href="/"
             className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--primary)] px-5 py-3 text-sm font-semibold text-[var(--primary)] transition hover:bg-[var(--primary-faint)]"
           >
             Về trang chủ
-          </a>
+          </Link>
         </div>
       </div>
     </main>

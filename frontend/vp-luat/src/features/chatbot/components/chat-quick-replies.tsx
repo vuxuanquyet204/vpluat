@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { QuickReply } from '../types';
 
 interface ChatQuickRepliesProps {
@@ -8,8 +9,10 @@ interface ChatQuickRepliesProps {
 }
 
 export function ChatQuickReplies({ quickReplies, onSelect }: ChatQuickRepliesProps) {
+  const t = useTranslations('chatbot');
+
   return (
-    <div className="quick-replies" role="group" aria-label="Chọn nhanh">
+    <div className="quick-replies" role="group" aria-label={t('quickRepliesLabel')}>
       {quickReplies.map((qr, i) => (
         <button
           key={i}

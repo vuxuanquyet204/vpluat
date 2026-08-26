@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export function BackToTop() {
+  const t = useTranslations('chatbot');
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -19,8 +21,8 @@ export function BackToTop() {
     <button
       className="back-to-top"
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      aria-label="Quay về đầu trang"
-      title="Quay về đầu trang"
+      aria-label={t('backToTop')}
+      title={t('backToTop')}
     >
       <svg
         width="20"

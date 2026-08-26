@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { ArrowRight, Check } from 'lucide-react';
 import type { Service } from '../types';
+import { getDisplayLabel } from '@/lib/display-labels';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface ServiceCardProps {
   service: Service;
@@ -15,14 +17,19 @@ const COLOR_CLASS: Record<string, string> = {
   purple: 'service-card__icon--purple',
 };
 
-function formatPrice(v?: number) {
-  if (!v) return 'Liên hệ';
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(v);
+function formatPrice(v: number | undefined, locale: string, contactLabel: string): string {
+  if (!v) return contactLabel;
+  return new Intl.NumberFormat(locale, { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(v);
 }
 
 export function ServiceCard({ service }: ServiceCardProps) {
+  const t = useTranslations('public.services.serviceCard');
+  const filters = useTranslations('public.filters');
+  const locale = useLocale();
   const colorClass = COLOR_CLASS[service.color || 'primary'] || COLOR_CLASS.primary;
-  const categoryLabel = service.category?.replace('-', ' ') || 'Dịch vụ';
+  const categoryLabel = filters.has(`categories.${service.category}`)
+    ? filters(`categories.${service.category}`)
+    : getDisplayLabel(service.category, filters('categories.other'));
   const features = service.features || [];
   const hasLawyer = !!service.lawyerId;
   const icon = service.icon || 'fa-solid fa-gavel';
@@ -32,7 +39,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
       <div className="service-card__top">
         <i className={`service-card__icon ${colorClass} ${icon}`} aria-hidden="true" />
         {service.popular && (
-          <span className="service-card__category">Phổ biến</span>
+          <span className="service-card__category">{t('popular')}</span>
         )}
         {!service.popular && (
           <span className="service-card__category">
@@ -61,9 +68,9 @@ export function ServiceCard({ service }: ServiceCardProps) {
             <i className="fa-solid fa-user" />
           </div>
           <div className="service-card__lawyer-info">
-            <div className="service-card__lawyer-name">Tư vấn viên</div>
+            <div className="service-card__lawyer-name">{t('consultant')}</div>
             <div className="service-card__lawyer-exp">
-              Chuyên gia pháp lý
+              {t('legalExpert')}
             </div>
           </div>
         </div>
@@ -71,15 +78,15 @@ export function ServiceCard({ service }: ServiceCardProps) {
 
       <div className="service-card__footer">
         <div className="service-card__price">
-          <span className="service-card__price-label">Từ</span>
-          <span className="service-card__price-value">{formatPrice(service.price)}</span>
+          <span className="service-card__price-label">{t('from')}</span>
+          <span className="service-card__price-value">{formatPrice(service.price, locale === 'en' ? 'en-US' : 'vi-VN', t('contact'))}</span>
         </div>
         <Link
           href={`/services/${service.slug}`}
           className="service-card__cta"
-          aria-label={`Tìm hiểu thêm về ${service.name}`}
+          aria-label={t('learnMoreAria', { name: service.name })}
         >
-          Tìm hiểu
+          {t('learnMore')}
           <ArrowRight size={14} />
         </Link>
       </div>

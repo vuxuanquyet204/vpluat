@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import { trackBookingLawyerSelected, trackBookingServiceSelected } from '../analytics';
 import { useBookingStore, useLawyersQuery } from '../hooks';
@@ -19,8 +20,8 @@ function toBookingLawyerOption(lawyer: {
   rating?: number | null;
   reviewCount?: number;
   isAvailableToday?: boolean;
-}): BookingLawyerOption {
-  const name = lawyer.nameVi || lawyer.nameEn || 'Luật sư';
+}, getAvailabilityLabel: (key: 'availableToday' | 'unavailableToday') => string): BookingLawyerOption {
+  const name = lawyer.nameVi || lawyer.nameEn || 'Lawyer';
   const initials = name
     .split(' ')
     .filter(Boolean)
@@ -55,15 +56,18 @@ function toBookingLawyerOption(lawyer: {
     result.reviewCount = lawyer.reviewCount;
   }
   if (lawyer.isAvailableToday === true) {
-    result.availabilityLabel = 'Còn lịch hôm nay';
+    result.isAvailableToday = true;
+    result.availabilityLabel = getAvailabilityLabel('availableToday');
   } else if (lawyer.isAvailableToday === false) {
-    result.availabilityLabel = 'Hết lịch hôm nay';
+    result.isAvailableToday = false;
+    result.availabilityLabel = getAvailabilityLabel('unavailableToday');
   }
 
   return result;
 }
 
 export function StepService({ onNext }: { onNext: () => void }) {
+  const t = useTranslations('booking');
   const service = useBookingStore((state) => state.service);
   const lawyer = useBookingStore((state) => state.lawyer);
   const setService = useBookingStore((state) => state.setService);
@@ -89,7 +93,9 @@ export function StepService({ onNext }: { onNext: () => void }) {
     }
   }, [service?.id, prevServiceId, setLawyer]);
 
-  const bookingLawyers: BookingLawyerOption[] = rawLawyers.map(toBookingLawyerOption);
+  const bookingLawyers: BookingLawyerOption[] = rawLawyers.map((lawyer) =>
+    toBookingLawyerOption(lawyer, (key) => t(key)),
+  );
 
   const canProceed = Boolean(service && lawyer);
 
@@ -110,10 +116,10 @@ export function StepService({ onNext }: { onNext: () => void }) {
   return (
     <section className="animate-in fade-in slide-in-from-right-1 duration-300">
       <h2 className="mb-1.5 font-heading text-[1.5rem] font-bold text-[var(--primary)]">
-        Bạn cần tư vấn về lĩnh vực nào?
+        {t('serviceTitle')}
       </h2>
       <p className="mb-7 text-[0.875rem] text-[var(--gray-500)]">
-        Chọn lĩnh vực pháp lý bạn cần hỗ trợ để được kết nối với luật sư chuyên môn.
+        {t('serviceSubtitle')}
       </p>
 
       <ServiceGrid
@@ -136,7 +142,7 @@ export function StepService({ onNext }: { onNext: () => void }) {
           disabled={!canProceed}
           className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--accent)] px-7 py-[11px] text-[0.875rem] font-bold text-[var(--primary-dark)] transition-all duration-200 hover:-translate-y-px hover:bg-[var(--accent-dark)] hover:shadow-[0_4px_15px_rgba(201,168,76,0.3)] disabled:cursor-not-allowed disabled:bg-[var(--gray-200)] disabled:text-[var(--gray-400)] disabled:shadow-none"
         >
-          <span>Tiếp theo</span>
+          <span>{t('next')}</span>
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>

@@ -21,7 +21,7 @@ import Link from 'next/link';
 interface Props {
   notification: AdminNotification;
   onMarkRead: (id: string) => void;
-  onRemove: (id: string) => void;
+  onRemove?: (id: string) => void;
   compact?: boolean;
 }
 
@@ -196,26 +196,28 @@ export function NotificationItem({ notification, onMarkRead, onRemove, compact }
           </span>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onRemove(notification.id);
-        }}
-        aria-label="Xóa thông báo"
-        style={{
-          background: 'transparent',
-          border: 'none',
-          color: 'var(--gray-400)',
-          cursor: 'pointer',
-          padding: 2,
-          display: 'flex',
-          flexShrink: 0,
-        }}
-        title="Xóa"
-      >
-        <X size={14} />
-      </button>
+      {onRemove && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(notification.id);
+          }}
+          aria-label="Xóa thông báo"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--gray-400)',
+            cursor: 'pointer',
+            padding: 2,
+            display: 'flex',
+            flexShrink: 0,
+          }}
+          title="Xóa"
+        >
+          <X size={14} />
+        </button>
+      )}
     </div>
   );
 

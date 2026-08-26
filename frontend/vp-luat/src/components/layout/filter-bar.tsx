@@ -13,6 +13,8 @@ export interface FilterOption<T extends string> {
 }
 
 interface FilterBarProps<T extends string> {
+  /** Accessible label for the filter region. */
+  ariaLabel?: string;
   /** Label phía trái (vd: "Lọc theo chuyên môn") */
   label?: string;
   /** Icon override cho label (mặc định: Filter icon) */
@@ -28,6 +30,7 @@ interface FilterBarProps<T extends string> {
 }
 
 export function FilterBar<T extends string>({
+  ariaLabel,
   label,
   labelIcon,
   options,
@@ -37,7 +40,7 @@ export function FilterBar<T extends string>({
   resultLabel,
 }: FilterBarProps<T>) {
   return (
-    <section className="filter-section" aria-label="Bộ lọc">
+    <section className="filter-section" aria-label={ariaLabel ?? label}>
       <div className="container">
         <div className="filter-bar">
           {label && (

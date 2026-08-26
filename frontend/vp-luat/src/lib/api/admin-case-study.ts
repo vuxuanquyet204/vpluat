@@ -45,6 +45,12 @@ export const caseStudyApi = {
   list: (params?: { publishedOnly?: boolean }) =>
     api.get<CaseStudy[]>(`/admin/case-studies`, params),
 
+  publicList: (params?: { serviceId?: string }) =>
+    api.get<CaseStudy[]>(`/public/case-studies`, params),
+
+  publicGetBySlug: (slug: string) =>
+    api.get<CaseStudy>(`/public/case-studies/${encodeURIComponent(slug)}`),
+
   get: (id: string) => api.get<CaseStudy>(`/admin/case-studies/${id}`),
 
   create: (body: CaseStudyRequest) => api.post<CaseStudy>(`/admin/case-studies`, body),

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { FilterBar } from '@/components/layout/filter-bar';
 import { useServices } from '../hooks/use-services';
+import { useTranslations } from 'next-intl';
 
 interface ServicesFilterTabsProps {
   active: string;
@@ -10,6 +11,7 @@ interface ServicesFilterTabsProps {
 }
 
 export function ServicesFilterTabs({ active, onChange }: ServicesFilterTabsProps) {
+  const t = useTranslations('public.filters');
   const { data: services = [] } = useServices();
 
   // Nhóm service theo `category` slug (BE trả về). Nếu service không có category
@@ -19,17 +21,22 @@ export function ServicesFilterTabs({ active, onChange }: ServicesFilterTabsProps
     services.forEach((s) => {
       const key = s.category || 'other';
       if (!groups.has(key)) {
-        groups.set(key, { label: s.parentName || key, icon: 'fa-solid fa-folder', count: 0 });
+        groups.set(key, {
+          label: t.has(`categories.${key}`) ? t(`categories.${key}`) : key,
+
+          icon: 'fa-solid fa-folder',
+          count: 0,
+        });
       }
       groups.get(key)!.count += 1;
     });
     return groups;
-  }, [services]);
+  }, [services, t]);
 
   const options = useMemo(() => {
     const allOption = {
       id: 'all',
-      label: 'Tất cả',
+      label: t('all'),
       icon: 'fa-solid fa-layer-group',
       count: services.length,
     };
@@ -40,7 +47,7 @@ export function ServicesFilterTabs({ active, onChange }: ServicesFilterTabsProps
       count: info.count,
     }));
     return [allOption, ...categoryOptions];
-  }, [services, grouped]);
+  }, [services, grouped, t]);
 
   const resultCount = useMemo(() => {
     if (active === 'all') return services.length;
@@ -49,12 +56,13 @@ export function ServicesFilterTabs({ active, onChange }: ServicesFilterTabsProps
 
   return (
     <FilterBar
-      label="Lọc theo danh mục"
+      ariaLabel={t('byCategory')}
+      label={t('byCategory')}
       options={options}
       active={active}
       onChange={onChange}
       resultCount={resultCount}
-      resultLabel="dịch vụ"
+      resultLabel={t('services')}
     />
   );
 }

@@ -111,7 +111,7 @@ export function useReviewKanban() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['admin', 'kanban', 'reviews'],
     queryFn: async () => {
-      const res = await reviewApi.list({ status: 'APPROVED', size: 50 });
+      const res = await reviewApi.list({ size: 50 });
       return (res.content ?? []).map(beReviewToUI);
     },
   });

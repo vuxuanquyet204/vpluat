@@ -10,7 +10,6 @@ import {
   Mail,
   UserCog,
   Settings,
-  LayoutTemplate,
   Bell,
   History,
   Briefcase,
@@ -31,12 +30,14 @@ export interface NavItem {
 }
 
 export interface NavSection {
+  labelKey: string;
   label: string;
   items: NavItem[];
 }
 
 export const ADMIN_NAV_SECTIONS: NavSection[] = [
   {
+    labelKey: 'sections.management',
     label: 'Quản lý',
     items: [
       {
@@ -106,17 +107,10 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
       //   icon: Mail,
       //   href: '/admin/newsletter',
       // },
-      // Hidden: chức năng Landing Pages chưa cần thiết
-      // {
-      //   id: 'landing-pages',
-      //   labelKey: 'nav.landing_pages',
-      //   label: 'Landing Pages',
-      //   icon: LayoutTemplate,
-      //   href: '/admin/landing-pages',
-      // },
     ],
   },
   {
+    labelKey: 'sections.system',
     label: 'Hệ thống',
     items: [
       {

@@ -3,20 +3,18 @@
 import { useState, useMemo, useEffect } from 'react';
 import {
   Bell,
-  Check,
   CheckCheck,
-  Trash2,
   Filter,
   X,
   Mail,
-  MessageSquare,
   Smartphone,
   RefreshCw,
 } from 'lucide-react';
-import { AdminPageHeader, SearchBar, FilterTabs, ConfirmDialog } from '@/features/admin/shared';
-import { useAdminUIStore } from '@/features/admin/store';
+import { AdminPageHeader, SearchBar, FilterTabs } from '@/features/admin/shared';
 import { useBookingUpcomingAlerts } from './lib/use-booking-upcoming-alerts';
 import { NotificationItem } from '@/features/admin/layout/notification-item';
+import { useApiMutation, useApiQuery, type PageResponse } from '@/lib/api/hooks';
+import { type Notification } from '@/lib/api';
 import type { AdminNotification } from '@/features/admin/store';
 
 const TYPE_TABS: Array<{ value: string; label: string; types: AdminNotification['type'][] }> = [
@@ -43,36 +41,53 @@ const CHANNEL_LABELS: Record<string, string> = {
 };
 
 export default function NotificationsPage() {
-  const {
-    notifications,
-    markNotificationRead,
-    markAllNotificationsRead,
-    removeNotification,
-    clearNotifications,
-  } = useAdminUIStore();
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
   const [channelFilter, setChannelFilter] = useState('all');
-  const [confirmClear, setConfirmClear] = useState(false);
-  const [confirmClearRead, setConfirmClearRead] = useState(false);
 
   useBookingUpcomingAlerts();
 
-  // Tick để cập nhật "time ago"
-  const [, setTick] = useState(0);
+  const notificationsQuery = useApiQuery<PageResponse<Notification>>(
+    ['admin-notifications'],
+    '/notifications',
+    { page: 0, size: 100 },
+  );
+
   useEffect(() => {
-    const t = setInterval(() => setTick((n) => n + 1), 30_000);
-    return () => clearInterval(t);
-  }, []);
+    const timer = window.setInterval(() => notificationsQuery.refetch(), 30_000);
+    return () => window.clearInterval(timer);
+  }, [notificationsQuery.refetch]);
+  const notifications = notificationsQuery.data?.content ?? [];
+  const markReadMutation = useApiMutation<{ ok: boolean }, { id: string }>(
+    'PATCH',
+    ({ id }) => `/notifications/${id}/read`,
+    { onSuccess: () => notificationsQuery.refetch() },
+  );
+  const markAllReadMutation = useApiMutation<{ updated: number }, void>(
+    'PATCH',
+    '/notifications/read-all',
+    { onSuccess: () => notificationsQuery.refetch() },
+  );
+
+  const toAdminNotification = (notification: Notification): AdminNotification => ({
+    id: notification.id,
+    type: notification.type as AdminNotification['type'],
+    title: notification.title,
+    message: notification.message,
+    link: notification.link,
+    read: notification.isRead,
+    createdAt: notification.createdAt,
+  });
+  const apiNotifications: AdminNotification[] = notifications.map(toAdminNotification);
 
   const counts = useMemo(() => {
     const r = {
-      all: notifications.length,
+      all: apiNotifications.length,
       business: 0,
       system: 0,
       unread: 0,
     };
-    for (const n of notifications) {
+    for (const n of apiNotifications) {
       if (!n.read) r.unread++;
       if (
         ['lead_new', 'booking_upcoming', 'booking_cancelled', 'review_new', 'campaign_sent'].includes(
@@ -85,10 +100,10 @@ export default function NotificationsPage() {
       }
     }
     return r;
-  }, [notifications]);
+  }, [apiNotifications]);
 
   const filtered = useMemo(() => {
-    let r = notifications;
+    let r = apiNotifications;
     if (tab === 'unread') r = r.filter((n) => !n.read);
     if (tab === 'business') {
       r = r.filter((n) =>
@@ -112,12 +127,10 @@ export default function NotificationsPage() {
       );
     }
     return r;
-  }, [notifications, tab, channelFilter, search]);
+  }, [apiNotifications, tab, channelFilter, search]);
 
-  const handleClearRead = () => {
-    const remaining = notifications.filter((n) => !n.read);
-    useAdminUIStore.setState({ notifications: remaining });
-    setConfirmClearRead(false);
+  const handleMarkRead = (id: string) => {
+    markReadMutation.mutate({ id });
   };
 
   const handleRefresh = () => {
@@ -152,34 +165,11 @@ export default function NotificationsPage() {
             <button
               type="button"
               className="action-btn"
-              onClick={markAllNotificationsRead}
+              onClick={() => markAllReadMutation.mutate(undefined)}
               disabled={counts.unread === 0}
               style={{ display: 'flex', alignItems: 'center', gap: 4 }}
             >
               <CheckCheck size={12} /> Đánh dấu đã đọc hết
-            </button>
-            <button
-              type="button"
-              className="action-btn"
-              onClick={() => setConfirmClearRead(true)}
-              disabled={notifications.length === counts.unread}
-              style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-            >
-              <Check size={12} /> Xóa đã đọc
-            </button>
-            <button
-              type="button"
-              className="action-btn"
-              onClick={() => setConfirmClear(true)}
-              disabled={notifications.length === 0}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                color: 'var(--danger, #DC2626)',
-              }}
-            >
-              <Trash2 size={12} /> Xóa tất cả
             </button>
           </div>
         }
@@ -264,8 +254,8 @@ export default function NotificationsPage() {
               <div key={n.id} style={{ position: 'relative' }}>
                 <NotificationItem
                   notification={n}
-                  onMarkRead={markNotificationRead}
-                  onRemove={removeNotification}
+                  onMarkRead={handleMarkRead}
+                  onRemove={() => undefined}
                 />
                 {n.channels && n.channels.length > 0 && (
                   <div
@@ -315,36 +305,9 @@ export default function NotificationsPage() {
         Hệ thống lưu tối đa 50 thông báo gần nhất.
       </div>
 
-      <ConfirmDialog
-        isOpen={confirmClear}
-        title="Xóa tất cả thông báo?"
-        message="Toàn bộ 50 thông báo gần nhất sẽ bị xóa vĩnh viễn. Hành động không thể hoàn tác."
-        confirmLabel="Xóa hết"
-        cancelLabel="Hủy"
-        variant="danger"
-        onConfirm={() => {
-          clearNotifications();
-          setConfirmClear(false);
-        }}
-        onClose={() => setConfirmClear(false)}
-      />
-
-      <ConfirmDialog
-        isOpen={confirmClearRead}
-        title="Xóa thông báo đã đọc?"
-        message={`Sẽ xóa ${notifications.length - counts.unread} thông báo đã đọc, giữ lại ${counts.unread} chưa đọc.`}
-        confirmLabel="Xóa"
-        cancelLabel="Hủy"
-        variant="danger"
-        onConfirm={handleClearRead}
-        onClose={() => setConfirmClearRead(false)}
-      />
     </div>
   );
 }
-
-void X;
-void MessageSquare;
 
 function lbl(): React.CSSProperties {
   return {

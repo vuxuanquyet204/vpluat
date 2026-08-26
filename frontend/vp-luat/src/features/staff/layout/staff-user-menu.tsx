@@ -32,6 +32,7 @@ const ROLE_COLOR: Record<Role, string> = {
   CSKH: '#F59E0B',
   LAWYER: '#10B981',
   USER: '#6B7280',
+  VIEWER: '#6B7280',
 };
 
 export function StaffUserMenu() {

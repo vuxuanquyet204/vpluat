@@ -1,6 +1,7 @@
 'use client';
 
 import { Search } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface SidebarSearchProps {
   value: string;
@@ -9,6 +10,7 @@ interface SidebarSearchProps {
 }
 
 export function SidebarSearch({ value, onChange, onSubmit }: SidebarSearchProps) {
+  const t = useTranslations('public.news');
   return (
     <form
       className="sidebar-search"
@@ -20,12 +22,12 @@ export function SidebarSearch({ value, onChange, onSubmit }: SidebarSearchProps)
       <input
         type="search"
         className="sidebar-search__input"
-        placeholder="Tìm kiếm bài viết..."
+        placeholder={t('sidebarSearchPlaceholder')}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        aria-label="Tìm kiếm bài viết"
+        aria-label={t('searchLabel')}
       />
-      <button type="submit" className="sidebar-search__btn" aria-label="Tìm kiếm">
+      <button type="submit" className="sidebar-search__btn" aria-label={t('search')}>
         <Search size={16} />
       </button>
     </form>

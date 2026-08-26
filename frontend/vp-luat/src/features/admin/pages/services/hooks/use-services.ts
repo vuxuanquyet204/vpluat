@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiQuery, useApiMutation } from '@/lib/api/hooks';
 import { ghiAudit, notifySuccess, notifyError } from '@/features/admin/lib';
@@ -238,10 +238,7 @@ export function useCreateService() {
     },
   );
 
-  return useCallback(
-    (body: Omit<Service, 'id'>) => mutation.mutate(body),
-    [mutation],
-  );
+  return mutation;
 }
 
 export function useUpdateService() {
@@ -268,10 +265,7 @@ export function useUpdateService() {
     },
   );
 
-  return useCallback(
-    (id: string, body: Partial<Omit<Service, 'id'>>) => mutation.mutate({ id, body }),
-    [mutation],
-  );
+  return mutation;
 }
 
 export function useDeleteService() {
@@ -297,8 +291,5 @@ export function useDeleteService() {
     },
   );
 
-  return useCallback(
-    (id: string) => mutation.mutate(id),
-    [mutation],
-  );
+  return mutation;
 }

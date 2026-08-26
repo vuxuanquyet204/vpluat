@@ -72,7 +72,7 @@ export function useToggleFeaturedReview() {
 
   const mutation = useApiMutation(
     'POST',
-    (id: string) => `/crm/reviews/${id}/publish`,
+    (id: string) => `/crm/reviews/${id}/feature`,
     {
       onSuccess: (_, id) => {
         qc.invalidateQueries({ queryKey: ['reviews'] });

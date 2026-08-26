@@ -1,31 +1,17 @@
-import { Mail, Phone, MapPin, Clock } from 'lucide-react';
-import { OFFICE_INFOS } from '../lib/data/contact-data';
-import type { OfficeInfo } from '../types';
+'use client';
 
-const ICON_MAP: Record<string, React.ReactNode> = {
-  'fa-solid fa-location-dot': <MapPin size={18} />,
-  'fa-solid fa-phone': <Phone size={18} />,
-  'fa-solid fa-envelope': <Mail size={18} />,
-  'fa-solid fa-clock': <Clock size={18} />,
-};
+import { Clock, Mail, MapPin, Phone } from 'lucide-react';
+import type { PublicSiteContent } from '@/features/home/api/site-content-api';
+import { useTranslations } from 'next-intl';
 
-interface ContactInfoListProps {
-  items?: OfficeInfo[];
-}
+export function ContactInfoList({ contact }: { contact: PublicSiteContent['contact'] }) {
+  const t = useTranslations('contactPage.info');
+  const items = [
+    { icon: MapPin, label: t('address'), value: contact.address, sub: t('addressSub') },
+    { icon: Phone, label: t('phone'), value: contact.hotline, sub: t('phoneSub') },
+    { icon: Mail, label: t('emailSub'), value: contact.email, sub: t('emailSub') },
+    { icon: Clock, label: t('hours'), value: contact.workingHours, sub: t('hoursSub') },
+  ];
 
-export function ContactInfoList({ items = OFFICE_INFOS }: ContactInfoListProps) {
-  return (
-    <div className="info-list">
-      {items.map((item) => (
-        <div key={item.type} className="info-card">
-          <div className="info-card__icon">{ICON_MAP[item.icon]}</div>
-          <div className="info-card__content">
-            <div className="info-card__label">{item.label}</div>
-            <div className="info-card__value">{item.value}</div>
-            {item.sub && <div className="info-card__sub">{item.sub}</div>}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  return <div className="contact-info-list">{items.filter((item) => item.value).map(({ icon: Icon, label, value, sub }) => <div className="contact-info-item" key={label}><Icon size={20} /><div><strong>{label}</strong><span>{value}</span><small>{sub}</small></div></div>)}</div>;
 }

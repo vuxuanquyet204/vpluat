@@ -1,14 +1,18 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { CHATBOT_CONFIG } from '../config';
 
 export function CallWidget() {
+  const t = useTranslations('chatbot');
+  const label = t('callHotline', { hotline: CHATBOT_CONFIG.HOTLINE });
+
   return (
     <a
       href={`tel:${CHATBOT_CONFIG.HOTLINE}`}
       className="call-widget"
-      aria-label={`Gọi hotline ${CHATBOT_CONFIG.HOTLINE}`}
-      title={`Gọi hotline ${CHATBOT_CONFIG.HOTLINE}`}
+      aria-label={label}
+      title={label}
     >
       <svg
         width="20"

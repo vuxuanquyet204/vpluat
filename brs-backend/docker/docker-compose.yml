@@ -17,7 +17,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U brs_dev"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d brs_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -75,8 +75,14 @@ services:
   #   container_name: brs-backend
   #   environment:
   #     - SPRING_PROFILES_ACTIVE=dev
+  #     # Keep false after the one-time initialization has completed.
+  #     - APP_SEED_ENABLED=false
+  #     - APP_SEED_KEY=initial-content-v1
+  #     - APP_SEED_MODE=IF_EMPTY
+  #     - APP_SEED_ADMIN_EMAIL=
+  #     - APP_SEED_ADMIN_PASSWORD=
   #     - DB_HOST=postgres
-  #     - DB_PORT=5433
+  #     - DB_PORT=5432
   #     - DB_NAME=brs_db
   #     - DB_USER=postgres
   #     - DB_PASSWORD=password

@@ -33,6 +33,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -345,6 +346,7 @@ public class ServiceManagementService {
         // but a soft-delete leaves the parent row in place — clear manually so
         // stale lawyer assignments don't leak when the service is later restored.
         serviceLawyerRepository.deleteByServiceId(id);
+        entityManager.flush();
         log.info("Soft deleted service: {}", id);
     }
 
@@ -360,7 +362,7 @@ public class ServiceManagementService {
                 ? Set.of()
                 : lawyerIds.stream()
                     .filter(java.util.Objects::nonNull)
-                    .collect(Collectors.toCollection(HashSet::new));
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
         try {
             // Get current lawyer IDs before deleting
             List<UUID> previousLawyerIds = serviceLawyerRepository.findLawyerIdsByServiceId(serviceId);

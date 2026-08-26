@@ -8,18 +8,16 @@ import { ProcessTimeline } from '@/features/services/components/process-timeline
 import { ServicesFaq } from '@/features/services/components/services-faq';
 import { ServicesCta } from '@/features/services/components/services-cta';
 import { useServices } from '@/features/services/hooks/use-services';
-
-// Fallback stats when API fails
-const DEFAULT_STATS = {
-  totalServices: 0,
-  totalLawyers: 0,
-  totalClients: 1200,
-  successRate: 95,
-};
+import { useTranslations } from 'next-intl';
+import { usePublicSiteContent } from '@/features/home/hooks/use-site-content';
 
 export default function ServicesPage() {
+  const t = useTranslations('public.services');
+  const filters = useTranslations('public.filters');
+  const common = useTranslations('common');
   const [active, setActive] = useState<string>('all');
   const { data: services = [], isLoading } = useServices();
+  const { data: siteContent } = usePublicSiteContent();
 
   const filtered = useMemo(() => {
     if (active === 'all') return services;
@@ -29,16 +27,16 @@ export default function ServicesPage() {
   // Calculate stats from API data
   const stats = useMemo(() => ({
     totalServices: services.length,
-    totalLawyers: DEFAULT_STATS.totalLawyers,
-    totalClients: DEFAULT_STATS.totalClients,
-    successRate: DEFAULT_STATS.successRate,
-  }), [services]);
+    totalLawyers: new Set(services.flatMap((service) => service.lawyerIds ?? (service.lawyerId ? [service.lawyerId] : []))).size,
+    totalClients: siteContent?.heroStats.clients ?? 0,
+    successRate: siteContent?.heroStats.successRate ?? 0,
+  }), [services, siteContent]);
 
   if (isLoading) {
     return (
       <div className="loading-container">
         <div className="loading-spinner" />
-        <p>Đang tải dịch vụ...</p>
+        <p>{common('loading')}</p>
       </div>
     );
   }
@@ -46,18 +44,18 @@ export default function ServicesPage() {
   return (
     <>
       <PageHero
-        title="Dịch vụ pháp lý toàn diện"
-        subtitle="Đồng hành cùng bạn trên mọi lĩnh vực pháp luật — từ tư vấn đơn giản đến tranh tụng phức tạp. Minh bạch, chuyên nghiệp, tận tâm."
-        highlight="pháp lý toàn diện"
+        title={t('hero.title')}
+        subtitle={t('hero.subtitle')}
+        highlight={t('hero.highlight')}
         breadcrumb={[
-          { label: 'Trang chủ', href: '/' },
-          { label: 'Dịch vụ' },
+          { label: t('breadcrumb.home'), href: '/' },
+          { label: t('breadcrumb.current') },
         ]}
         stats={[
-          { value: `${stats.totalServices}+`, label: 'Dịch vụ' },
-          { value: `${stats.totalLawyers}`, label: 'Luật sư' },
-          { value: `${stats.totalClients}+`, label: 'Khách hàng' },
-          { value: `${stats.successRate}%`, label: 'Tỷ lệ thành công' },
+          { value: `${stats.totalServices}+`, label: t('stats.services') },
+          { value: `${stats.totalLawyers}`, label: t('stats.lawyers') },
+          { value: `${stats.totalClients}+`, label: t('stats.clients') },
+          { value: `${stats.successRate}%`, label: t('stats.successRate') },
         ]}
       />
 
@@ -66,14 +64,16 @@ export default function ServicesPage() {
       <section className="services-section">
         <div className="container">
           <div className="section__header">
-            <div className="section__label">Danh mục dịch vụ</div>
+            <div className="section__label">{t('catalog.label')}</div>
             <h2 className="section__title">
               {active === 'all'
-                ? 'Tất cả dịch vụ'
-                : 'Dịch vụ ' + active.replace('-', ' & ')}
+                ? t('catalog.all')
+                : t('catalog.categoryTitle', {
+                    category: filters.has(`categories.${active}`) ? filters(`categories.${active}`) : active,
+                  })}
             </h2>
             <p className="section__subtitle">
-              Hiển thị {filtered.length} dịch vụ trong tổng số {services.length} dịch vụ của chúng tôi.
+              {t('catalog.count', { visible: filtered.length, total: services.length })}
             </p>
           </div>
 
@@ -85,7 +85,7 @@ export default function ServicesPage() {
 
           {filtered.length === 0 && (
             <div className="services-empty">
-              <p>Chưa có dịch vụ nào trong danh mục này.</p>
+              <p>{t('catalog.empty')}</p>
             </div>
           )}
         </div>

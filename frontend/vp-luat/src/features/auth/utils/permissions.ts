@@ -6,7 +6,8 @@ export type Role =
   | 'EDITOR'
   | 'CSKH'
   | 'LAWYER'
-  | 'USER';
+  | 'USER'
+  | 'VIEWER';
 
 export type Permission =
   | 'dashboard:read'
@@ -91,6 +92,9 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   USER: [
     'dashboard:read',
   ],
+  VIEWER: [
+    'dashboard:read',
+  ],
 };
 
 export function can(role: Role, permission: Permission): boolean {
@@ -121,22 +125,24 @@ export const RoleDisplayNames: Record<Role, string> = {
   CSKH: 'Nhân viên CSKH',
   LAWYER: 'Luật sư',
   USER: 'Khách hàng',
+  VIEWER: 'Người xem',
 };
 
 // Navigation config by role - which nav items each role can access
 export const ROLE_NAV_CONFIG: Record<Role, string[]> = {
   SUPER_ADMIN: [
     'dashboard', 'bookings', 'crm', 'blog', 'services', 'reviews',
-    'chatbot', 'newsletter', 'landing-pages', 'users', 'audit', 'settings'
+    'chatbot', 'newsletter', 'users', 'audit', 'settings'
   ],
   ADMIN: [
     'dashboard', 'bookings', 'crm', 'blog', 'services', 'reviews',
-    'chatbot', 'newsletter', 'landing-pages', 'users', 'audit', 'settings'
+    'chatbot', 'newsletter', 'users', 'audit', 'settings'
   ],
   CSKH: ['dashboard', 'crm', 'bookings', 'reviews'],
   LAWYER: ['dashboard', 'bookings', 'crm'],
-  EDITOR: ['dashboard', 'blog', 'landing-pages'],
+  EDITOR: ['dashboard', 'blog'],
   USER: ['dashboard'],
+  VIEWER: ['dashboard'],
 };
 
 // Check if role can access a specific nav item
@@ -164,7 +170,7 @@ export function getDashboardPath(role: Role): string {
 
 // Valid roles set for O(1) lookup
 const VALID_ROLES = new Set<Role>([
-  'SUPER_ADMIN', 'ADMIN', 'EDITOR', 'CSKH', 'LAWYER', 'USER'
+  'SUPER_ADMIN', 'ADMIN', 'EDITOR', 'CSKH', 'LAWYER', 'USER', 'VIEWER'
 ]);
 
 // Valid permissions set for O(1) lookup
@@ -175,7 +181,7 @@ export function validateRole(role: unknown): Role {
   if (typeof role === 'string' && VALID_ROLES.has(role as Role)) {
     return role as Role;
   }
-  return 'USER';
+  return 'VIEWER';
 }
 
 // Validate and sanitize permissions from external source

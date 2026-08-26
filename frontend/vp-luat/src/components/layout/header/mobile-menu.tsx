@@ -2,12 +2,14 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useUIStore } from '@/stores/ui.store';
 import { NavLinks } from './nav-links';
 import { LanguageSwitcher } from './language-switcher';
 
 export function MobileMenu() {
   const { mobileMenuOpen, setMobileMenuOpen } = useUIStore();
+  const t = useTranslations('header');
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Lock body scroll when open
@@ -76,7 +78,7 @@ export function MobileMenu() {
       className={`mobile-menu ${mobileMenuOpen ? 'active' : ''}`}
       role="dialog"
       aria-modal={mobileMenuOpen ? true : undefined}
-      aria-label="Menu điều hướng"
+      aria-label={t('navigationMenu')}
       aria-hidden={!mobileMenuOpen}
       tabIndex={-1}
     >
@@ -84,7 +86,7 @@ export function MobileMenu() {
       <div className="mobile-menu__divider" />
       <LanguageSwitcher layout="mobile" />
       <Link href="/booking" className="mobile-menu__cta" onClick={handleLinkClick}>
-        Đặt lịch tư vấn
+        {t('bookConsultation')}
       </Link>
     </div>
   );

@@ -53,23 +53,15 @@ public class AuditLogController {
             @RequestParam(required = false) Instant to) {
         Instant f = from == null ? Instant.EPOCH : from;
         Instant t = to == null ? Instant.now().plusSeconds(60) : to;
-        List<AuditLog> all = auditLogRepository.findAll(PageRequest.of(page, size * 5,
-                Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
-
-        List<AuditLog> filtered = all.stream()
-            .filter(a -> userId == null || (a.getUserId() != null && a.getUserId().equals(userId)))
-            .filter(a -> action == null || action.equalsIgnoreCase(a.getAction()))
-            .filter(a -> entityType == null || entityType.equalsIgnoreCase(a.getEntityType()))
-            .filter(a -> entityId == null || (a.getEntityId() != null && a.getEntityId().equals(entityId)))
-            .filter(a -> !a.getCreatedAt().isBefore(f) && a.getCreatedAt().isBefore(t))
-            .limit(size)
-            .toList();
+        Page<AuditLog> result = auditLogRepository.search(
+            userId, action, entityType, entityId, f, t,
+            PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
 
         Map<UUID, String> nameById = userRepository.findAll().stream()
             .filter(u -> u.getId() != null)
             .collect(Collectors.toMap(u -> u.getId(), u -> u.getFullName() == null ? "user" : u.getFullName()));
 
-        List<ActivityLogResponse> dtos = filtered.stream()
+        List<ActivityLogResponse> dtos = result.getContent().stream()
             .map(a -> ActivityLogResponse.builder()
                 .id(a.getId())
                 .actorName(a.getUserId() == null ? "system" : nameById.getOrDefault(a.getUserId(), "user"))
@@ -81,7 +73,7 @@ public class AuditLogController {
                 .build())
             .toList();
         return ResponseEntity.ok(ApiResponse.success(
-            PageResponse.of(dtos, page, size, filtered.size())));
+            PageResponse.of(dtos, page, size, result.getTotalElements())));
     }
 
     @GetMapping("/{id}")
@@ -99,6 +91,22 @@ public class AuditLogController {
                 .summary(buildSummary(a))
                 .createdAt(a.getCreatedAt())
                 .build()));
+    }
+
+    @DeleteMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @Operation(summary = "Purge audit logs")
+    public ResponseEntity<ApiResponse<Map<String, Long>>> purge(
+            @RequestParam(required = false) Instant before) {
+        long deleted = before == null
+            ? auditLogRepository.count()
+            : auditLogRepository.countByCreatedAtBefore(before);
+        if (before == null) {
+            auditLogRepository.deleteAllInBatch();
+        } else {
+            auditLogRepository.deleteByCreatedAtBefore(before);
+        }
+        return ResponseEntity.ok(ApiResponse.success(Map.of("deleted", deleted)));
     }
 
     @GetMapping("/export/csv")

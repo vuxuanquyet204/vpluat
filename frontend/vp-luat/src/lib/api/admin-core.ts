@@ -84,28 +84,22 @@ export const userApi = {
 // ============================================================
 
 export const roleApi = {
+  // Backend roles are system-defined and currently read-only.
   list: () => api.get<Role[]>(`/admin/roles`),
-
-  get: (id: string) => api.get<Role>(`/admin/roles/${id}`),
-
-  create: (body: { name: string; description?: string; permissions: string[] }) =>
-    api.post<Role>(`/admin/roles`, body),
-
-  update: (id: string, body: Partial<Role>) =>
-    api.put<Role>(`/admin/roles/${id}`, body),
-
-  delete: (id: string) => api.del<void>(`/admin/roles/${id}`),
 };
 
 // ============================================================
 // Settings
 // ============================================================
 
-export const settingsApi = {
-  get: () => api.get<SystemSettings>(`/admin/settings`),
+export type SettingsNamespace = 'general' | 'booking' | 'smtp' | 'theme' | 'integrations';
 
-  update: (body: Partial<SystemSettings>) =>
-    api.put<SystemSettings>(`/admin/settings`, body),
+export const settingsApi = {
+  get: <T extends object>(namespace: SettingsNamespace) =>
+    api.get<T>(`/admin/settings/${namespace}`),
+
+  update: <T extends object>(namespace: SettingsNamespace, body: Partial<T>) =>
+    api.put<T>(`/admin/settings/${namespace}`, body),
 };
 
 // ============================================================
@@ -148,6 +142,11 @@ export const auditApi = {
     from?: string;
     to?: string;
   }) => api.get<PageResponse<AuditLogEntry>>(`/admin/audit-logs`, params),
+
+  purge: (params?: { before?: string }) => api.del<{ deleted: number }>(
+    `/admin/audit-logs`,
+    params ? { before: params.before } : undefined,
+  ),
 
   exportCsvUrl: (params?: { from?: string; to?: string }) => {
     const qs = new URLSearchParams();

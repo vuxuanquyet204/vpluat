@@ -8,11 +8,13 @@ import { getStaffNavSections, getNavItemByHref } from '@/features/staff/constant
 import { useSidebarBadges } from '@/features/admin/lib/use-sidebar-badges';
 import { Scale, LogOut } from 'lucide-react';
 import { clearAuthToken, setLoggingOut, callServerLogout } from '@/lib/api/client';
+import { useTranslations } from 'next-intl';
 import { RoleDisplayNames } from '@/features/auth/utils/permissions';
 import type { Role } from '@/features/auth/utils/permissions';
 
 function LogoutButton() {
   const { closeSidebar } = useAdminUIStore();
+  const t = useTranslations('auth');
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -35,10 +37,10 @@ function LogoutButton() {
       type="button"
       onClick={handleLogout}
       className="admin-sidebar__logout"
-      aria-label="Đăng xuất"
+      aria-label={t('logout')}
     >
       <LogOut size={14} aria-hidden="true" />
-      Đăng xuất
+      {t('logout')}
     </button>
   );
 }
@@ -52,12 +54,14 @@ function pickColor(name: string): string {
 
 export function StaffSidebar() {
   const pathname = usePathname();
+  const t = useTranslations('admin');
+  const authT = useTranslations('auth');
   const { isSidebarOpen, closeSidebar } = useAdminUIStore();
   const badges = useSidebarBadges();
   const { data: session, status } = useSession();
 
   const navItem = getNavItemByHref(pathname);
-  const displayTitle = navItem?.label ?? 'Staff Portal';
+  const displayTitle = navItem ? t(navItem.labelKey) : t('staffPortal');
 
   const userRole = ((session?.user?.role as Role) ?? 'VIEWER');
   const sections = getStaffNavSections(userRole);
@@ -68,8 +72,8 @@ export function StaffSidebar() {
   };
 
   // Get user info from session (NextAuth) - not from localStorage/MockDB
-  const userName = session?.user?.name ?? 'Nhân viên';
-  const roleDisplayName = RoleDisplayNames[userRole] ?? 'Nhân viên';
+  const userName = session?.user?.name ?? t('administrator');
+  const roleDisplayName = RoleDisplayNames[userRole] ?? t('administrator');
   const initials = userName
     .split(/\s+/)
     .filter(Boolean)
@@ -91,7 +95,7 @@ export function StaffSidebar() {
 
       <aside
         className={`admin-sidebar ${isSidebarOpen ? 'admin-sidebar--open' : ''}`}
-        aria-label="Staff navigation"
+        aria-label={t('navigation')}
       >
         {/* Logo */}
         <div className="admin-sidebar__logo">
@@ -100,7 +104,7 @@ export function StaffSidebar() {
           </div>
           <div className="admin-sidebar__logo-text">
             <div className="admin-sidebar__logo-name">VP Luật</div>
-            <div className="admin-sidebar__logo-sub">Staff Portal</div>
+            <div className="admin-sidebar__logo-sub">{t('staffPortal')}</div>
           </div>
         </div>
 
@@ -109,7 +113,7 @@ export function StaffSidebar() {
           {sections.map((section, idx) => (
             <div key={section.label}>
               <div className="admin-sidebar__section-label">
-                {section.label}
+                {t(section.label)}
               </div>
               {section.items.map((item) => {
                 const isActive = pathname.startsWith(item.href);
@@ -122,11 +126,11 @@ export function StaffSidebar() {
                     aria-current={isActive ? 'page' : undefined}
                   >
                     <item.icon size={16} strokeWidth={1.8} aria-hidden="true" />
-                    <span className="admin-sidebar__item-label">{item.label}</span>
+                    <span className="admin-sidebar__item-label">{t(item.labelKey)}</span>
                     {getBadge(item) > 0 && (
                       <span
                         className={`admin-sidebar__badge ${item.badgeVariant === 'red' ? 'admin-sidebar__badge--red' : ''}`}
-                        aria-label={`${getBadge(item)} thông báo`}
+                        aria-label={t('notificationsCount', { count: getBadge(item) })}
                       >
                         {getBadge(item) > 99 ? '99+' : getBadge(item)}
                       </span>

@@ -1,18 +1,24 @@
 'use client';
 
 import { useEffect } from 'react';
+import { getSessionHistory } from '../api/chatbot-api';
 import { useChatbotStore } from '../state';
-import { GREETING_MESSAGE } from '../config/conversation-flow';
+import type { ChatMessage } from '../types';
+import { createConversationFlow } from '../config/conversation-flow';
 import { CHATBOT_CONFIG } from '../config';
+import { useTranslations } from 'next-intl';
 
 export function useChatbotWidget() {
+  const t = useTranslations('chatbot');
   const {
     isOpen,
     isMinimized,
     popupDismissed,
     hasSeenPopup,
     messages,
+    sessionId,
     unreadCount,
+    setMessages,
     setOpen,
     toggleOpen,
     setMinimized,
@@ -22,10 +28,31 @@ export function useChatbotWidget() {
     resetAll,
   } = useChatbotStore();
 
-  // Show greeting message when chatbot opens for the first time
   useEffect(() => {
-    if (isOpen && messages.length === 0 && !hasSeenPopup) {
-      addMessage(GREETING_MESSAGE);
+    if (!isOpen || !sessionId || messages.length > 0) return;
+
+    let cancelled = false;
+    void getSessionHistory(sessionId).then((history) => {
+      if (cancelled || history.length === 0) return;
+      const restoredMessages: ChatMessage[] = history.map((item, index) => ({
+        id: `history-${sessionId}-${index}`,
+        from: item.role === 'USER' ? 'user' : item.role === 'SYSTEM' ? 'system' : 'bot',
+        content: item.content ?? '',
+        timestamp: item.timestamp ?? new Date().toISOString(),
+      }));
+      setMessages(restoredMessages);
+    }).catch(() => {
+      // A stale session should not prevent the widget from opening.
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, sessionId, messages.length, setMessages]);
+
+  useEffect(() => {
+    if (isOpen && messages.length === 0 && !hasSeenPopup && !sessionId) {
+      addMessage(createConversationFlow(t).greetingMessage);
       setConversationState('greeting');
     }
   }, [isOpen, messages.length, hasSeenPopup, addMessage, setConversationState]);

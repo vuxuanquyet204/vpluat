@@ -257,7 +257,7 @@ function SeoPreview({
         {title.length > 60 ? `${title.slice(0, 60)}…` : title}
       </div>
       <div style={{ color: '#006621', fontSize: '0.74rem', marginTop: 2 }}>
-        https://vpluat.vn/blog/{slug || 'bai-viet'}
+        https://vpluat.vn/news/{slug || 'bai-viet'}
       </div>
       <div
         style={{

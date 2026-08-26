@@ -3,6 +3,8 @@
 import { useEffect, useId, useRef } from 'react';
 import { Star, Mail, Phone, Award, GraduationCap, Languages, X } from 'lucide-react';
 import type { LawyerApiResponse } from '../api/lawyers-api';
+import { getDisplayLabel } from '@/lib/display-labels';
+import { useTranslations } from 'next-intl';
 
 interface LawyerProfileModalProps {
   lawyer: LawyerApiResponse | null;
@@ -11,12 +13,15 @@ interface LawyerProfileModalProps {
 
 function getSpecialtyLabels(lawyer: LawyerApiResponse): string[] {
   if (lawyer.serviceNames && lawyer.serviceNames.length > 0) {
-    return lawyer.serviceNames.filter((s): s is string => !!s);
+    return lawyer.serviceNames
+      .filter((s): s is string => !!s)
+      .map((serviceName) => getDisplayLabel(serviceName, 'Chuyên môn'));
   }
-  return lawyer.specialties ?? [];
+  return (lawyer.specialties ?? []).map((specialty) => getDisplayLabel(specialty, 'Chuyên môn'));
 }
 
 export function LawyerProfileModal({ lawyer, onClose }: LawyerProfileModalProps) {
+  const t = useTranslations('public.lawyerProfile');
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const titleId = useId();
 
@@ -86,7 +91,7 @@ export function LawyerProfileModal({ lawyer, onClose }: LawyerProfileModalProps)
           type="button"
           className="lawyer-modal__close"
           onClick={onClose}
-          aria-label="Đóng"
+          aria-label={t('close')}
         >
           <X size={18} />
         </button>
@@ -113,7 +118,7 @@ export function LawyerProfileModal({ lawyer, onClose }: LawyerProfileModalProps)
               )}
               <span style={{ marginLeft: '6px' }}>
                 {lawyer.rating?.toFixed?.(1) ?? lawyer.rating ?? '—'}
-                {lawyer.reviewCount !== undefined && ` · ${lawyer.reviewCount} đánh giá`}
+                {lawyer.reviewCount !== undefined && ` · ${lawyer.reviewCount} ${t('reviews')}`}
               </span>
             </div>
           )}
@@ -121,23 +126,23 @@ export function LawyerProfileModal({ lawyer, onClose }: LawyerProfileModalProps)
 
         <div className="lawyer-modal__body">
           <section className="lawyer-modal__section">
-            <h3>Giới thiệu</h3>
+            <h3>{t('introduction')}</h3>
             <p>{lawyer.bio}</p>
           </section>
 
           <section className="lawyer-modal__section">
-            <h3>Thông tin chuyên môn</h3>
+            <h3>{t('professionalInfo')}</h3>
             <ul className="lawyer-modal__list">
               <li>
                 <Award size={16} aria-hidden />
-                <span><strong>{lawyer.experience}</strong> năm kinh nghiệm</span>
+                <span><strong>{lawyer.experience}</strong> {t('yearsExperience')}</span>
               </li>
               {/* successfulCases / degree are not in the BE LawyerDTO yet.
                   Render only when the BE provides them. */}
               {lawyer.successfulCases !== undefined && lawyer.successfulCases !== null && (
                 <li>
                   <Award size={16} aria-hidden />
-                  <span><strong>{lawyer.successfulCases}</strong> vụ thành công</span>
+                  <span><strong>{lawyer.successfulCases}</strong> {t('successfulCases')}</span>
                 </li>
               )}
               {lawyer.degree && (
@@ -148,13 +153,13 @@ export function LawyerProfileModal({ lawyer, onClose }: LawyerProfileModalProps)
               )}
               <li>
                 <Languages size={16} aria-hidden />
-                <span>Ngôn ngữ: {lawyer.languages.join(', ')}</span>
+                <span>{t('languages')}: {lawyer.languages.join(', ')}</span>
               </li>
             </ul>
           </section>
 
           <section className="lawyer-modal__section">
-            <h3>Lĩnh vực chuyên môn</h3>
+            <h3>{t('specialties')}</h3>
             <div className="lawyer-modal__tags">
               {getSpecialtyLabels(lawyer).map((sp, i) => (
                 <span key={`${sp}-${i}`} className="lawyer-tag">{sp}</span>
@@ -163,7 +168,7 @@ export function LawyerProfileModal({ lawyer, onClose }: LawyerProfileModalProps)
           </section>
 
           <section className="lawyer-modal__section">
-            <h3>Liên hệ</h3>
+            <h3>{t('contact')}</h3>
             <ul className="lawyer-modal__list">
               <li>
                 <Phone size={16} aria-hidden />

@@ -18,6 +18,7 @@ import {
   ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useFeaturedServices } from '@/features/services/hooks/use-services';
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -35,14 +36,13 @@ const ICON_MAP: Record<string, LucideIcon> = {
   shield: Shield,
 };
 
-const DEFAULT_DESCRIPTION = 'Tư vấn pháp lý chuyên nghiệp, tận tâm';
-
 function getServiceIcon(iconName?: string): LucideIcon {
   if (!iconName) return Scale;
   return ICON_MAP[iconName] ?? Scale;
 }
 
 export function ServicesSection() {
+  const t = useTranslations('homeSections.services');
   const { data: services = [], isLoading } = useFeaturedServices();
 
   const displayServices = useMemo(() => {
@@ -54,22 +54,20 @@ export function ServicesSection() {
     <section className="section">
       <div className="container">
         <div className="section__header">
-          <span className="section__label">Dịch vụ</span>
-          <h2 className="section__title">Giải Pháp Pháp Lý Toàn Diện</h2>
-          <p className="section__subtitle">
-            Chúng tôi cung cấp đa dạng các dịch vụ pháp lý cho cá nhân và doanh nghiệp
-          </p>
+          <span className="section__label">{t('label')}</span>
+          <h2 className="section__title">{t('title')}</h2>
+          <p className="section__subtitle">{t('subtitle')}</p>
         </div>
 
         <div className="services__grid">
           {isLoading && (
             <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#666' }}>
-              Đang tải dịch vụ nổi bật...
+              {t('loading')}
             </p>
           )}
           {!isLoading && displayServices.length === 0 && (
             <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#666' }}>
-              Đang cập nhật dịch vụ...
+              {t('empty')}
             </p>
           )}
           {displayServices.map((service) => {
@@ -87,10 +85,10 @@ export function ServicesSection() {
                 </div>
                 <h3 className="service-card__name">{service.name}</h3>
                 <p className="service-card__desc">
-                  {service.shortDescription || DEFAULT_DESCRIPTION}
+                  {service.shortDescription || t('defaultDescription')}
                 </p>
                 <span className="service-card__link">
-                  Tìm hiểu thêm <ArrowRight size={14} />
+                  {t('learnMore')} <ArrowRight size={14} />
                 </span>
               </Link>
             );

@@ -1,16 +1,18 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useChatbotWidget } from '../hooks';
 import { MessageCircle } from 'lucide-react';
 
 export function ChatbotFab() {
+  const t = useTranslations('chatbot');
   const { isOpen, unreadCount, toggleOpen } = useChatbotWidget();
 
   return (
     <button
       onClick={toggleOpen}
       className="chatbot__fab"
-      aria-label={isOpen ? 'Đóng chatbot' : 'Mở chatbot'}
+      aria-label={isOpen ? t('closeChat') : t('openChat')}
       aria-expanded={isOpen}
     >
       {isOpen ? (
@@ -32,7 +34,7 @@ export function ChatbotFab() {
       )}
 
       {!isOpen && unreadCount > 0 && (
-        <span className="chatbot__fab-badge" aria-label={`${unreadCount} tin nhắn mới`}>
+        <span className="chatbot__fab-badge" aria-label={t('newMessages', { count: unreadCount })}>
           {unreadCount > 9 ? '9+' : unreadCount}
         </span>
       )}

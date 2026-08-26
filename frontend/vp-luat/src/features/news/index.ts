@@ -12,4 +12,3 @@ export { SidebarNewsletter } from './components/sidebar-newsletter';
 export { SidebarCta } from './components/sidebar-cta';
 export { default as NewsPage } from './components/pages/news-page';
 export * from './types';
-export * from './lib/data/news-data';

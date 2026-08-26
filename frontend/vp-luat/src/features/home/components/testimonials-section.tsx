@@ -1,15 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
 import { useRecentReviews } from '@/features/home/hooks/use-reviews';
 
-// Empty-state copy when the backend has no reviews yet (or the call failed).
-// We intentionally do NOT ship hard-coded Vietnamese names / companies as
-// fallback data — that would put fake testimonials in front of users.
-const EMPTY_MESSAGE = 'Chưa có đánh giá nào từ khách hàng. Hãy là người đầu tiên chia sẻ trải nghiệm của bạn.';
-
 export function TestimonialsSection() {
+  const t = useTranslations('reviews');
   const [current, setCurrent] = useState(0);
   const { data: reviews = [], isLoading, isError } = useRecentReviews(10);
 
@@ -19,7 +16,7 @@ export function TestimonialsSection() {
     name: review.clientName,
     role:
       review.clientRole ||
-      (review.serviceName ? `Khách hàng ${review.serviceName}` : 'Khách hàng'),
+      (review.serviceName ? t('serviceCustomer', { service: review.serviceName }) : t('customer')),
     initials: review.initials || review.clientName?.slice(0, 2).toUpperCase() || 'CL',
   }));
 
@@ -39,7 +36,7 @@ export function TestimonialsSection() {
         <div className="container">
           <div className="loading-container">
             <div className="loading-spinner" />
-            <p>�ang tải đánh giá...</p>
+            <p>{t('loading')}</p>
           </div>
         </div>
       </section>
@@ -51,16 +48,14 @@ export function TestimonialsSection() {
       <section className="section">
         <div className="container">
           <div className="section__header">
-            <span className="section__label">Đánh giá</span>
-            <h2 className="section__title">Khách Hàng Nói Gì Về Chúng Tôi</h2>
-            <p className="section__subtitle">
-              Những đánh giá chân thực từ khách hàng đã sử dụng dịch vụ
-            </p>
+            <span className="section__label">{t('label')}</span>
+            <h2 className="section__title">{t('title')}</h2>
+            <p className="section__subtitle">{t('subtitle')}</p>
           </div>
           <div className="testimonial-card testimonial-card--empty" role="status">
             <Quote className="testimonial-card__quote-icon" aria-hidden="true" />
             <p className="testimonial-card__text">
-              {isError ? 'Không thể tải đánh giá. Vui lòng thử lại sau.' : EMPTY_MESSAGE}
+              {isError ? t('error') : t('empty')}
             </p>
           </div>
         </div>
@@ -72,11 +67,9 @@ export function TestimonialsSection() {
     <section className="section">
       <div className="container">
         <div className="section__header">
-          <span className="section__label">Đánh giá</span>
-          <h2 className="section__title">Khách Hàng Nói Gì Về Chúng Tôi</h2>
-          <p className="section__subtitle">
-            Những đánh giá chân thực từ khách hàng đã sử dụng dịch vụ
-          </p>
+          <span className="section__label">{t('label')}</span>
+          <h2 className="section__title">{t('title')}</h2>
+          <p className="section__subtitle">{t('subtitle')}</p>
         </div>
 
         <div className="testimonials__slider">
@@ -117,7 +110,7 @@ export function TestimonialsSection() {
             className="testimonials__arrow"
             onClick={prev}
             disabled={total <= 1}
-            aria-label="Đánh giá trước"
+            aria-label={t('previous')}
           >
             <ChevronLeft size={20} />
           </button>
@@ -127,7 +120,7 @@ export function TestimonialsSection() {
                 key={index}
                 className={`testimonials__dot ${index === current ? 'active' : ''}`}
                 onClick={() => setCurrent(index)}
-                aria-label={`Đánh giá ${index + 1}`}
+                aria-label={t('item', { number: index + 1 })}
                 aria-current={index === current ? 'true' : undefined}
               />
             ))}
@@ -136,7 +129,7 @@ export function TestimonialsSection() {
             className="testimonials__arrow"
             onClick={next}
             disabled={total <= 1}
-            aria-label="Đánh giá tiếp theo"
+            aria-label={t('next')}
           >
             <ChevronRight size={20} />
           </button>

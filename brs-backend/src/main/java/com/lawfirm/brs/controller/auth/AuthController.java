@@ -194,16 +194,4 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Password reset successfully", null));
     }
 
-    @PostMapping("/hash-password")
-    @Operation(summary = "Hash password", description = "Generate BCrypt hash for a password (dev only)")
-    public ResponseEntity<ApiResponse<Map<String, String>>> hashPassword(
-            @RequestBody Map<String, String> request
-    ) {
-        String password = request.get("password");
-        String hash = authService.generatePasswordHash(password);
-        return ResponseEntity.ok(ApiResponse.success("Password hashed", Map.of(
-            "password", password,
-            "hash", hash
-        )));
-    }
 }
